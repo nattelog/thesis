@@ -1,8 +1,6 @@
 
 # Created by https://www.gitignore.io/api/tex,vim
 
-*.pdf
-
 ### TeX ###
 ## Core latex/pdflatex auxiliary files:
 *.aux
