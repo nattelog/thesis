@@ -32,21 +32,26 @@ blocking concurrent requests \cite{elmeleegy2004lazy}. These requests are both
 on a network level but also on the general operating system level. Requests
 from a smart device might be logged on a file or written to a database, meaning
 the server must start new processes to handle these requests without blocking
-new requests from the network. However, a server does not necessarily have to
-be a web server serving requests on the internet protocol. The operating system
-itself can be viewed as an I/O (input/output) server receiving requests from
-the I/O layer. This can be data on serial ports and general purpose I/O pins on
-the processor. A device monitoring a physical environment using sensors can
-take use of this feature by letting the registers call interrupt handlers when
-they are ready for reading or writing. Thus an application running on an
-embedded system listening for data from sensors can be viewed as a web server
-listening for internet requests. The same challenge regarding non-blocking
-request handlers holds also for these mentioned applications.
+new requests from the network. A server does not necessarily have to be a web
+server serving requests on the internet protocol. The operating system itself
+can be viewed as an I/O (input/output) server receiving requests from the I/O
+layer. This can be data on serial ports and general purpose I/O pins on the
+processor. A device monitoring a physical environment using sensors can take
+use of this feature by letting the registers call interrupt handlers when they
+are ready for reading or writing. Thus an application running on an embedded
+system listening for data from sensors can be viewed as a web server listening
+for internet requests. The same challenge regarding non-blocking request
+handlers holds also for these mentioned applications.
+
+To implement a non-blocking server, the \textit{libuv} C++ library can be a
+good choice. With it the user can implement an \textit{event driven}
+architecture with request handlers reacting to certain events in the system,
+e.g. I/O events from the operating system. \cite{libuv-webpage}
 
 To determine the maintainability of a software system one can, among others,
 look at the source code and its age since release, the number of non-commented
-source code statements and its rate of failures per time unit
-\cite{oman1992metrics}.
+source code statements and its rate of failures per time unit.
+\cite{oman1992metrics}
 
 \section{Motivation}
 \label{sec:motivation}
@@ -61,10 +66,18 @@ themselves. If the demand for high performance IoT services is increasing
 development towards embedded systems will too. A rigor evaluation on two common
 architectures can therefore be of great value to find what suits best in IoT.
 
+\textit{libuv} is the major subsystem to \textit{Node.js}, a popular universal
+language for \textit{"[...] front end, back end and connected devices [and]
+everything from the browser to your toaster [...]."}
+\cite{node-js-survey-report-2016}. Due to \textit{Node.js}' event-driven
+development style many developers in its field might have a better experience
+using \textit{libuv} when if need to transfer to embedded programming will be
+in question.
+
 \section{Aim}
 \label{sec:aim}
 
-To conclude whether libuv is a good option in terms of performance and
+To conclude whether \textit{libuv} is a good option in terms of performance and
 maintainability when selecting underlying architecture for IoT devices.
 
 \section{Research questions}
