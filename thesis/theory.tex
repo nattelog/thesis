@@ -1,38 +1,143 @@
-%%% lorem.tex --- 
-%% 
-%% Filename: lorem.tex
-%% Description: 
-%% Author: Ola Leifler
-%% Maintainer: 
-%% Created: Wed Nov 10 09:59:23 2010 (CET)
-%% Version: $Id$
-%% Version: 
-%% Last-Updated: Tue Oct  4 11:58:17 2016 (+0200)
-%%           By: Ola Leifler
-%%     Update #: 7
-%% URL: 
-%% Keywords: 
-%% Compatibility: 
-%% 
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%% 
-%%% Commentary: 
-%% 
-%% 
-%% 
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%% 
-%%% Change log:
-%% 
-%% 
-%% RCS $Log$
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%% 
-%%% Code:
-
 \chapter{Theory}
 \label{cha:theory}
 
+Theories used in this study are presented here. They include software metrics,
+electronic hardware metrics, previous research on event-driven-related
+architectures and some general information regarding C++ and the \textit{libuv}
+library.
+
+\section{Software Metrics}
+
+In all engineering fields, measurement is important. Measuring software is a
+way for an engineer to assess its quality and a large number of software
+metrics have been derived during the years \cite{aggarwal2006empirical}.
+Previous research show that software process improvements is key for both large
+and small successful companies \cite{dybaa2003factors}. However, it requires a
+balance between formal process and informal practice. Large companies tend to
+lean more towards the formality of things and employees are given less space to
+be creative. On the other hand, small companies tend to do the opposite:
+employees are given freedom to explore solutions while formal processes are
+being put aside. Dybå \cite{dybaa2003factors} suggests that "formal processes
+must be supplemented with informal, inter-personal coordination about
+practice".
+
+It is also important to note how failure is handled. Failure is essential for
+improving learning and questioning the status quo inside both companies and
+software. If failure is unacceptable, the organizational competance can
+decrease when facing change in the environment. When a company is successful it
+will grow larger with repeated success and there is no financial reason to
+change what already works and generates revenue. However, eventually when the
+environment changes there might be good reasons to dust off legacy systems and
+introduce some new patches. The cost of doing so might depend on whether the
+system was initially built with maintenability in mind.
+
+Maintainability can be measured in many ways. Aggarwal et al.
+\cite{aggarwal2006empirical} suggests that some metric results can be derived
+from others. In the same way the area and diagonal can be derived from the
+width and height of a table, some metrics may provide redundant information.
+Oman and Hagemeister \cite{oman1992metrics} proposes a quantitative approach
+where multiple metrics can be combined into a unified value. Software
+maintainability can be divided into three broad categories:
+
+\begin{itemize}
+\item The management practices being employed
+\item Hardware and software environments involved in the target software system
+\item The target software system
+\end{itemize}
+
+Oman and Hagemeister \cite{oman1992metrics} further derive the target software
+system into additional categories:
+
+\begin{itemize}
+\item Maturity attributes
+\item Source code
+\item Supporting Documentation
+\end{itemize}
+
+Maturity attributes include metrics such as the \textit{age} of the software
+since release, \textit{size} in terms of non-commented source statements and
+\textit{reliability} which can be measured as the rate of failures per hour.
+Source code include metrics on how the software is decomposed into algorithms
+and how they are implemented, e.g. the number of modules and the cyclomatic
+complexity averaged over all modules. It also includes metrics on the
+information flow in the system, e.g. the number of global data types and
+structures, the number of data structures whose type is converted and the
+number of lines of code dedicated to I/O. Coding style metrics are also
+included, e.g. the percentage of uncrowded statements (only one statement per
+line), the number of blank lines and the number of commented lines are taken
+into account. Supporting documentation are evaluated in a subjective manner.
+Metrics include traceability to and from code implementation, verifiability of
+the implementation and consistency of the writing style and comprehensibility
+of the document.
+
+To assess these metrics, Oman and Hagemeister \cite{oman1992metrics} introduces
+a formula:
+
+$$
+\prod_{i=1}^m{W_D_i(\frac{\sum_{j=1}^n{W_A_jM_A_j}}{n})_i}
+$$
+
+where $W_D_i$ is the weight of influence of software maintainability category
+$D_i$, e.g.  source code control structure. $W_A_j$ is the weight of influence
+of maintainability attribute $A_j$, e.g. software age. $M_A_j$ is the measure
+of maintainability attribute $A_j$. The values should be structured so that
+they range from 0 to 1, thereby showing a percentage of their correctness.
+Worth noting is that not all attributes have to be measured, only those of
+significant value.
+
+\subsection{Measuring maintainability in C++}
+
+Some metrics might not be suitable for object-oriented (OO) languages and C++
+in particular. Wilde and Huitt \cite{wilde1991maintenance} studies some of the
+main difficulties regarding maintenance as in "post deployment support" of
+OO-languages. These languages introduces the concepts of \textit{object class
+inheritance hierarchy} and \textit{polymorphism} which in some sense helps give
+programmers a better understanding of their programs, but the maintenance
+burden will unlikely disappear completely. One issue with analyzing OO source
+code is \textit{dynamic binding}. A class object variable might not necessarily
+refer to its declared class type, but it can also refer to any of its
+descendants in the class hierarchy. This makes static analysis complicated,
+e.g. it is not always known what implementation of a method will be used when
+the method is called on an object.
+
+Rajaraman and Lyu \cite{rajaraman1992reliability} have also studied the
+shortcomings on some traditional maintainability metrics on OO-languages. For
+instance, they look on the metric \textit{statement count} which can predict a
+software's complexity. It is built on the assumption that "the more detail that
+an entity possesses, the more difficult it is to understand"
+\cite{rajaraman1992reliability}. The metric simply counts the number of
+statements in a program or module. They criticize the metric for not taking the
+program's context into account and that it is not easy to determine what
+exactly a statement is. They also criticize McCabe's \textit{cyclomatic
+complexity measure} \cite{mccabe1976complexity} that calculates a program's
+complexity by taking the number of edges in a program flow graph, the number of
+nodes and the number of connected components into account (nodes are
+abstractions of sequential blocks of code and edges are conditional branches in
+the program). The critique involves, as stated earlier regarding statement
+count, that the metric ignores the context in the program and has no support to
+take the complexity of each statement into account.
+
+Rajaraman and Lyu \cite{rajaraman1992reliability} defines four measures of
+\textit{coupling} in their paper. They define the term coupling as "[...] a
+measure of association, whether by inheritance or otherwise, between classes in
+a software product". Abstracting the program to a directed multigraph, each
+node represents a class and each edge represents a reference from one node to
+another through variable references and method calls. Two of the proposed
+measures, \textit{Class Coupling} and \textit{Average Method Coupling} resulted
+in highest correlation (though not statistically significant) with perceived
+maintainability when tested on a number of C++ programs. Class Coupling for a
+class $C$ is defined as the sum of each outgoing edge from $C$; i.e. the sum of
+all global variable references, all global function uses, all calls to other
+class methods and all local references to other class instances. Average Method
+Coupling is a ratio number between a class $C$'s Class Coupling and its total
+number of methods, i.e. $AMC = CC / n$ where $n$ is the total number of methods
+declared in $C$.
+
+\section{Hardware performance metrics}
+
+\section{Event-driven architecture}
+
+\iffalse
 The main purpose of this chapter is to make it obvious for
 the reader that the report authors have made an effort to read
 up on related research and other information of relevance for
@@ -79,12 +184,4 @@ in general.
 
 This chapter is called either \emph{Theory, Related Work}, or
 \emph{Related Research}. Check with your supervisor.
-
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%%% lorem.tex ends here
-
-%%% Local Variables: 
-%%% mode: latex
-%%% TeX-master: "demothesis"
-%%% End: 
+\fi
