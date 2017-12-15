@@ -6,12 +6,80 @@ electronic hardware metrics, previous research on event-driven-related
 architectures and some general information regarding C++ and the \textit{libuv}
 library.
 
-\section{Software Metrics}
+\section{Reactive systems}
+
+Systems required to continually respond to its environment are called
+\textit{reactive} systems. Harel and Pnueli \cite{harel1985development}
+elaborates on different system dichotomies, for instance deterministic and
+nondeterministic systems. Deterministic systems have unique actions which
+always generates the same output. Nondeterministic systems do not have that
+property and it can cause them to be more difficult to handle. Another
+dichotomy is the sequential and concurrent systems. Concurrent systems cause
+problems which are easily avoidable in sequential ones. For instance the mutual
+exclusion problem where it is not always trivial what process owns what
+resource and whether it is safe to modify a resource that can be used by
+another process. A more fundamental dichotomy is presented by Harel and Pnueli:
+\textit{transformational} and \textit{reactive} systems. A transformational
+system transforms its input and creates new output. It can continually prompt
+for new input. A reactive system is prompted the other way around: from the
+outside. It does not necessarily compute any input, but it maintains a
+relationship with its outside environment. A reactive system can be
+deterministic or nondeterministic, sequential or concurrent, thus making the
+transformational/reactive system dichotomy a fundamental system paradigm.
+\cite{harel1985development}
+
+\section{Programming embedded systems}
+
+In embedded systems programming, both hardware and software is important. Nahas
+and Maaita \cite{nahas2012choosing} mentiones a few factors to be considered
+when choosing a programming language for an embedded system:
+
+\begin{itemize}
+\item
+  The language must take the resource constraints of an embedded processor
+  into account
+\item
+  It must allow low-level access to the hardware
+\item
+  It must be able to re-use code components in the form of libraries from other
+    projects
+\item
+  It must be a widely used language with good access to documentation and other
+    skilled programmers
+\end{itemize}
+
+There is no scientific method for selecting an appropiate language for a
+specific project. Selection mostly relies on experience and subjective
+assessment from developers. It was however shown in 2006 that over 50 \% of
+embedded system projects were developed in C and 30 \% were developed in C++.
+Barr \cite{barr1999programming} states that the key advantage of C is that it
+allows the developer to access hardware without loosing the benefits of
+high-level programming. Compared to C, C++ offer a better object-oriented
+programming style but can on the other hand be less efficient.
+\cite{nahas2012choosing}
+
+\section{Multithreading}
+
+Multithreading can be achieved both in software and in hardware. In software,
+multithreading is achieved by the operating system. Each process corresponds to
+a thread and each process can also spawn new threads
+\cite{silberschatz2014operating}.
+
+The component maintaining all these threads is called the \textit{scheduler}
+and its main purpose is to balance the load of threads between the CPU cores.
+The big problems the scheduler faces is 1) to make sure the most important
+thread is currently running and 2) to minimize the number of context switches,
+i.e. switching the current working thread. Linux uses a scheduling algorithm
+called \textit{Completely Fair Scheduling} (CFS) which, in a single-core
+context, is quite simple. However, for multi-core systems the algorithm has
+proven to get very complex and several bugs has been found in it.
+\cite{lozi2016linux}
+
+\section{Software metrics}
 
 In all engineering fields, measurement is important. Measuring software is a
 way for an engineer to assess its quality and a large number of software
 metrics have been derived during the years \cite{aggarwal2006empirical}.
-
 
 Previous research show that software process improvements is key for both large
 and small successful companies. However, it requires a balance between formal
@@ -135,54 +203,3 @@ number of methods, i.e. $AMC = CC / n$ where $n$ is the total number of methods
 declared in $C$.
 
 \section{Hardware performance metrics}
-
-\section{Event-driven architecture}
-
-\iffalse
-The main purpose of this chapter is to make it obvious for
-the reader that the report authors have made an effort to read
-up on related research and other information of relevance for
-the research questions. It is a question of trust. Can I as a
-reader rely on what the authors are saying? If it is obvious
-that the authors know the topic area well and clearly present
-their lessons learned, it raises the perceived quality of the
-entire report.
-
-After having read the theory chapter it shall be obvious for
-the reader that the research questions are both well
-formulated and relevant.
-
-The chapter must contain theory of use for the intended
-study, both in terms of technique and method. If a final thesis
-project is about the development of a new search engine for
-a certain application domain, the theory must bring up related
-work on search algorithms and related techniques, but also
-methods for evaluating search engines, including
-performance measures such as precision, accuracy and
-recall.
-
-The chapter shall be structured thematically, not per author.
-A good approach to making a review of scientific literature
-is to use \emph{Google Scholar} (which also has the useful function
-\emph{Cite}). By iterating between searching for articles and reading
-abstracts to find new terms to guide further searches, it is
-fairly straight forward to locate good and relevant
-information, such as \cite{test}.
-
-Having found a relevant article one can use the function for
-viewing other articles that have cited this particular article,
-and also go through the article’s own reference list. Among
-these articles on can often find other interesting articles and
-thus proceed further.
-
-It can also be a good idea to consider which sources seem
-most relevant for the problem area at hand. Are there any
-special conference or journal that often occurs one can search
-in more detail in lists of published articles from these venues
-in particular. One can also search for the web sites of
-important authors and investigate what they have published
-in general.
-
-This chapter is called either \emph{Theory, Related Work}, or
-\emph{Related Research}. Check with your supervisor.
-\fi

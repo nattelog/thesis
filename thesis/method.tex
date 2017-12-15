@@ -1,38 +1,7 @@
-%%% lorem.tex --- 
-%% 
-%% Filename: lorem.tex
-%% Description: 
-%% Author: Ola Leifler
-%% Maintainer: 
-%% Created: Wed Nov 10 09:59:23 2010 (CET)
-%% Version: $Id$
-%% Version: 
-%% Last-Updated: Wed Nov 10 09:59:47 2010 (CET)
-%%           By: Ola Leifler
-%%     Update #: 2
-%% URL: 
-%% Keywords: 
-%% Compatibility: 
-%% 
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%% 
-%%% Commentary: 
-%% 
-%% 
-%% 
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%% 
-%%% Change log:
-%% 
-%% 
-%% RCS $Log$
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%% 
-%%% Code:
-
 \chapter{Method}
 \label{cha:method}
 
+\iffalse
 In this chapter, the method is described in a way which shows how the
 work was actually carried out. The description must be precise and
 well thought through. Consider the scientific term
@@ -46,11 +15,139 @@ Sometimes the work is separated into different parts, e.g.  pre-study,
 implementation and evaluation. In such cases it is recommended that
 the method chapter is structured accordingly with suitable named
 sub-headings.
+\fi
 
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%%% lorem.tex ends here
+The aim of this study is fundamentally to compare a single-threaded
+implementation to a multi-threaded implementation of an embedded software
+application. The application is of a reactive nature and is relevant to modern
+industry. Previous attempts have been made to prove how certain programming
+languages perform better when used in a reactive context. Terber
+\cite{terber2017function} discusses the lack of function-oriented software
+decomposition for reactive software. With an industrial application as context,
+he replaces legacy code with code written in the \textit{Cèu} programming
+language, reaching the conclusion that Cèu preserves fundamental software
+engineering principles and is at the same time able to fullfill resource
+limitations in the system. Jagadeesan et al \cite{jagadeesan1996formal}
+performs a similar study but with a different language: \textit{Esterel}. They
+reimplement a component in a telephone switching system and reach the
+conclusion that Esterel is better suited for analysis and verification for
+reactive systems.
 
-%%% Local Variables: 
-%%% mode: latex
-%%% TeX-master: "demothesis"
-%%% End: 
+The main approach this study will undertake to answer its questions is 1) to
+create a specification of a system that will be implemented, 2) perform the
+implementation with the chosen libraries and platforms, 3) test the
+implementations, 4) apply the metrics and 5) perform evaluation of the metrics.
+
+\section{Creating a specification}
+
+Harel and Pnueli \cite{harel1985development} presents a method for decomposing
+complex system using \textit{statecharts}. Drawn from the theories of finite
+state automata, a system can be expressed using states. This is particularily
+useful for reactive systems that can react to a large amount of different
+inputs. One powerful feature with statecharts is its ability to handle
+hierarchical states. If a system has a numerous amount of input combinations, a
+large set of states must be created which in the long run is not appropiate in
+terms of scalability. One solution to this is hierarchical states in which a
+state can hold a number of other states. Fundamentally, a state undergo a
+transition to another state when an action is performed on that state.
+\cite{harel1985development}
+
+Ardis et al \cite{ardis1996framework} created a specification for a telephone
+switching system which later was tested on a number of languages. They started
+by describing some general properties of the system in a list. In general, the
+list had the format:
+
+\begin{enumerate}
+\item
+  When event $X_1$ occurs,
+\begin{enumerate}
+\item
+  If some condition or property of the system holds true, call action $Y_1$
+\item
+  Otherwise, call action $Z_1$
+\end{enumerate}
+
+\item
+  When event $X_2$ occurs,
+\begin{enumerate}
+\item
+  Call action $Y_2$
+\end{enumerate}
+
+\item
+  And so on...
+\end{enumerate}
+
+They then implemented a system fullfilling the requirements in a set of
+different languages. Most languages fit well for reactive systems since their
+semantic allows and makes it easy to build and define different state machines.
+They also did one implementation in C in which they had two solutions: one
+using arrays to hold all the different actions and states and one using
+switch-blocks.
+
+This very same method will be used in this study. A multi-sensor monitor
+application will be specified. Its basic purpose is to listen for data from
+different sensors and publish it to a web service. The application will be
+developed on a Raspberry Pi device with an ARM processor. Each sensor will be
+connected to the device's \textit{GPIO} ports and the software will poll data
+in specific time intervals. The application will have a set of events which are
+called when a specific timeout or request is issued.
+
+\begin{itemize}
+\item
+  $DATA\_READY$: This event is dispatched when sensor data is ready to be read.
+The data is a tuple consisting of the sensor ID and its current value: $<ID,
+value>$.
+\item
+  $SYSTEM\_STATUS$: This event is dispatched from a remote client on the web.
+\end{itemize}
+
+Following is a description of the general properties of the system.
+
+\begin{enumerate}
+\item
+  When event $DATA\_READY$ occurs,
+\begin{enumerate}
+\item
+  If a remote client exists, send the data to it.
+\item
+  Do nothing.
+\end{enumerate}
+\item
+  When event $SYSTEM\_STATUS$ occurs,
+\begin{enumerate}
+\item
+  If the last time $DATA\_READY$ was dispatched is outside the accepted time
+frame, send $STATUS\_NOT\_OK$ to the remote client.
+\item
+  Send $STATUS\_OK$ to the remote client.
+\end{enumerate}
+\end{enumerate}
+
+\section{Implementation}
+
+Two different implementations written in C++ will be tested in this study: one
+using the \textit{libuv} library, and one with no specific third party library.
+The first implementation will utilize the \textit{event-loop} inside the libuv
+library to handle timers and event callbacks. The second implementation will
+instead create new threads to handle events.
+
+\section{Testing the implementation}
+
+A testing environment will be created. This will include actual hardware
+sensors for humidity and temperature that will be connected to the Raspberry Pi
+device. A web client will also be developed to be able to communicate with the
+device to receive sensor data and request system status. Multiple test cases
+will be written in both software and as a specification for higher level
+integration tests.
+
+\section{Applying the metrics}
+
+Maintainability will be the main software metric to apply on the
+implementations. To measure performance, a benchmark test will be done were a
+large amount of sensor data polls and remote client requests will be issued.
+
+\section{Evaluate the metrics}
+
+The values received from both the software metric analysis and the performance
+analysis will be compared.
