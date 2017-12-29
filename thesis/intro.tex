@@ -66,29 +66,45 @@ themselves. If the demand for high performance IoT services is increasing, then
 development towards embedded systems will too. A rigor evaluation on two common
 architectures can therefore be of great value to find what suits best in IoT.
 
-\textit{libuv} is the major subsystem to \textit{Node.js}, a popular universal
-language for \textit{"[...] front end, back end and connected devices [and]
-everything from the browser to your toaster [...]."}
-\cite{node-js-survey-report-2016}. Due to \textit{Node.js}' event-driven
-development style many developers in its field might have a better experience
-using \textit{libuv} when if need to transfer to embedded programming will be
-in question.
+libuv is the major subsystem to \textit{Node.js}, a popular universal language
+for \textit{"front end, back end and connected devices [and] everything from
+the browser to your toaster"} \cite{node-js-survey-report-2016}. Due to
+Node.js' event-driven development style many developers in its field might have
+a better experience using libuv when if need to transfer to embedded
+programming will be in question.
 
 \section{Aim}
 \label{sec:aim}
 
-To conclude whether \textit{libuv} is a good option in terms of performance and
+To conclude whether libuv is a good option in terms of performance and
 maintainability when selecting underlying architecture for IoT devices.
 
 \section{Research questions}
 \label{sec:research-questions}
 
 \begin{enumerate}
+
+  \item Given a state of the art reactive system from the industry - how does
+    an equivalent implementation using libuv compare in terms of
+
+    \begin{enumerate}
+
+      \item software maintainability?
+
+      \item performance?
+
+      \item power consumption?
+
+    \end{enumerate}
+
+  %% old research questions
+  \iffalse
     \item How does an event-driven architecture using libuv compare to a
         multi-threaded environment in terms of performance?
 
     \item How does an event-driven architecture using libuv compare to a
         multi-threaded environment in terms of maintainability?
+  \fi
 \end{enumerate}
 
 \section{Delimitations}
