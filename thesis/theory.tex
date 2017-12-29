@@ -6,6 +6,94 @@ electronic hardware metrics, previous research on event-driven-related
 architectures and some general information regarding C++ and the \textit{libuv}
 library.
 
+\section{Software development methodology}
+
+There exists a numerous amount of ways to develop software. In plan-based
+methodologies, including the \textit{waterfall model}, the way of working is
+highly inspired by traditional engineering such as manufacturing and
+construction. Given a set of phases in the development, each phase must be done
+before the next phase starts. These phases include \textit{requirement
+definition}, \textit{design}, \textit{implementation}, \textit{testing} and
+\textit{release} \cite{crookshanks2014practical}. On the other end of the
+spectra lies the \textit{agile} methodologies. Initially developed as a
+response to the frustration of the static, slow-going process of the well-used
+waterfall model, it is based on the understanding that software requirements
+are highly dynamic and most certainly change over time
+\cite{moniruzzaman2013comparative}.
+
+Vijayasarathy and Butler \cite{vijayasarathy2016choice} found in an online
+survey they conducted in 2016 that around a third of all software projects were
+using the waterfall model as main software methodology. Following were the
+agile methodologies \textit{Agile Unified Process} and \textit{Scrum}. They
+also found that multiple methodologies were often used in the same project.
+For instance the agile method \textit{Joint Application Development} was used
+in one project to identify requirements, while the waterfall model was used in
+the remainder of the project.
+
+\subsection{Scrum}
+
+Scrum is an agile framework utilized by small teams to develop simple and
+complex products. Scrum is not only used to do software development, it can be
+applied to any development - even a book \cite{sims2012scrum}. In Scrum there
+are three main components: \textit{roles}, \textit{artifacts} and \textit{the
+sprint cycle}. Roles are taken by people in the team, artifacts are tools used
+by the team and the fundamental pulse of the project is the sprint cycle. Three
+distinct roles are recognized: \textit{product owner}, \textit{Scrum master}
+and \textit{team member}. The product owner is the team's representation of the
+\textit{stakeholders} of the product (mainly the business related
+stakeholders). He is responsible for making the team always do most valuable
+work, he holds the vision of the product, he owns the \textit{product backlog}
+and creates acceptance criteria for the backlog items. The scrum master is the
+team's coach guiding them to become a high-performing, self-organizing team. He
+helps the team apply and shape the agile practices to the team's advantage. A
+team member is responsible for completing \textit{user stories}, create
+\textit{estimates} and decides what tools to use in the upcoming
+\textit{sprint}. \cite{sims2012scrum}
+
+The artifacts recognized by Scrum are called \textit{product backlog},
+\textit{sprint backlog}, \textit{burn down charts} and \textit{task board}. The
+product backlog consists of a list deliverables that can be anything of value
+for the product, e.g. features and documentation changes. Items in the list are
+also called \textit{user stories} and they are ordered by priority. They
+include information such as who the story is for, what needs to be built, how
+much work is needed to implement it and what the acceptance criteria is. Prior
+to a \textit{sprint} user stories are derived into practical \textit{tasks}
+usually performed by a single team member. The sprint backlog is populated by
+these tasks and they are expected to be finished within the time limit of the
+sprint. To monitor the status of the sprint or the entire project, the burn
+down chart is used. It is a diagram showing how much work is left to be done.
+The Y-axis shows the amount of tasks and the X-axis the time. As time progress
+the amount of tasks are hopefully decreasing. The task board is used to help
+the team inspect their current situation. It usually consists of three columns:
+\textit{To do}, \textit{Doing} and \textit{Done}. Each column consists of tasks
+(or symbols of tasks) in the current sprint, and gives the team a visual on
+what tasks are yet to be done. \cite{sims2012scrum}
+
+A Scrum project is split into a series of sprints. They are time limited
+smaller versions of the entire project where a pre-defined amount of tasks are
+to be completed within the sprint. When a sprint is finished a potentially
+working product is demonstrated. The benefit of short-lived sprints is that the
+team receives frequent feedback on their work, giving them a better presumption
+to improve future sprints. From a business perspective, the sprint method
+provides greater freedom to decide if a product should be shipped or further
+developed. A sprint consists of a number of meetings: \textit{sprint planning},
+\textit{daily Scrum}, \textit{story time}, \textit{sprint review} and
+\textit{retrospective}. A sprint always starts with a sprint planning. It is a
+meeting where the product owner and the team decides which user stories will be
+a part of the sprint backlog in the upcoming sprint. This is also where the
+team derive the user stories into tasks. Every day the team also has brief
+daily Scrum meetings. Each team member shares what tasks they completed since
+the previous meeting, what tasks they expect to complete before the next and
+what difficulties they are currently facing. Every week, during story time, the
+product backlog is again reviewed by the team and the product owner. This time
+each user story is evaluated to refine its acceptance criteria. If there are
+large stories in the backlog they are also split into smaller stories to make
+them easier to understand and easier to complete within a sprint. The sprint
+review marks the public end of the sprint. Here the completed user stories are
+demonstrated to the stakeholders and feedback is received. After this meeting
+the team has a retrospective meeting where they discuss what strategy changes
+can be made to improve the next sprint. \cite{sims2012scrum}
+
 \section{Reactive systems}
 
 Systems required to continually respond to its environment are called
