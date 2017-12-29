@@ -219,6 +219,80 @@ context, is quite simple. However, for multi-core systems the algorithm has
 proven to get very complex and several bugs has been found in it.
 \cite{lozi2016linux}
 
+\section{libuv}
+
+libuv is an asynchronous I/O cross-platform library written in C. It is one of
+the major core systems of Node.js, a popular JavaScript runtime engine. libuv's
+central part is the single-threaded event loop which contains all I/O
+operations. The event loop notifies any I/O events in a callback fashion using
+abstractions called \textit{handles} and \textit{requests}. Handles are
+long-lived structures and are operated on using requests. Requests usually only
+represent one I/O operation on a handle. Each I/O operation performed on the
+event loop is \textit{non-blocking}, meaning they instantly return and
+abstracts away any concurrency necessary. To handle network I/O libuv make use
+of platform specific functionality, such as \textit{epoll} for Linux. For file
+I/O libuv utilizes its \textit{thread pool} to make the operation non-blocking.
+All loops can queue work in this thread pool making it ideal for external
+services or systems that do not want to block any I/O. libuv include handles
+for \textit{UDP} and \textit{TCP} sockets, file and file system, \textit{TTY},
+timers and \textit{child processes}. \cite{libuv-docs}
+
+\begin{figure}[h]
+  \includegraphics[width=7cm]{loop_iteration}
+  \centering
+  \caption[libuv event loop]{The stages each event loop iteration step through
+  in libuv \cite{github2017libuv-loop_iteration}.}
+  \label{fig:loop_iteration}
+\end{figure}
+
+Figure \ref{fig:loop_iteration} demonstrates the stages each event loop
+iteration step through. A loop is considered to be alive if there are any
+active handles or requests. For instance, if a TCP socket is closing its
+connection the handle structure is freed from the heap and both the request and
+handle are no longer active. If they were the last being active the loop dies.
+The steps are described briefly: \cite{libuv-docs}
+
+\begin{enumerate}
+  \item The loop time is updated and stored for the entire iteration.
+  \item If the loop is alive the iteration starts, otherwise it dies.
+  \item All active timers who are scheduled to timeout have their callbacks
+    called.
+  \item Pending callbacks are called; they are I/O callbacks deferred from the previous
+    iteration.
+  \item Callbacks registered for idle handles are called. Idle handles are good
+    for low priority activity.
+  \item Callbacks that should be called right before polling for I/O can be
+    registered with prepare handles, whose callbacks are called here.
+  \item The time to poll for I/O is calculated here. It either blocks for 0
+    seconds, the timeout for the closest timer or infinity. Depending on
+    whether there are active idle handles or requests or if the loop is about
+    to close, the time is 0. \label{item:poll_time_calculation}
+  \item I/O is polled and the loop is blocked. All handles monitoring I/O will
+    have their callbacks called.
+  \item Callbacks that should be called right after polling for I/O can be
+    registered with check handles, whose callbacks are called here.
+  \item Handles being closed have their close callbacks called.
+  \item If the loop was configured to only run once and no I/O callbacks were
+    called after the poll, timers might be due since time could have elapsed
+    during the poll. Those timers gets their callbacks called.
+  \item Depending on the loop's configuration and if it is still alive, the
+    loop exits or continue.
+\end{enumerate}
+
+The following example provided by Marathe \cite{uvbook} shows an idle handler
+and its corresponding callback. As seen in Figure \ref{fig:loop_iteration} and
+explained in step \ref{item:poll_time_calculation} idle handles and their
+callbacks are called every iteration with 0 poll time.
+
+\lstinputlisting[
+  style=customc,
+  caption={libuv example with an idle handle \cite{uvbook}.},
+  label={listing:idle_handle}
+]{figures/libuv_idle_handle_example.c}
+
+libuv includes a number of data types and functions which can be found in its
+documentation \cite{libuv-docs}.
+
 \section{Software metrics}
 
 In all engineering fields, measurement is important. Measuring software is a
