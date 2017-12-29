@@ -14,7 +14,7 @@ elaborates on different system dichotomies, for instance deterministic and
 nondeterministic systems. Deterministic systems have unique actions which
 always generates the same output. Nondeterministic systems do not have that
 property and it can cause them to be more difficult to handle. Another
-dichotomy is the sequential and concurrent systems. Concurrent systems cause
+dichotomy is sequential and concurrent systems. Concurrent systems cause
 problems which are easily avoidable in sequential ones. For instance the mutual
 exclusion problem where it is not always trivial what process owns what
 resource and whether it is safe to modify a resource that can be used by
@@ -28,7 +28,63 @@ deterministic or nondeterministic, sequential or concurrent, thus making the
 transformational/reactive system dichotomy a fundamental system paradigm.
 \cite{harel1985development}
 
-\section{Programming embedded systems}
+\subsection{Specifications for reactive systems}
+
+Harel and Pnueli \cite{harel1985development} presents a method for decomposing
+complex system using \textit{statecharts}. Drawn from the theories of
+\textit{finite state automata}, a system can be expressed using states. This is
+particularily useful for reactive systems that can react to a large amount of
+different inputs. One powerful feature with statecharts is its ability to
+handle hierarchical states. If a system has a numerous amount of input
+combinations, a large set of states must be created which in the long run is
+not appropiate in terms of scalability. One solution to this is hierarchical
+states in which a state can hold a number of other states. Fundamentally, a
+state undergo a transition to another state when an action is performed on that
+state. \cite{harel1985development}
+
+Ardis et al \cite{ardis1996framework} created a specification for a telephone
+switching system which later was tested on a number of languages. They started
+by describing some general properties of the system in a list. In general, the
+list had the format:
+
+\begin{enumerate}
+\item
+  When event $X_1$ occurs,
+\begin{enumerate}
+\item
+  If some condition or property of the system holds true, call action $Y_1$
+\item
+  Otherwise, call action $Z_1$
+\end{enumerate}
+
+\item
+  When event $X_2$ occurs,
+\begin{enumerate}
+\item
+  Call action $Y_2$
+\end{enumerate}
+
+\item
+  And so on...
+\end{enumerate}
+
+They then implemented a system fullfilling the requirements in a set of
+different languages. Most languages fit well for reactive systems since their
+semantic allows and makes it easy to build and define different state machines.
+They also did one implementation in C in which they had two solutions: one
+using arrays to hold all the different actions and states and one using
+switch-blocks.
+
+However, specification of primitive components can still be a challenge.
+Non-trivial steps might be required to transition from one state to another.
+Hummel and Thyssen \cite{hummel2009behavioral} presents a formal method to
+specify a reactive system using stream based I/O-tables. In addition to
+generating a simple and understandable description of the system, the method
+helps formalize inconsistent requirements.
+
+\section{Embedded systems}
+
+\subsection{Choosing programming language}
 
 In embedded systems programming, both hardware and software is important. Nahas
 and Maaita \cite{nahas2012choosing} mentiones a few factors to be considered
@@ -202,4 +258,4 @@ Coupling is a ratio number between a class $C$'s Class Coupling and its total
 number of methods, i.e. $AMC = CC / n$ where $n$ is the total number of methods
 declared in $C$.
 
-\section{Hardware performance metrics}
+\section{Hardware metrics}

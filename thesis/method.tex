@@ -38,52 +38,36 @@ create a specification of a system that will be implemented, 2) perform the
 implementation with the chosen libraries and platforms, 3) test the
 implementations, 4) apply the metrics and 5) perform evaluation of the metrics.
 
+\section{Pre-study}
+
+A major literature study will be conducted prior and during the implementation.
+The theoretical framework will be vindicated in this phase to support claims
+and form a general direction of the entire study. Multiple databases will be
+queried in order to find interesting material from previous research. Mainly
+the online library hosted by \textit{Linköping
+University}\footnote{\url{www.bibl.liu.se}} will be used since it allow access
+to material otherwise unviewable due to institutional login requirements. Query
+results from this library is a collection of query results from other research
+databases such as \textit{ACM Digital Library}\footnote{\url{dl.acm.org}},
+\textit{ProQuest Ebook Central}\footnote{\url{ebookcentral.proquest.com}} and
+\textit{IEEE Xplore Digital Library}\footnote{\url{ieeexplore.ieee.org}}; so it
+acts as a gateway to a global collection of scientific research.
+
+The \textit{three-pass approach} presented by Keshav \cite{keshav2007read} will
+be used as a basic approach to find interesting material. It helps the reader
+grasp the paper's content in three \textit{passes}. The first pass' purpose is
+to give the reader an overview of the paper. The title, abstract, introduction,
+headings, sub-headings, conclusions and references are read. This information
+should help the reader understand the paper's category and context and help
+decide whether to continue read this paper or leave it. If the reader choose to
+continue read it, the second pass starts. Here the paper is read more
+thoroughly. The figures and diagrams are examined and after this pass the
+reader should be able to summarize the paper, with leading evidence, to someone
+else. The purpose of the third pass is to fully understand the paper. By making
+the same assumptions as the author, the paper is virtually re-created. It helps
+identify the true innovations of the paper, as well as the hidden failures.
+
 \section{Creating a specification}
-
-Harel and Pnueli \cite{harel1985development} presents a method for decomposing
-complex system using \textit{statecharts}. Drawn from the theories of finite
-state automata, a system can be expressed using states. This is particularily
-useful for reactive systems that can react to a large amount of different
-inputs. One powerful feature with statecharts is its ability to handle
-hierarchical states. If a system has a numerous amount of input combinations, a
-large set of states must be created which in the long run is not appropiate in
-terms of scalability. One solution to this is hierarchical states in which a
-state can hold a number of other states. Fundamentally, a state undergo a
-transition to another state when an action is performed on that state.
-\cite{harel1985development}
-
-Ardis et al \cite{ardis1996framework} created a specification for a telephone
-switching system which later was tested on a number of languages. They started
-by describing some general properties of the system in a list. In general, the
-list had the format:
-
-\begin{enumerate}
-\item
-  When event $X_1$ occurs,
-\begin{enumerate}
-\item
-  If some condition or property of the system holds true, call action $Y_1$
-\item
-  Otherwise, call action $Z_1$
-\end{enumerate}
-
-\item
-  When event $X_2$ occurs,
-\begin{enumerate}
-\item
-  Call action $Y_2$
-\end{enumerate}
-
-\item
-  And so on...
-\end{enumerate}
-
-They then implemented a system fullfilling the requirements in a set of
-different languages. Most languages fit well for reactive systems since their
-semantic allows and makes it easy to build and define different state machines.
-They also did one implementation in C in which they had two solutions: one
-using arrays to hold all the different actions and states and one using
-switch-blocks.
 
 This very same method will be used in this study. A multi-sensor monitor
 application will be specified. Its basic purpose is to listen for data from
