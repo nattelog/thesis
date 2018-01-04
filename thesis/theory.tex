@@ -1,10 +1,9 @@
 \chapter{Theory}
 \label{cha:theory}
 
-Theories used in this study are presented here. They include software metrics,
-electronic hardware metrics, previous research on event-driven-related
-architectures and some general information regarding C++ and the \textit{libuv}
-library.
+Theories used in this study are presented here. They include software
+development methodology, software metrics, reactive systems and some general
+information regarding the \textit{libuv} library.
 
 \section{Software development methodology}
 
@@ -170,9 +169,7 @@ specify a reactive system using stream based I/O-tables. In addition to
 generating a simple and understandable description of the system, the method
 helps formalize inconsistent requirements.
 
-\section{Embedded systems}
-
-\subsection{Choosing programming language}
+\subsection{Choosing programming language for embedded systems}
 
 In embedded systems programming, both hardware and software is important. Nahas
 and Maaita \cite{nahas2012choosing} mentiones a few factors to be considered
@@ -201,23 +198,6 @@ allows the developer to access hardware without loosing the benefits of
 high-level programming. Compared to C, C++ offer a better object-oriented
 programming style but can on the other hand be less efficient.
 \cite{nahas2012choosing}
-
-\section{Multithreading}
-
-Multithreading can be achieved both in software and in hardware. In software,
-multithreading is achieved by the operating system. Each process corresponds to
-a thread and each process can also spawn new threads
-\cite{silberschatz2014operating}.
-
-The component maintaining all these threads is called the \textit{scheduler}
-and its main purpose is to balance the load of threads between the CPU cores.
-The big problems the scheduler faces is 1) to make sure the most important
-thread is currently running and 2) to minimize the number of context switches,
-i.e. switching the current working thread. Linux uses a scheduling algorithm
-called \textit{Completely Fair Scheduling} (CFS) which, in a single-core
-context, is quite simple. However, for multi-core systems the algorithm has
-proven to get very complex and several bugs has been found in it.
-\cite{lozi2016linux}
 
 \section{libuv}
 
@@ -419,5 +399,3 @@ class methods and all local references to other class instances. Average Method
 Coupling is a ratio number between a class $C$'s Class Coupling and its total
 number of methods, i.e. $AMC = CC / n$ where $n$ is the total number of methods
 declared in $C$.
-
-\section{Hardware metrics}
