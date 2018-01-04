@@ -43,10 +43,10 @@ system listening for data from sensors can be viewed as a web server listening
 for internet requests. The same challenge regarding non-blocking request
 handlers holds also for these mentioned applications.
 
-To implement a non-blocking server, the \textit{libuv} C++ library can be a
-good choice. With it the user can implement an \textit{event driven}
-architecture with request handlers reacting to certain events in the system,
-e.g. I/O events from the operating system. \cite{libuv-webpage}
+To implement a non-blocking server, the \textit{libuv} C library can be a good
+choice. With it the user can implement an \textit{event driven},
+\textit{reactive} architecture with request handlers reacting to certain events
+in the system, e.g. I/O events from the operating system. \cite{libuv-webpage}
 
 To determine the maintainability of a software system one can, among others,
 look at the source code and its age since release, the number of non-commented
@@ -85,26 +85,9 @@ maintainability when selecting underlying architecture for IoT devices.
 \begin{enumerate}
 
   \item Given a state of the art reactive system from the industry - how does
-    an equivalent implementation using libuv compare in terms of
+    an equivalent implementation using libuv compare in terms of software
+    maintainability?
 
-    \begin{enumerate}
-
-      \item software maintainability?
-
-      \item performance?
-
-      \item power consumption?
-
-    \end{enumerate}
-
-  %% old research questions
-  \iffalse
-    \item How does an event-driven architecture using libuv compare to a
-        multi-threaded environment in terms of performance?
-
-    \item How does an event-driven architecture using libuv compare to a
-        multi-threaded environment in terms of maintainability?
-  \fi
 \end{enumerate}
 
 \section{Delimitations}
