@@ -5,6 +5,122 @@ Theories used in this study are presented here. They include software
 development methodology, software metrics, reactive systems and some general
 information regarding the \textit{libuv} library.
 
+\section{Internet of Things}
+
+The Internet of Things (IoT) is a relatively new paradigm of the internet where
+not only people are interconnected, but \textit{everything} is. The term was
+first heard in 1999 in a presentation by Kevin Ashton \cite{ashton2011internet}
+and the popularity has since blossomed \cite{gubbi2013internet}. IoT can be
+conceptualized as context-aware \textit{things} communicating with each other
+and human-centered applications. The enabling applications are vast and include
+domains from many areas of society - transportation, healthcare, homes, offices
+and social domains to name a few. A good example is electricity consumption
+control in homes. Electricity prices can be monitored and utilities such as
+washing machines and heating can be optimized and only used when prices are low
+\cite{atzori2010internet}. IoT can typically be explained as "one paradigm with
+many visions" \cite{atzori2010internet} as there is no official definition of
+the term. IoT is more than ubiquitous computing, embedded devices and
+applications. It should not only be accessible by a small group of stakeholders
+but embedded in today's open internet infrastructure. Referring to logistics an
+IoT definition can be viewed as \textit{"[asking] for the right product in the
+right quantity at the right time at the right place in the right condition and
+at the right price"} \cite{uckelmann2011architectural}. Uckelmann et. al.
+discusses these approaches and defines IoT as:
+
+\begin{center}
+\textit{"Internet of Things links
+uniquely identifiable things to their virtual representations in the Internet
+containing or linking to additional information on their identity, status,
+location or any other business, social or privately relevant information at a
+financial or non-financial pay-off that exceeds the efforts of information
+provisioning and offers information access to non-predefined participants. The
+provided accurate and appropriate information may be accessed in the right
+quantity and condition, at the right time and place at the right price. The
+Internet of Things is not synonymous with ubiquitous / pervasive computing, the
+Internet Protocol (IP), communication technology, embedded devices, its
+applications, the Internet of People or the Intranet / Extranet of Things, yet
+it combines aspects and technologies of all of these approaches."}
+\cite{uckelmann2011architectural}.
+\end{center}
+
+\subsection{Enabling technologies and challenges}
+
+The state-of-the-art technologies used today in the IoT context include
+sensoring equipment and networks such as the \textit{Radio Frequency
+Identification} (RFID) and the \textit{Wireless Sensor Network} (WSN),
+communication techniques like the \textit{IPv6 over Low-Power Wireless Personal
+Area Network} (6LoWPAN) and \textit{Representational State Transfer} (REST) and
+architectural approaches like \textit{middleware} and \textit{gateways}.
+
+The RFID is a technique used to identify an object by letting a reader generate
+an electromagnetic wave which in turn generates a current in a microchip that
+transmits a code back to the reader. The code, also known as an
+\textit{Electronic Product Code} (EPC), can be used to identify the object. EPC
+is developed by EPCglobal, a global non-profit organization, with the purpose
+to spread the use of RFID and create global standards for modern businesses
+\cite{atzori2010internet}. An RFID tag can be passive, i.e. work without
+battery power, or active, i.e. work with battery power. It basically consists
+of an antenna, a microchip attached to the antenna and some form of
+encapsulation. They vary in size and shape; from centimeter long 3D-shaped
+capsules to 2D-shaped stickers. The fact that they can work without a battery,
+meaning they theoretically can work forever, make them very practical to use in
+different environments. \cite{want2006introduction}
+
+In a survey from 2001, Akyildiz et. al.  \cite{akyildiz2002wireless} presents a
+\textit{Wireless Sensor Network} containing hardware nodes capable of
+monitoring its environment and transmit the received data to a server or host
+acting as a sink. The sensor could be one of many types and be able to measure
+temperature, humidity, movement, lightning condition, noise levels etc. This
+leads into one of the major challenges in IoT: communication and networking.
+Following the semantical meaning of IoT, which states \textit{"[it is] a world
+wide network of interconnected objects uniquely addressable, based on standard
+communication protocols"} \cite{bassi2008internet}, it is clear that every node
+will produce its own content and should be retrievable regardless of location.
+This puts pressure on the identification methods and the overall network
+infrastructure for IoT. As remaining unused IPv4 addresses are closing in to
+zero, the IPv6 protocol can be a natural next step for IoT devices to use
+\cite{atzori2010internet}. 4 bytes are used to address devices in IPv4, wich
+means the protocol can support around 4 billion devices. IPv6 on the other hand
+use 16 bytes to address devices, meaning around $10^{38}$ devices can be
+uniquely addressed.
+
+6LoWPAN is a wireless technology suitable for resource-constrained nodes in the
+IoT network. It is designed for small packet sizes, low bandwidth, low power
+and low cost. It assumes a large amount of nodes will be deployed and that they
+can be unreliable in terms of radio connectivity and power drain, thus making
+this technology a good choice for wireless sensor nodes. \cite{kushalnagar2007ipv6}
+
+%% Write stuff about REST
+
+\subsection{Gateways}
+
+A big challenge in IoT is, as described earlier, to connect every single device
+to the internet. As for example devices in a WSN are deployed they do not
+necessarily have the power and capacity to directly communicate to the
+internet. A common approach to solve this problem is to add a gateway between
+the devices and the internet, acting as an amplifier for the transmissions from
+the devices \cite{zhu2010iot}. Chen et. al. \cite{chen2011brief} describes three
+layers of domains in the IoT architecture: the \textit{sensing domain}, the
+\textit{network domain} and the \textit{application domain}. The sensing domain
+is where the primitive communication between the actual devices in the network
+happen; for instance RFID and 6LoWPAN. This domain is layered under the network
+domain and each piece of information sent from the sensing domain is
+aggregated, filtered and wrapped in the network domain before being sent to the
+application domain. Note that the information protocols used between the
+sensing- and network domain and the network- and application domain does not
+necessarily match. As some protocols are more suited for resource-constrained
+devices, they might require modification to be able to communicate with more
+standardized protocols, like the \textit{Internet Protocol} (IP). E.g. the EPC
+code generated by the RFID can not be put on an IP stack as is, but it could be
+mapped to an IPv6 address via a gateway and thereby be identified and usable
+through the internet \cite{lee2007epc}.
+
+The gateways reside in the network domain. They act as a bridge between the
+devices and the internet. The approaches towards implementing IoT gateways vary
+
+%% Should list different approaches in the industry, from large companies to
+%% smaller projects.
+
 \section{Software development methodology}
 
 There exists a numerous amount of ways to develop software. In plan-based
