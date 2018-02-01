@@ -86,17 +86,26 @@
 
 \usepackage{listings}
 
-\lstdefinestyle{customc}{
-  belowcaptionskip=1\baselineskip,
+\lstset{
   breaklines=true,
   xleftmargin=\parindent,
-  language=C,
-  showstringspaces=false,
+  belowcaptionskip=1\baselineskip,
+  belowskip=1\baselineskip,
   basicstyle=\footnotesize\ttfamily,
   keywordstyle=\color{blue!40!black},
   commentstyle=\color{green!40!black},
   identifierstyle=\color{black},
   stringstyle=\color{orange},
+  showstringspaces=false,
+}
+
+\lstdefinelanguage{javascript}{
+  morekeywords={typeof, new, true, false, catch, function, return, null, catch,
+  switch, var, const, let, if, in, while, do, else, case, break},
+  morecomment=[s]{/*}{*/},
+  morecomment=[l]//,
+  morestring=[b]",
+  morestring=[b]'
 }
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

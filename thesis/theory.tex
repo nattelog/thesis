@@ -121,6 +121,96 @@ devices and the internet. The approaches towards implementing IoT gateways vary
 %% Should list different approaches in the industry, from large companies to
 %% smaller projects.
 
+\section{Event-driven architectures}
+
+In software architecture, the term \textit{event-driven}, or \textit{implicit
+invocation}, is used to express the mechanism of function invocation based on
+events \cite{garlan1993introduction}. In contrast, \textit{explicit invocation}
+refers to a traditional function invocation by function name, e.g.
+\lstinline{foo()}. However, a function can be mapped to an event
+so that when the event occur, the function is invoked implicitly. Hence the
+name implicit invocation. The announcers of events do not know what functions
+are registered to the event and cannot make assumptions on event ordering or
+how data will be transformed due to the event. This is one disadvantage of this
+architecture \cite{garlan1993introduction}. However, in high-performance, I/O
+intensive networking systems, it is shown that event-based approaches perform
+much better \cite{hu1997measuring}.
+
+%% Also, there are research showing that event-driven systems are slower for
+%% CPU intense applications.
+
+\subsection{Task management and stack management}
+
+A program task is an encapsulation of control flow with access to some common
+shared state. This can be viewed as a closure in a program language or a
+function. Managing these tasks can be done in several ways. In
+\textit{preemptive} task management, tasks can be scheduled to interleave and
+make room for other tasks or be run in parallell on multicore systems. In
+\textit{serial} task management, tasks are run until they are finished before
+any other task can start its execution. A hybrid approach is
+\textit{cooperative} task management. Tasks can yield control to other tasks in
+defined points in its execution. This is useful in I/O intensive systems where
+tasks can make way for other tasks while waiting for I/O. Event-driven systems
+usually implements the cooperative approach. Events, e.g.  network requests,
+are handled by calling an associated function. A benefit with event-driven
+systems that run on a single thread is that mutual exclusion conflicts never
+occur. However, the state in which the task was in before yielding control to
+another task is not necessarily the same as when the task resumes control.
+\cite{adya2002cooperative}
+
+There are two categories of I/O management: \textit{synchronous} and
+\textit{asynchronous} \cite{adya2002cooperative}. If a function calls an I/O
+operation and then blocks the rest of the execution while waiting for the I/O
+operation to finish, the function is synchronous. Here is an example of a
+synchronous read file-function from the Node.js documentation
+\cite{nodejs-docs}:
+
+\lstinputlisting[
+  language=javascript,
+  caption={Synchronous I/O example in Node.js.},
+  label={listing:read_file_sync}
+]{figures/read_file_sync.js}
+
+The \lstinline{readFileSync()} function blocks the rest of the execution while
+the file is being read, i.e. the file content will be printed before
+\textit{"end of code"}. In asynchronous I/O, the function calling the I/O
+operation returns immediately but is provided a function to be run when the I/O
+is ready. Here is an equivalent implementation but with an asynchronous
+function:
+
+\lstinputlisting[
+  language=javascript,
+  caption={Asynchronous I/O example in Node.js.},
+  label={listing:read_file_async}
+]{figures/read_file_async.js}
+
+\lstinline{readFile()} does not in this case return anything, but instead let
+the event handling system invoke the callback function when the I/O is ready.
+The execution continues directly, so \textit{"end of code"} will be printed
+before the file content.
+
+An interesting notice to Listing \ref{listing:read_file_async} is that, say a
+global state is introduced and is dependent upon by the callback function,
+there is no guarantee the state remains unchanged between the
+\lstinline{readFile()}- and the \lstinline{callback()}-invocation. This is
+similar to the mutual exclusion problem in preemeptive task management where
+multiple agents wants to access the same resource concurrently, and problems
+like read/write conflicts can occur. But since cooperative task management not
+necessarily infer multithreaded environments, concurrent problems can be
+avoided. There are however other problems related to understanding and
+scalability of the code. In Listing \ref{listing:read_file_sync} one can
+observe that all operations happen in the same scope. This is called
+\textit{automatic stack management} and it means the task is written as a
+single procedure with synchronous I/O \cite{adya2002cooperative}. The current
+state of the program is always kept in the local stack and there is no
+possibility it can be mutated by other parties. In \textit{manual stack
+management} the task is ripped into callbacks, or \textit{event handlers},
+which are registered to the event handling system. This can have a negative
+impact on the control flow and the global state of the program as tasks are
+being broken into functions with separate scopes.
+
+%% compare lambdas to function pointers?
+
 \section{Software development methodology}
 
 There exists a numerous amount of ways to develop software. In plan-based
@@ -381,7 +471,7 @@ explained in step \ref{item:poll_time_calculation} idle handles and their
 callbacks are called every iteration with 0 poll time.
 
 \lstinputlisting[
-  style=customc,
+  language=C,
   caption={libuv example with an idle handle \cite{uvbook}.},
   label={listing:idle_handle}
 ]{figures/libuv_idle_handle_example.c}
