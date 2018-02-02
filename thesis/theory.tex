@@ -211,94 +211,6 @@ being broken into functions with separate scopes.
 
 %% compare lambdas to function pointers?
 
-\section{Software development methodology}
-
-There exists a numerous amount of ways to develop software. In plan-based
-methodologies, including the \textit{waterfall model}, the way of working is
-highly inspired by traditional engineering such as manufacturing and
-construction. Given a set of phases in the development, each phase must be done
-before the next phase starts. These phases include \textit{requirement
-definition}, \textit{design}, \textit{implementation}, \textit{testing} and
-\textit{release} \cite{crookshanks2014practical}. On the other end of the
-spectra lies the \textit{agile} methodologies. Initially developed as a
-response to the frustration of the static, slow-going process of the well-used
-waterfall model, it is based on the understanding that software requirements
-are highly dynamic and most certainly change over time
-\cite{moniruzzaman2013comparative}.
-
-Vijayasarathy and Butler \cite{vijayasarathy2016choice} found in an online
-survey they conducted in 2016 that around a third of all software projects were
-using the waterfall model as main software methodology. Following were the
-agile methodologies \textit{Agile Unified Process} and \textit{Scrum}. They
-also found that multiple methodologies were often used in the same project.
-For instance the agile method \textit{Joint Application Development} was used
-in one project to identify requirements, while the waterfall model was used in
-the remainder of the project.
-
-\subsection{Scrum}
-
-Scrum is an agile framework utilized by small teams to develop simple and
-complex products. Scrum is not only used to do software development, it can be
-applied to any development - even a book \cite{sims2012scrum}. In Scrum there
-are three main components: \textit{roles}, \textit{artifacts} and \textit{the
-sprint cycle}. Roles are taken by people in the team, artifacts are tools used
-by the team and the fundamental pulse of the project is the sprint cycle. Three
-distinct roles are recognized: \textit{product owner}, \textit{Scrum master}
-and \textit{team member}. The product owner is the team's representation of the
-\textit{stakeholders} of the product (mainly the business related
-stakeholders). He is responsible for making the team always do most valuable
-work, he holds the vision of the product, he owns the \textit{product backlog}
-and creates acceptance criteria for the backlog items. The scrum master is the
-team's coach guiding them to become a high-performing, self-organizing team. He
-helps the team apply and shape the agile practices to the team's advantage. A
-team member is responsible for completing \textit{user stories}, create
-\textit{estimates} and decides what tools to use in the upcoming
-\textit{sprint}. \cite{sims2012scrum}
-
-The artifacts recognized by Scrum are called \textit{product backlog},
-\textit{sprint backlog}, \textit{burn down charts} and \textit{task board}. The
-product backlog consists of a list deliverables that can be anything of value
-for the product, e.g. features and documentation changes. Items in the list are
-also called \textit{user stories} and they are ordered by priority. They
-include information such as who the story is for, what needs to be built, how
-much work is needed to implement it and what the acceptance criteria is. Prior
-to a \textit{sprint} user stories are derived into practical \textit{tasks}
-usually performed by a single team member. The sprint backlog is populated by
-these tasks and they are expected to be finished within the time limit of the
-sprint. To monitor the status of the sprint or the entire project, the burn
-down chart is used. It is a diagram showing how much work is left to be done.
-The Y-axis shows the amount of tasks and the X-axis the time. As time progress
-the amount of tasks are hopefully decreasing. The task board is used to help
-the team inspect their current situation. It usually consists of three columns:
-\textit{To do}, \textit{Doing} and \textit{Done}. Each column consists of tasks
-(or symbols of tasks) in the current sprint, and gives the team a visual on
-what tasks are yet to be done. \cite{sims2012scrum}
-
-A Scrum project is split into a series of sprints. They are time limited
-smaller versions of the entire project where a pre-defined amount of tasks are
-to be completed within the sprint. When a sprint is finished a potentially
-working product is demonstrated. The benefit of short-lived sprints is that the
-team receives frequent feedback on their work, giving them a better presumption
-to improve future sprints. From a business perspective, the sprint method
-provides greater freedom to decide if a product should be shipped or further
-developed. A sprint consists of a number of meetings: \textit{sprint planning},
-\textit{daily Scrum}, \textit{story time}, \textit{sprint review} and
-\textit{retrospective}. A sprint always starts with a sprint planning. It is a
-meeting where the product owner and the team decides which user stories will be
-a part of the sprint backlog in the upcoming sprint. This is also where the
-team derive the user stories into tasks. Every day the team also has brief
-daily Scrum meetings. Each team member shares what tasks they completed since
-the previous meeting, what tasks they expect to complete before the next and
-what difficulties they are currently facing. Every week, during story time, the
-product backlog is again reviewed by the team and the product owner. This time
-each user story is evaluated to refine its acceptance criteria. If there are
-large stories in the backlog they are also split into smaller stories to make
-them easier to understand and easier to complete within a sprint. The sprint
-review marks the public end of the sprint. Here the completed user stories are
-demonstrated to the stakeholders and feedback is received. After this meeting
-the team has a retrospective meeting where they discuss what strategy changes
-can be made to improve the next sprint. \cite{sims2012scrum}
-
 \section{Reactive systems}
 
 Systems required to continually respond to its environment are called
@@ -374,6 +286,157 @@ Hummel and Thyssen \cite{hummel2009behavioral} presents a formal method to
 specify a reactive system using stream based I/O-tables. In addition to
 generating a simple and understandable description of the system, the method
 helps formalize inconsistent requirements.
+
+\section{Reactive programming}
+
+Reactive programming has been proposed to be the solution to implement
+event-driven architectures \cite{bainomugisha2013survey}. It is derived from
+the \textit{Synchronous Data Flow} (SDF) paradigm \cite{lee1987synchronous}.
+SDF is a data flow abstraction used to describe parallell computation.
+Functions are presented as nodes in a directed graph and the arcs represent
+data paths. Nodes can execute its computation whenever data is available on its
+incoming arcs, and nodes with no incoming arcs can execute at any time. This
+leads to concurrency since multiple nodes can execute in the same time. One
+constraint on this system is that of \textit{side-effects}, which are not
+allowed. Nodes cannot mutade any resource accessible by another node unless
+they are explicitly connected by an arc.
+
+In the reactive programming paradigm, the notion of time is abstracted away. In
+the same way memory can be abstracted away by garbage collection in languages
+like Java, the programmer does not have to instruct the program \textit{when}
+things will execute, but rather \textit{how} \cite{bainomugisha2013survey}.
+Data dependencies and change propagation can be handled automatically by the
+language. Consider a simple example:
+
+\begin{lstlisting}[language=C]
+int i = 1;
+int j = 1;
+int k = i + j;
+\end{lstlisting}
+
+In a language like C, $k$ will be computed to the value $2$. If $i$ later on is
+redefined to another value, say $3$, $k$ will still hold the same value $2$. In
+a reactive setting, $k$ will be updated with the latest value of either $i$ or
+$j$, even if they change later on in time. It can be viewed such that $k$ is
+\textit{dependent} on $i$ and $j$. \cite{bainomugisha2013survey}
+
+Reactive programming has two distinguishing features: \textit{behaviors} and
+\textit{events}. Behaviors refer to time-varying vales, e.g. time itself.
+Events on the other hand, happen in discrete points in time and describes what
+happened. This could be a file that is ready to be written to, a network
+request that is available or a keyboard button that was pressed.
+\cite{bainomugisha2013survey}
+
+\subsection{A taxonomy}
+
+Bainomugisha et. al. \cite{bainomugisha2013survey} presents a taxonomy with six
+fundamental properties considered important features in reactive languages.
+
+\subsubsection{Basic abstractions}
+
+Imperative languages holds basic abstractions in the form of primitives such as
+primitive operators and values. Reactive languages holds basic abstractions
+such as behaviors and events.
+
+\subsubsection{Evaluation model}
+
+When an event occur, the evaluation model of a reactive language determines how
+change is propagated throughout the data dependencies. Propagatation can either
+be \textit{push-based}, meaning that data is pushed to its dependencies as soon
+as an event occur, or \textit{pull-based}, meaning that computation nodes pull
+data when needed. The former is a \textit{data driven} model and is often implemented
+using callbacks. A challenge is to find out what nodes does not need to be
+recomputed. The pull-based model is said to be \textit{demand driven} as data
+is propagated upon request. A disadvantage with this model is that delays
+between events and reactions can be long.
+
+\subsubsection{Glitch avoidance}
+
+A \textit{glitch} is when inconsistencies in the data occur due to the way
+updates are propagated among the dependencies. Consider the following example:
+
+\begin{lstlisting}[language=C]
+int i = j;
+int k = i + j;
+\end{lstlisting}
+
+$k$ is dependent on $i$ and $j$ and $i$ is on another level dependent on
+$j$. If $j$ is updated, the case can be that $k$ is updated before $i$, thus
+leading to an inconsistency between $k$ and $i$. Here is an example:
+
+
+\begin{lstlisting}[language=C]
+// j == 1
+int i = j;      // i == 1
+int k = i + j;  // k == 2
+
+// j == 2, k updated before i
+int i = j;      // i == 1
+int k = i + j;  // k == 3, should be 4
+\end{lstlisting}
+
+These kinds of inconsistencies, or glitches, should be avoided by the language.
+
+\subsubsection{Lifting operators}
+
+\textit{Lifting} in reactive programming refers to the act of making previously
+uncompliant operators or functions work with behaviors. Lifting transforms the
+type signature of the function and registers the topology of its dependencies
+in the dataflow graph. A function $f$ with a non-behavior type $T$ can be
+lifted as:
+
+\begin{lstlisting}
+f(T) -> flift(Behavior<T>)
+\end{lstlisting}
+
+Where $Behavior$ is a behavior-type holding a type $T$. In Flapjax, an reactive
+language built upon Javascript, lifting is performed on multiple places to
+support behaviors \cite{meyerovich2009flapjax}. Here is an example from the
+language:
+
+\begin{lstlisting}[language=javascript]
+let time = timerB(1000);
+\end{lstlisting}
+
+This looks like traditional, imperative Javascript. However, $timerB$ with the
+argument $1000$ starts a timer that yields every second and $time$ will always
+be kept up to date with the yielded value. Flapjax performs lifting on, among
+others, the addition ($+$) operator:
+
+
+\begin{lstlisting}[language=javascript]
+let time = timerB(1000) + 1;
+\end{lstlisting}
+
+The compiler transforms the expression using the $liftB$ function, looking
+somewhat like this:
+
+\begin{lstlisting}[language=javascript]
+liftB(function(t) { return t + 1 }, timerB(1000));
+\end{lstlisting}
+
+This is called \textit{implicit lifting}, meaning that the programmer does not
+have to worry about whether the add operator was used on a behavior or not
+\cite{bainomugisha2013survey}.
+
+\subsubsection{Multidirectionality}
+
+A property of reactive languages is to support data propagation both from
+derived data, as well as the data it is derived from. Consider a distance
+converting function:
+
+\begin{lstlisting}[language=C]
+double miles = km * 1.61;
+\end{lstlisting}
+
+Whenever an updated value on either $miles$ or $km$ is available, the other one
+is recalculated as well.
+
+\subsubsection{Support for distribution}
+
+As interactive applications such that web applications are becoming more
+popular (whose nature is distributed) it is important for reactive languages to
+also support distributed mechanisms.
 
 \section{Choosing programming language for embedded systems}
 
@@ -605,3 +668,92 @@ class methods and all local references to other class instances. Average Method
 Coupling is a ratio number between a class $C$'s Class Coupling and its total
 number of methods, i.e. $AMC = CC / n$ where $n$ is the total number of methods
 declared in $C$.
+
+\section{Software development methodology}
+
+There exists a numerous amount of ways to develop software. In plan-based
+methodologies, including the \textit{waterfall model}, the way of working is
+highly inspired by traditional engineering such as manufacturing and
+construction. Given a set of phases in the development, each phase must be done
+before the next phase starts. These phases include \textit{requirement
+definition}, \textit{design}, \textit{implementation}, \textit{testing} and
+\textit{release} \cite{crookshanks2014practical}. On the other end of the
+spectra lies the \textit{agile} methodologies. Initially developed as a
+response to the frustration of the static, slow-going process of the well-used
+waterfall model, it is based on the understanding that software requirements
+are highly dynamic and most certainly change over time
+\cite{moniruzzaman2013comparative}.
+
+Vijayasarathy and Butler \cite{vijayasarathy2016choice} found in an online
+survey they conducted in 2016 that around a third of all software projects were
+using the waterfall model as main software methodology. Following were the
+agile methodologies \textit{Agile Unified Process} and \textit{Scrum}. They
+also found that multiple methodologies were often used in the same project.
+For instance the agile method \textit{Joint Application Development} was used
+in one project to identify requirements, while the waterfall model was used in
+the remainder of the project.
+
+\subsection{Scrum}
+
+Scrum is an agile framework utilized by small teams to develop simple and
+complex products. Scrum is not only used to do software development, it can be
+applied to any development - even a book \cite{sims2012scrum}. In Scrum there
+are three main components: \textit{roles}, \textit{artifacts} and \textit{the
+sprint cycle}. Roles are taken by people in the team, artifacts are tools used
+by the team and the fundamental pulse of the project is the sprint cycle. Three
+distinct roles are recognized: \textit{product owner}, \textit{Scrum master}
+and \textit{team member}. The product owner is the team's representation of the
+\textit{stakeholders} of the product (mainly the business related
+stakeholders). He is responsible for making the team always do most valuable
+work, he holds the vision of the product, he owns the \textit{product backlog}
+and creates acceptance criteria for the backlog items. The scrum master is the
+team's coach guiding them to become a high-performing, self-organizing team. He
+helps the team apply and shape the agile practices to the team's advantage. A
+team member is responsible for completing \textit{user stories}, create
+\textit{estimates} and decides what tools to use in the upcoming
+\textit{sprint}. \cite{sims2012scrum}
+
+The artifacts recognized by Scrum are called \textit{product backlog},
+\textit{sprint backlog}, \textit{burn down charts} and \textit{task board}. The
+product backlog consists of a list deliverables that can be anything of value
+for the product, e.g. features and documentation changes. Items in the list are
+also called \textit{user stories} and they are ordered by priority. They
+include information such as who the story is for, what needs to be built, how
+much work is needed to implement it and what the acceptance criteria is. Prior
+to a \textit{sprint} user stories are derived into practical \textit{tasks}
+usually performed by a single team member. The sprint backlog is populated by
+these tasks and they are expected to be finished within the time limit of the
+sprint. To monitor the status of the sprint or the entire project, the burn
+down chart is used. It is a diagram showing how much work is left to be done.
+The Y-axis shows the amount of tasks and the X-axis the time. As time progress
+the amount of tasks are hopefully decreasing. The task board is used to help
+the team inspect their current situation. It usually consists of three columns:
+\textit{To do}, \textit{Doing} and \textit{Done}. Each column consists of tasks
+(or symbols of tasks) in the current sprint, and gives the team a visual on
+what tasks are yet to be done. \cite{sims2012scrum}
+
+A Scrum project is split into a series of sprints. They are time limited
+smaller versions of the entire project where a pre-defined amount of tasks are
+to be completed within the sprint. When a sprint is finished a potentially
+working product is demonstrated. The benefit of short-lived sprints is that the
+team receives frequent feedback on their work, giving them a better presumption
+to improve future sprints. From a business perspective, the sprint method
+provides greater freedom to decide if a product should be shipped or further
+developed. A sprint consists of a number of meetings: \textit{sprint planning},
+\textit{daily Scrum}, \textit{story time}, \textit{sprint review} and
+\textit{retrospective}. A sprint always starts with a sprint planning. It is a
+meeting where the product owner and the team decides which user stories will be
+a part of the sprint backlog in the upcoming sprint. This is also where the
+team derive the user stories into tasks. Every day the team also has brief
+daily Scrum meetings. Each team member shares what tasks they completed since
+the previous meeting, what tasks they expect to complete before the next and
+what difficulties they are currently facing. Every week, during story time, the
+product backlog is again reviewed by the team and the product owner. This time
+each user story is evaluated to refine its acceptance criteria. If there are
+large stories in the backlog they are also split into smaller stories to make
+them easier to understand and easier to complete within a sprint. The sprint
+review marks the public end of the sprint. Here the completed user stories are
+demonstrated to the stakeholders and feedback is received. After this meeting
+the team has a retrospective meeting where they discuss what strategy changes
+can be made to improve the next sprint. \cite{sims2012scrum}
+
