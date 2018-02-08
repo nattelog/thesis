@@ -545,11 +545,28 @@ callbacks are called every iteration with 0 poll time.
 libuv includes a number of data types and functions which can be found in its
 documentation \cite{libuv-docs}.
 
-\section{Software metrics}
+\section{Software maintainability}
 
-In all engineering fields, measurement is important. Measuring software is a
-way for an engineer to assess its quality and a large number of software
-metrics have been derived during the years \cite{aggarwal2006empirical}.
+Maintaining software has two distinct viewpoints: it could either be the act of
+refactor and modify existing software to correct faults and improve existing
+features, or it could point to the attribute of a software system that
+expresses its ease of modification for the same purpose \cite{radatz1990ieee}.
+Riaz et. al. \cite{riaz2009systematic} compiled a list of how other authors
+that have studied maintainability in different settings defined the term
+maintainability. The definitions could be \textit{"the ease with which a
+software application or component can be modified to correct faults, improve
+performance or other attributes, or adapt to a changed environment"} and
+\textit{"how difficult it is to make small or incremental changes to an
+existing software object without introducing errors in logic or design"}
+\cite{riaz2009systematic}.
+
+Interesting results have been found in a study by Sjøberg et. al
+\cite{sjoberg2013quantifying} where certain bad design choices (or \textit{code
+smells}) was hypothesized to lead to a greater maintenance effort. However, the
+best predictor of maintenance effort turned out to be code size and number of
+revisions of the software. I.e. small code bases are easier to maintain.
+\todo{Continue here with stuff about metrics in general and the problem with
+assessing them}
 
 Previous research show that software process improvements is key for both large
 and small successful companies. However, it requires a balance between formal
@@ -567,14 +584,243 @@ with repeated success and there is no financial reason to change what already
 works and generates revenue. However, eventually when the environment changes
 there might be good reasons to dust off legacy systems and introduce some new
 patches. The cost of doing so might depend on whether the system was initially
-built with maintenability in mind. \cite{dybaa2003factors}
+built with maintainability in mind. \cite{dybaa2003factors}
 
-\subsection{Maintainability}
+\subsection{Metrics}
 
-Maintainability can be measured in many ways. Aggarwal et al.
+In all engineering fields, measurement is important. Measuring software is a
+way for an engineer to assess its quality and a large number of software
+metrics have been derived during the years \cite{aggarwal2006empirical}.
+Maintainability can be measured in many ways and Aggarwal et al.
 \cite{aggarwal2006empirical} suggests that some metric results can be derived
 from others. In the same way the area and diagonal can be derived from the
-width and height of a table, some metrics may provide redundant information.
+width and height of a table, some metrics may provide redundant information. It
+is common, when selecting metrics to use in a study, that some metrics can be
+superfluous in certain contexts or be substituted with similar metrics
+\cite{benestad2006assessing} \cite{anda2007assessing}.
+
+\todo{Some sort of leading text to the following subchapters}
+
+\subsubsection{Halstead's metrics}
+
+Metrics proposed by Halstead \cite{halstead1977elements} in 1977 are widely
+used metrics that work both for object-oriented systems and non-object-oriented
+systems \cite{al2005analysis} \cite{benestad2006assessing}. It consists of six
+\textit{based} measures and ten \textit{derived} measures
+\cite{al2005analysis}. Based measures are measures defined as an attribute and
+the method used to measure it, and derived measures are defined as functions of
+base measures \cite{al2005analysis}. The based measures are:
+
+\begin{flalign*}
+  &\text{Number of unique operators } n_1 &\\
+  &\text{Number of unique operands } n_2 &\\
+  &\text{Total number of operators } N_1 &\\
+  &\text{Total number of operands } N_2 &\\
+  &\text{Number of potential operators } n_1^* &\\
+  &\text{Number of potential operands } n_2^* &
+\end{flalign*}
+
+These are self explanatory, except perhaps for the last two. $n_1^*$ and
+$n_2^*$ are defined as the \textit{minimum} possible number for $n_1$ and
+$n_2$. This depends on the programming language, but for C, where at least a
+\lstinline{main()} function must be defined, $n_1^* = 2$ (the function name and
+the parantheses symbols) and $n_2^* = 0$ (the number of required arguments to
+\lstinline{main()}) \cite{menzies2002metrics}. To better understand the
+measures, consider this sample program in C:
+
+\begin{lstlisting}[language=C]
+int main() {
+  char s[12] = "Hello world!";
+  printf(s);
+  return 0;
+}
+\end{lstlisting}
+
+The unique operators ($n_1$) are \lstinline{int}, \lstinline{main},
+\lstinline{()}, \lstinline|{}|, \lstinline{char}, \lstinline{[]},
+\lstinline{=}, \lstinline{"}, \lstinline{;}, \lstinline{printf} and
+\lstinline{return}. The unique operands ($n_2$) are \lstinline{s},
+\lstinline{12}, \lstinline{"Hello world!"} and \lstinline{0}. So $n_1 = 9$,
+$n_2 = 4$, $N_1 = 14$, $N_2 = 5$.
+
+The derived measures proposed by Halstead are:
+
+\begin{flalign*}
+  &\text{Program length } N = N_1 + N_2 &\\
+  &\text{Vocabulary } n = n_1 + n_2 &\\
+  &\text{Volume } V = N\log_2n &\\
+  &\text{Potential volume } V^* = (2 + n_2^*)\log_2(2 + n_2^*) &\\
+  &\text{Level } L = \frac{V^*}{V} &\\
+  &\text{Difficulty } D = \frac{1}{L} &\\
+  &\text{Level estimator \^{L}} = \frac{2n_2}{n_1N_2} &\\
+  &\text{Intelligent content } I = \text{\^{L}} \times V &\\
+  &\text{Programming effort } E = \frac{V}{L} = \frac{n_1N_2N\log_2n}{2n_2} &\\
+  &\text{Programming time } T = \frac{E}{S} = \frac{n_1N_2N\log_2n}{2n_2S}
+  \text{ ($S$ is usually set to 18 seconds \cite{hamer1982mh})} &
+\end{flalign*}
+
+Some critique on these metrics include a scattered counting strategy among its
+users due to, among others, a vague definition of the difference between
+operators and operands. Also, some of the derived measures are mathematically
+equivalent which can cause confusion on their semantics. \cite{al2005analysis}
+
+\subsubsection{Cyclomatic complexity}
+
+Presented by McCabe in 1976 \cite{mccabe1976complexity}, the cyclomatic
+complexity measure is a way to assess and measure the complexity of a code
+block. It is defined as
+
+$$
+V(G) = e - n + 2p
+$$
+
+Where $e$ is the number of edges, $n$ the number of nodes and $p$ the number of
+connected components. A software program can be presented as a \textit{control
+graph} where each node represents a basic code block and each edge represents
+branches taken by predicates such as if-statements. It is assumed that the
+graph has only one entry point and one exit point and that each node can be
+reached from the entry node, and that each node can reach the exit node. If the
+exit node is connected to the entry node the graph is said to be
+\textit{strongly connected}, and the cyclomatic complexity can be defined as
+the number of linearly independent circuits. \cite{mccabe1976complexity}
+
+\begin{figure}[h]
+  \includegraphics[width=4cm]{graph-1}
+  \centering
+  \caption{Control graph example}
+  \label{fig:graph_1}
+\end{figure}
+
+In Figure \ref{fig:graph_1} a example is provided. Node $A$ is the entry point
+and node $E$ is the exit point. Excluding the dotted edge connecting $E$ with
+$A$, the graph has 6 edges, 5 nodes and represents one connected component;
+i.e. $V(G) = 6 - 5 + 2 = 3$. Utilizing the connection between $E$ and $A$, the
+same complexity value can be calculated by counting the number of linearly
+independent circuits in the graph, i.e. the independent paths the program can
+take. In this example the paths are $ABA$, $ABDEA$, $ACEA$, which corresponds
+to the same result as $V(G)$.
+
+Figure \ref{fig:graph_1} can be seen as a single program or control flow, e.g.
+a function or class. Calculating complexity in a composition of functions or
+classes, or the complexity of a function that calls other functions is
+fortunately mathematically easy. The combined complexity of the graphs $G_1$
+and $G_2$ is the sum of their respective complexities: $V(G_1 \cup G_2) =
+V(G_1) + V(G_2)$. \cite{mccabe1976complexity}
+
+The number of nodes and edges can be also be calculated by counting the number
+of functions, predicates and collecting nodes in the program
+\cite{mills1972mathematical}.  McCabe applies those relationships to the
+cyclomatic complexity definition and reach the conclusion that the cyclomatic
+complexity equals the number of predicates in the program plus one
+\cite{mccabe1976complexity}. So complexity can be calculated as
+
+$$
+V(G) = \pi + 1
+$$
+
+where $\pi$ is the number of predicates in the program.
+
+\subsubsection{Weighted Methods per Class (WMC)}
+
+This metric relates to object oriented designs. Let $n$ be the number of
+methods in a class and $c_i$ the complexity of method number $i$. Then the
+metric is defined as:
+
+$$
+WMC = \sum_{i=1}^nc_i
+$$
+
+The more the methods and the higher their complexity value is, the higher the
+maintainability effort is. \cite{chidamber1994metrics}
+
+\subsubsection{Depth of Inheritance Tree (DIT)}
+
+In object oriented programming, a class can inherit another class, i.e. be a
+subclass of a superclass. This metric measures how many classes are inherited
+all the way up to the root class. In programming languages like C++ where
+classes can inherit multiple classes, the DIT is the longest distance to any
+root class. \cite{chidamber1994metrics}
+
+\subsubsection{Number of Children (NOC)}
+
+This metric counts the number of classes that directly inherit a class, i.e.
+its children. An advantageous viewpoint of this metric is that the more
+children a class has, the greater the reuse of the class is. However, if a
+class has a large amount of children it has a great effect on the design of the
+system. \cite{chidamber1994metrics}
+
+\subsubsection{Coupling Between Object Classes (CBO)}
+
+An object is \textit{coupled} to another object of another class if it uses
+methods or instance variables of that class. Coupling relates to the modularity
+of a class, i.e. if a class has a high coupling value it is unlikely to be
+reused or modified without having an effect on the coupled objects.
+\cite{chidamber1994metrics}
+
+\subsubsection{Response for a Class (RFC)}
+
+When an object receives a message, e.g. a method is invoked, a potential set of
+other methods can be called from that method. This metric measures the number
+of those methods. A large RFC value can predict testing and debuging effort of
+the class and its complexity. \cite{chidamber1994metrics}
+
+\subsubsection{Lack of Cohesion in Methods (LCOM)}
+
+Cohesion relates to the similarity of methods in a class. It is undesireable to
+have a class design whose methods are not related to each other. This can be
+measured by looking at the instance variables of the class and see how the
+methods use them. If a class has $n$ methods, let $\{I_j\}$ be the set of
+instance variables used by class $M_i$. Let $P$ be the number of instance
+variable sets that has nothing in common, i.e. their intersection is
+$\emptyset$. Let $Q$ be the opposite, i.e. the number of instance variable sets
+whose intersection $\neq \emptyset$. Then $LCOM = |P| - |Q|$.
+
+\begin{gather*}
+P = \{(I_i, I_j) | I_i \cap I_j = \emptyset\} \\
+Q = \{(I_i, I_j) | I_i \cap I_j \neq \emptyset\} \\
+LCOM = |P| - |Q| \text{, if $|P| > |Q|$, 0 otherwise} \\
+\end{gather*}
+
+\todo{More metrics like LOC, Maintainability Index and perhaps some machine
+learning approaches. Also metrics that does not infer object oriented
+languages.}
+
+\subsection{Assessing maintainability}
+
+Resulting numbers from a set of metrics applied on a software system can be
+difficult to interpret; is the system maintainable or not? An alternative to
+structural metrics can be subjective measures given by experts in the field.
+Anda \cite{anda2007assessing} studied the correlation between structural
+measures and expert assessments on four different software systems with
+equivalent functionality and found that the both types of measures gave a
+similar result. Benestad et. al. \cite{benestad2006assessing} applied several
+measurement strategies in a similar context and cross examined the result. They
+used class-level metrics, i.e. metrics applied on source code to make a
+system-level assessment. An overall assessment strategy can be divided into
+four categories; \textit{selection}, \textit{combination}, \textit{aggregation}
+and \textit{interpretation}, which are explained further
+\cite{benestad2006assessing}.
+
+\subsubsection{Selection}
+
+It is important to select metrics that best fit the systems under study. The
+tools used to perform the metrics can play a big role in what metrics are used.
+Also specific set of metrics, like the CK metrics \cite{chidamber1994metrics},
+are often used. Using statistical analysis, an initial set of metrics can be
+analysed to see if they discriminate between different designs. To avoid
+applying superfluous, or \textit{unorthogonal}, metrics that does not influence
+the resulting maintainability value to a certain degree, \textit{Principal
+Component Analysis} can be used. \cite{benestad2006assessing}
+
+\todo{Write about PCA!}
+
+\subsubsection{Combination}
+
+As ideal metrics only should measure one aspect of the design, and as
+maintainability is affected by multiple aspects of the design, a combination of
+several metrics are required to provide a fair image of a system's
+maintainability value \cite{benestad2006assessing}.
+
 Oman and Hagemeister \cite{oman1992metrics} proposes a quantitative approach
 where multiple metrics can be combined into a unified value. Software
 maintainability can be divided into three broad categories:
@@ -612,9 +858,9 @@ of the document. \cite{oman1992metrics}
 
 To assess these metrics, Oman and Hagemeister introduces a formula:
 
-$$
+\begin{align*}
 \prod_{i=1}^m{W_D_i(\frac{\sum_{j=1}^n{W_A_jM_A_j}}{n})_i}
-$$
+\end{align*}
 
 where $W_D_i$ is the weight of influence of software maintainability category
 $D_i$, e.g.  source code control structure. $W_A_j$ is the weight of influence
@@ -622,7 +868,39 @@ of maintainability attribute $A_j$, e.g. software age. $M_A_j$ is the measure
 of maintainability attribute $A_j$. The values should be structured so that
 they range from 0 to 1, thereby showing a percentage of their correctness.
 Worth noting is that not all attributes have to be measured, only those of
-significant value.
+significant value. \cite{oman1992metrics}
+
+Coleman et. al. \cite{coleman1994using} proposes a polynomial model that
+includes four metrics. By using regression analysis \todo{Elaborate further on
+regression analysis?} on historical data they were able to adjust the values in
+the polynomial to make a good maintainability prediction. The formula is
+expressed as:
+
+\begin{align*}
+\text{Maintainability} = 171 \\
+  - 5.2 \times \ln(\textit{aveVol}) \\
+  - 0.23 \times \textit{ave$V(g')$} \\
+  - 16.2 \times \ln(\textit{aveLOC}) \\
+  + 50 \times \sin(\sqrt{2.46 \times \textit{perCM}})
+\end{align*}
+
+Where \textit{aveVol} is Halstead's volume metric averaged over all source code
+modules, \textit{ave$V(g')$} is the extended cyclomatic complexity \todo{how
+does that differ from "normal" $V(g)$?}, \textit{aveLOC} is the average number
+of lines of code and \textit{perCM} is the percentage of comments across all
+modules. \cite{coleman1994using}
+
+\subsubsection{Aggregation}
+
+Aggregating results from software metrics is a statistical task. Metric values
+can be distributed in various ways, making fair interpretation hard. The most
+popular approach is taking the mean value of a specific metric, across all
+modules. A problem with this approach is, say one module has a very high
+complexity value while another has a very low, the resulting mean value will be
+a compensation right in between. A better approach in that case can be to
+measure the standard deviation of each metric that will give a hint on how
+evenly a certain metric is spread out across the modules, which leads to a
+notion of how balanced the design is. \cite{benestad2006assessing}
 
 \subsection{Measuring maintainability in C++}
 
