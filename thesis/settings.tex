@@ -79,3 +79,17 @@
 %% Sectional labeling level.
 
 \setcounter{secnumdepth}{2}
+
+%% Centered table
+
+\newenvironment{ctable}[2] {
+\begin{table}[htbp]
+  \caption{#1}
+  \begin{center}
+    \begin{tabular}{#2}
+}
+{
+    \end{tabular}
+  \end{center}
+\end{table}
+}
