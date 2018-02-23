@@ -1006,7 +1006,68 @@ Coupling is a ratio number between a class $C$'s Class Coupling and its total
 number of methods, i.e. $AMC = CC / n$ where $n$ is the total number of methods
 declared in $C$.
 
-\section{Performance testing}
+\section{Software testing}
+
+\todo{Decision tables, system tests, Petri nets, event-based thread testing?}
+
+Testing software is a broad concept with many goals such as validating an
+implementation to conform to its specification, evaluating robustness and
+performance or finding inconsistencies in the design
+\cite{bertolino2007software}. It is a generally hierarchical process where the
+discrete modules (\textit{unit testing}) to the interaction between modules
+(\textit{integration testing}) to the composition of modules and the entire
+system (\textit{system testing}) is tested \cite{raymond1998automatic}. The
+specification of the \textit{system under test} (SUT) can be unknown, thus only
+the inputs and the outputs of the system can be examined for test case
+generation (\textit{black-box testing}) \cite{jorgensen2016software}. The
+codebase of the SUT can also be known, enabling verification of test case
+coverage so all paths in the code are tested (\textit{white-box testing})
+\cite{jorgensen2016software}.
+
+Software testing include basic terms such as \textit{error}, \textit{fault},
+\textit{failure}, \textit{incident}, \textit{test} and \textit{test case}
+\cite{radatz1990ieee}. Errors and faults share the same meaning, a good synonym
+is \textit{bug}. But an error is something a human does (verb) and a fault is
+the expressive representation of the error. When a program executes a fault a
+failure occurs. But the failure could have happened not only because bad code
+was executed (\textit{faults of commission}) - it could also be due to the fact
+that the correct code was abscent (\textit{faults of omission}). An incident is
+the consequence of a failure that signals the user of its presence.
+Fundamentally the act of testing has two objectives: to locate failures and to
+verify correct execution of the program. The actual procedure that executes a
+test is the test case and it has a set of inputs and a set of expected outputs.
+\cite{jorgensen2016software}
+
+Important to ask oneself when tests are being planned or about to be carried
+out is \cite{bertolino2007software}:
+
+\begin{itemize}
+  \item What is the \textit{test objective}? To locate faults in the design or
+    verify correct behavior?
+  \item What test methods should be \textit{selected}?
+  \item What is an \textit{adequate} test sample? What is the criteria to stop
+    testing?
+  \item What \textit{levels} of testing should be conducted? Unit testing on
+    separate modules or the entire system?
+  \item In what environment should the tests be conducted?
+  \item When should the tests be conducted? In the end of the software
+    lifecycle in a waterfall fashion, or continuously between sprints in an
+    agile development framework?
+\end{itemize}
+
+\subsection{Petri nets}
+
+In \textit{graph theory}, a \textit{Petri net} is a bipartite directed graph
+with four components: $P$, $T$, $In$ and $Out$. $P$ is a set of \textit{places}
+that is independent from $T$, which is a set of \textit{transitions}. $In$ are
+directed edges from places to transitions, and $Out$ are directed edges from
+transitions to places.
+\cite{jorgensen2016software}
+
+\todo{Not sure whether this is important. Might not use Petri nets at all in
+the method, I will wait to put more effort here.}
+
+\subsection{Performance testing}
 
 Performance testing is the process of measuring and evaluating certain
 performance related benchmarks in a system; usually by putting the system under
