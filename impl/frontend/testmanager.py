@@ -9,7 +9,8 @@ from log import (\
         Log,
         UDPWriter,
         LogServer,
-        Scenario)
+        Scenario,
+        EventLifecycle)
 
 LOG_SERVER_ADDR = ('', 5001)
 NAMESERVICE_ADDR = ('', 5000)
@@ -27,15 +28,21 @@ if __name__ == '__main__':
             PassiveDevice,
             DEVICE_QUANTITY,
             EVENT_FREQUENCY)
-    #ns.start_devices()
-
-    scenario = Scenario()
+    ns.start_devices()
 
     """
+    scenario = Scenario()
+    eventlc = EventLifecycle()
+
+    sid = scenario.create_scenario()
+    eventlc.register_event(0, 0, sid, 100)
+
+    print(eventlc.get_events(sid))
+    """
+
     try:
         while True:
             ns.accept()
     except KeyboardInterrupt:
         ns.close()
         ls.close()
-    """

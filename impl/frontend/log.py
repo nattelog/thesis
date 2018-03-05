@@ -3,7 +3,8 @@ import sys
 import time
 import Queue
 import threading
-import sqlite3
+import re
+from db import Scenario, EventLifecycle
 
 
 class UDPWriter():
@@ -110,82 +111,15 @@ class LogServer(threading.Thread):
         self.file.close()
         LogServer.logger.debug('{}: Stop', addr)
 
+    def extract_message(self, message):
+        """ Extracts keywords from the message. It is formatted as follows:
+        <level>:<timestamp>:<classname>:<
+        """
+
+        m = re.match(r'(\w+):(\d+):(\w+):', message)
+        print(m.group(0))
+
     def run(self):
         while True:
             message, addr = self.server.recvfrom(1024)
-            print(message)
-
-
-class Database:
-    """ Abstract class that exposes database methods used by its concrete
-    subclasses.
-    """
-
-    PATH = 'db'
-    _db = None
-
-    def __init__(self):
-        self._execute_schema()
-        self.row_factory = sqlite3.Row
-
-        if Database._db is None:
-            Database._db = sqlite3.connect(Database.PATH)
-
-    def close(self):
-        if _db is not None:
-            _db.close()
-
-    def _schema(self):
-        """ This method should be implemented by the concrete subclass
-        describing its table schema.
-        """
-
-        raise NotImplementedError('Abstract method')
-
-    def _execute_schema(self):
-        query = self._schema()
-        self._execute(query)
-
-    def _execute(self, query, args = (), one = False):
-        """ Executes query with @args and returns the affected rows. If @one is
-        True, returns only the top row.
-        """
-
-        cur = Database._db.execute(query, args)
-        rv = cur.fetchall()
-        Database._db.commit()
-
-        return (rv[0] if rv else None) if one else rv
-
-
-class Scenario(Database):
-    """ A table containing information on a test scenario.
-    """
-
-    def _schema(self):
-        """
-        A Scenario table contains:
-
-        - sid: The ID of the scenario.
-        - offset: The time offset between the gateway and the device (offs =
-          time(gateway) - time(device)).
-        - start: The starting time.
-        - end: The end time.
-        """
-
-        return \
-            """
-            create table scenario if not exists config(
-            sid integer primary key autoincrement,
-            offset int,
-            start int,
-            end int
-            );
-            """
-
-    def create_scenario(self):
-        return self._execute(
-            """
-            insert into scenario
-            """
-        )
+            self.extract_message(message)
