@@ -6,13 +6,17 @@ the model.
 import socket
 import json
 import time
-from log import Log, UDPWriter
-from testmanager import LOG_SERVER_ADDR, NAMESERVICE_ADDR
+import sys
+import getopt
+from log import Log, UDPWriter, StandardWriter
+from testmanager import LOG_SERVER_PORT, NAMESERVICE_PORT
 
 
 class Stub():
     """ Wraps the socket request to the device.
     """
+
+    logger = Log.get_logger('Stub', StandardWriter)
 
     def __init__(self, address):
         self.address = tuple(address)
@@ -27,10 +31,13 @@ class Stub():
             'args': args
         })
 
+        Stub.logger.debug('{}: <<<< {}', sock.getsockname(), payload)
+
         conn.write(payload + '\n')
         conn.flush()
 
         response = json.loads(conn.readline())
+        Stub.logger.debug('{}: >>>> {}', sock.getsockname(), response)
 
         if 'result' in response:
             return response['result']
@@ -55,10 +62,15 @@ class PassiveGateway():
     """
 
     logger = Log.get_logger('PassiveGateway')
+    local_logger = Log.get_logger('PassiveGatewayLocal', StandardWriter)
 
-    def __init__(self, nsaddress):
+    def __init__(self, nsaddress, argv):
         ns = Stub(nsaddress)
+        ns.verify_gateway()
         self.devices = ns.hostnames()
+        PassiveGateway.local_logger.info(
+            'Retrieved devices from nameserver on {}: {}',
+            nsaddress, self.devices)
 
     def get_events(self):
         for daddress in self.devices:
@@ -73,16 +85,3 @@ class PassiveGateway():
                 time.sleep(1)
                 PassiveGateway.logger.info('EVENT_LIFECYCLE_DONE:{}',
                         event)
-
-
-if __name__ == '__main__':
-    Log.config(
-            level=Log.LEVEL_DEBUG,
-            default_writer=UDPWriter(LOG_SERVER_ADDR))
-    gw = PassiveGateway(NAMESERVICE_ADDR)
-
-    print('output piped to log server on {}'.format(LOG_SERVER_ADDR))
-
-    while True:
-        gw.get_events()
-        time.sleep(0.5)

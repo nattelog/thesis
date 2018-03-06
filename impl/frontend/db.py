@@ -62,7 +62,7 @@ class Scenario(Database):
         return \
             """
             create table if not exists scenario(
-            sid integer primary key,
+            sid text primary key,
             offset int,
             start int,
             end int
@@ -78,7 +78,7 @@ class Scenario(Database):
         )
 
     def create_scenario(self):
-        sid = uuid.uuid4().int >> 96 # reduce to 32 bit
+        sid = str(uuid.uuid4())
 
         self._execute(
             """
@@ -123,10 +123,10 @@ class EventLifecycle(Database):
         A lifecycle table contains:
 
         - eid: ID of the event.
-        - did: ID of the device the event originated from.
+        - did (disabled for now): ID of the device the event originated from.
         - sid: ID of the scenario context the event worked in.
         - error: Any error message retrieved for the event.
-        - create_time: The time when the event was created on the device.
+        - created_time: The time when the event was created on the device.
         - fetched_time: The time when the event left the device.
         - retrieved_time: The time when the event arrived to the gateway.
         - dispatched_time: The time when the event was dispatched to an event
@@ -137,16 +137,14 @@ class EventLifecycle(Database):
         return \
             """
             create table if not exists eventlifecycle(
-            eid int not null,
-            did int not null,
-            sid int not null,
-            error text,
-            create_time int,
+            eid text,
+            sid text,
+            created_time int,
             fetched_time int,
             retrieved_time int,
-            dispathed_time int,
+            dispatched_time int,
             done_time int,
-            primary key (eid, did),
+            primary key (eid, sid),
             foreign key (sid) references scenario(sid)
             );
             """
@@ -160,11 +158,47 @@ class EventLifecycle(Database):
         )
 
 
-    def register_event(self, eid, did, sid, create_time):
+    def register_time_created(self, eid, sid, time):
         self._execute(
             """
-            insert into eventlifecycle (eid, did, sid, create_time)
-            values (?, ?, ?, ?)
+            insert into eventlifecycle (eid, sid, created_time)
+            values (?, ?, ?)
             """,
-            (eid, did, sid, create_time)
+            (eid, sid, time)
+        )
+
+    def register_time_fetched(self, eid, sid, time):
+        self._execute(
+            """
+            update eventlifecycle set fetched_time=?
+            where eid=? and sid=?
+            """,
+            (time, eid, sid)
+        )
+
+    def register_time_retrieved(self, eid, sid, time):
+        self._execute(
+            """
+            update eventlifecycle set retrieved_time=?
+            where eid=? and sid=?
+            """,
+            (time, eid, sid)
+        )
+
+    def register_time_dispatched(self, eid, sid, time):
+        self._execute(
+            """
+            update eventlifecycle set dispatched_time=?
+            where eid=? and sid=?
+            """,
+            (time, eid, sid)
+        )
+
+    def register_time_done(self, eid, sid, time):
+        self._execute(
+            """
+            update eventlifecycle set done_time=?
+            where eid=? and sid=?
+            """,
+            (time, eid, sid)
         )

@@ -78,9 +78,10 @@ class Producer(threading.Thread):
         self.device = device
         self.frequency = frequency
         self.stop_event = threading.Event()
-        Producer.logger.debug('{}: Start', id(self))
 
     def run(self):
+        Producer.logger.debug('{}: Start', id(self))
+
         if self.frequency <= 0:
             return
 
@@ -215,25 +216,32 @@ class NameServiceAPI:
     """ API callable by the gateway.
     """
 
-    def __init__(self, devices):
+    def __init__(self, devices, gateway_event):
         self.devices = devices
+        self.gateway_event = gateway_event
 
     def hostnames(self):
         return [device.hostname() for device in self.devices]
 
+    def verify_gateway(self):
+        self.gateway_event.set()
 
-class NameService:
+
+class NameService(threading.Thread):
     """ Keeps track of all devices in the test.
     """
 
     logger = Log.get_logger('NameService')
 
-    def __init__(self, address, Device, quantity, frequency, delay=0):
+    def __init__(self, address, Device, quantity, frequency, delay,
+            gateway_event):
+        threading.Thread.__init__(self)
+        self.daemon = True
         self.quantity = quantity;
         self.devices = [Device('', 0, frequency, delay)
                 for _ in range(quantity)]
-        self.server = Server(address, NameServiceAPI(self.devices))
-        NameService.logger.info('{}: Start', self.server.hostname())
+        self.server = Server(address, NameServiceAPI(self.devices,
+            gateway_event))
 
     def stop_devices(self):
         for device in self.devices:
@@ -245,11 +253,14 @@ class NameService:
 
         NameService.logger.debug('Started {} devices', len(self.devices))
 
-    def accept(self):
-        self.server.accept()
-
     def close(self):
         hostname = self.server.hostname()
         self.stop_devices()
         self.server.close()
         NameService.logger.info('{}: Stop', hostname)
+
+    def run(self):
+        NameService.logger.info('{}: Start', self.server.hostname())
+
+        while True:
+            self.server.accept()

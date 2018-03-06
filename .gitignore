@@ -10,6 +10,7 @@ impl/gateway/include/std*
 impl/gateway/include/android*
 impl/gateway/include/tree*
 impl/gateway/lib
+db
 
 # Created by https://www.gitignore.io/api/tex,vim
 
