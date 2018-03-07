@@ -3,7 +3,7 @@ import re
 import threading
 import time
 from device import PassiveDevice, NameService
-from db import Scenario, EventLifecycle
+from db import Scenario, EventLifecycle, Configuration
 from log import (\
         now,
         Log,
@@ -16,6 +16,7 @@ Log.config(level=Log.LEVEL_DEBUG)
 
 
 class TestManager:
+
     logger = Log.get_logger('TestManager')
 
     def __init__(self, nsport, configuration):
@@ -24,6 +25,7 @@ class TestManager:
         self.nameservice = NameService(nsaddr, configuration)
         self.scenario = Scenario()
         self.lifecycle = EventLifecycle()
+        self.configuration_table = Configuration()
         self.sid = self.scenario.create_scenario()
         self.queue = Queue.Queue(100)
 
@@ -72,6 +74,8 @@ class TestManager:
 
         return self.nameservice.verify_gateway()
 
+    def save_configuration(self, key, value):
+        self.configuration_table.register_key(self.sid, key, value)
 
     def start_test(self):
         self.start_time = now()

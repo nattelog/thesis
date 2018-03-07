@@ -202,3 +202,36 @@ class EventLifecycle(Database):
             """,
             (time, eid, sid)
         )
+
+
+class Configuration(Database):
+    """ Contains configuration keys and values for a test.
+    """
+
+    def _schema(self):
+        """ A Configuration table contain:
+
+        - sid: ID of the scenario having this configuration.
+        - key: The name of the configuration key.
+        - value: The value of the configuration key.
+        """
+
+        return \
+        """
+        create table if not exists configuration(
+        sid text,
+        key text,
+        value text,
+        primary key (sid, key),
+        foreign key (sid) references scenario(sid)
+        );
+        """
+
+    def register_key(self, sid, key, value):
+        self._execute(
+            """
+            insert into configuration (sid, key, value)
+            values (?, ?, ?)
+            """,
+            (sid, key, value)
+        )

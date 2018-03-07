@@ -103,6 +103,17 @@ def main(argv):
 
     logger.info('Waiting for gateway...')
     if tm.verify_gateway(ls.hostname()):
+        tm.save_configuration(DEVICE_QUANTITY,
+                configuration[DEVICE_QUANTITY])
+        tm.save_configuration(DEVICE_FREQUENCY,
+                configuration[DEVICE_FREQUENCY])
+        tm.save_configuration(DEVICE_DELAY,
+                configuration[DEVICE_DELAY])
+        tm.save_configuration(DISPATCHER,
+                configuration[DISPATCHER])
+        tm.save_configuration(EVENT_HANDLER,
+                configuration[EVENT_HANDLER])
+
         tm.sync_time()
         tm.start_test()
 
