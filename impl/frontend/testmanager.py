@@ -3,14 +3,13 @@ import re
 import threading
 import time
 from device import PassiveDevice, NameService
+from db import Scenario, EventLifecycle
 from log import (\
         now,
         Log,
         UDPWriter,
         StandardWriter,
-        LogServer,
-        Scenario,
-        EventLifecycle)
+        LogServer)
 
 
 Log.config(level=Log.LEVEL_DEBUG)
