@@ -37,8 +37,8 @@ class TestManager:
         inspired by the one from
         http://www.mine-control.com/zack/timesync/timesync.html.
 
-        This function returns the time difference between the gateway and the
-        test manager.
+        This functions caches the offset time in self.offset and stores it in 
+        the database.
         """
 
         gwstub = self.nameservice.get_gateway_stub()
