@@ -18,6 +18,8 @@ Log.config(level=Log.LEVEL_DEBUG)
 class TestManager:
 
     logger = Log.get_logger('TestManager')
+    # pre compile for better performance
+    event_msg_regex = re.compile(r'^(\w+):(\d+):(\w+):EVENT_LIFECYCLE_(\w+):([\w\-]+)$')
 
     def __init__(self, nsport, configuration):
         self.configuration = configuration
@@ -95,7 +97,7 @@ class TestManager:
         made.
         """
 
-        m = re.match(r'^(\w+):(\d+):(\w+):EVENT_LIFECYCLE_(\w+):([\w\-]+)$', message)
+        m = TestManager.event_msg_regex.match(message)
 
         if m:
             return {
