@@ -89,12 +89,12 @@ class Scenario(Database):
 
         return sid
 
-    def set_offset(self, sid, offset):
+    def set_offset_time(self, sid, time):
         self._execute(
             """
             update scenario set offset=? where sid=?
             """,
-            (offset, sid)
+            (time, sid)
         )
 
     def set_start_time(self, sid, time):

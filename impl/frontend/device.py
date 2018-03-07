@@ -4,13 +4,14 @@ Systems", TDDD25 at Linkoping University. Implements a remote method invocation
 model.
 """
 
-import json
+
 import threading
 import Queue
-import time
 import socket
 import uuid
 from log import Log
+from net import TCPServer, Stub
+
 
 class EventError(Exception):
     def __init__(self, message):
@@ -95,91 +96,6 @@ class Producer(threading.Thread):
         Producer.logger.debug('{}: Stop', id(self))
 
 
-class Request(threading.Thread):
-    """ Representation of a request coming from the gateway.
-    """
-
-    logger = Log.get_logger('Request')
-
-    def __init__(self, owner, conn, addr, delay=0):
-        threading.Thread.__init__(self)
-        self.owner = owner
-        self.conn = conn
-        self.addr = addr
-        self.delay = delay
-        self.daemon = True
-
-    def process_request(self, request):
-        try:
-            Request.logger.debug('{}:>>>> {}', self.addr, repr(request))
-            data = json.loads(request)
-            method = data['method']
-            args = data['args']
-            result = getattr(self.owner, method)(*args)
-            result = json.dumps({ 'result': result })
-            Request.logger.debug('{}:<<<< {}', self.addr, repr(result))
-
-            return result
-        except Exception as e:
-            result = json.dumps({
-                'error': { 'name': type(e).__name__, 'args': [e.message] }
-            })
-            Request.logger.error('{}:<<<< {}', self.addr, repr(result))
-            return result
-
-    def run(self):
-        try:
-            worker = self.conn.makefile(mode='rw')
-            request = worker.readline()
-
-            if self.delay > 0:
-                Request.logger.debug('{}:Delay {} s', self.addr, self.delay)
-                time.sleep(self.delay)
-
-            result = self.process_request(request)
-            worker.write(result + '\n')
-            worker.flush()
-        except Exception as e:
-            Request.logger.error('The gateway connection has died: {}: {}',
-                    type(e), e);
-        finally:
-            Request.logger.debug('{}: Close', self.addr)
-            self.conn.close()
-
-
-class Server():
-    """ Handles incoming connections and requests on the socket.
-    """
-
-    logger = Log.get_logger('Server')
-
-    def __init__(self, address, owner, delay=0):
-        self.address = address
-        self.owner = owner
-        self.delay = delay
-        self.server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        self.server.bind(self.address)
-        self.server.listen(5)
-        Server.logger.debug('{}: Start', self.hostname())
-
-    def close(self):
-        hostname = self.hostname()
-        self.server.close()
-        Server.logger.debug('{}: Close', hostname)
-
-    def accept(self):
-        try:
-            conn, addr = self.server.accept()
-            Server.logger.debug('{}: Accept', addr)
-            req = Request(self.owner, conn, addr, self.delay)
-            req.start()
-        except socket.error:
-            Server.logger.error(socket.error)
-
-    def hostname(self):
-        return self.server.getsockname()
-
-
 class PassiveDevice(threading.Thread):
     """ A passive device is a socket server listening for requests that call
     methods on its event queue, and returns the result.
@@ -187,12 +103,11 @@ class PassiveDevice(threading.Thread):
 
     logger = Log.get_logger('PassiveDevice')
 
-    def __init__(self, address, port, frequency, delay):
+    def __init__(self, address, frequency, delay):
         threading.Thread.__init__(self)
         self.daemon = True
-        self.address = (address, port)
         self.device = Device()
-        self.server = Server(self.address, self.device, delay)
+        self.server = TCPServer(address, self.device, delay)
         self.producer = Producer(self.device, frequency)
 
     def run(self):
@@ -216,32 +131,83 @@ class NameServiceAPI:
     """ API callable by the gateway.
     """
 
-    def __init__(self, devices, gateway_event):
+    def __init__(self, devices, configuration, gateway_event):
         self.devices = devices
         self.gateway_event = gateway_event
+        self.configuration = configuration
 
     def hostnames(self):
         return [device.hostname() for device in self.devices]
 
-    def verify_gateway(self):
+    def verify_gateway(self, gw_configuration, address):
+        """ Called over the network by the gateway to verify it has been called
+        with the correct configuration. Updates the gateway address in the
+        configuration if the gateway's configuration verifies.
+        """
+
+        E = 'EVENT_HANDLER'
+        D = 'DISPATCHER'
+
+        if gw_configuration[E] == self.configuration[E] and \
+                gw_configuration[D] == self.configuration[D]:
+            self.configuration['GATEWAY_ADDRESS'] = tuple(address)
+        else:
+            self.configuration['GATEWAY_ADDRESS'] = None
+
         self.gateway_event.set()
+        return self.configuration['GATEWAY_ADDRESS'] is not None
 
 
 class NameService(threading.Thread):
-    """ Keeps track of all devices in the test.
+    """ Keeps track of all devices and the gateway in the test.
     """
 
     logger = Log.get_logger('NameService')
 
-    def __init__(self, address, Device, quantity, frequency, delay,
-            gateway_event):
+    def __init__(self, address, configuration):
         threading.Thread.__init__(self)
         self.daemon = True
-        self.quantity = quantity;
-        self.devices = [Device('', 0, frequency, delay)
+        self.gateway_verification_event = threading.Event()
+        self.configuration = configuration
+
+        DeviceType = configuration['DEVICE_TYPE']
+        quantity = configuration['DEVICE_QUANTITY']
+        frequency = configuration['DEVICE_FREQUENCY']
+        delay = configuration['DEVICE_DELAY']
+        daddr = ('', 0) # devices on localhost and random port
+
+        self.devices = [DeviceType(daddr, frequency, delay)
                 for _ in range(quantity)]
-        self.server = Server(address, NameServiceAPI(self.devices,
-            gateway_event))
+        self.server = TCPServer(
+            address,
+            NameServiceAPI(
+                self.devices,
+                configuration,
+                self.gateway_verification_event))
+
+    def verify_gateway(self):
+        """ Waits for the gateway to connect and be verified. Creates a gateway
+        stub if successful.
+        """
+
+        self.gateway_verification_event.wait()
+        gwaddr = self.configuration['GATEWAY_ADDRESS']
+
+        if gwaddr is None:
+            return False
+
+        self.gateway = Stub(gwaddr)
+        return True
+
+    def get_gateway_stub(self):
+        if self.gateway is None:
+            raise AttributeError(
+                'Cannot get gateway stub: Gateway is not verified')
+
+        return self.gateway
+
+    def hostname(self):
+        return self.server.hostname()
 
     def stop_devices(self):
         for device in self.devices:

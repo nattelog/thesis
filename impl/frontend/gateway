@@ -21,24 +21,24 @@ def usage():
     usage: ./gateway [<options>...]
 
     OPTIONS
-      -h
-        Show this message.
+        -h
+            Show this message.
 
-      -d, --dispatcher <architecture>
-        The architecture of the event dispatcher. Can be one of the following:
-          serial
-          preemptive (disabled)
-          cooperative (disabled)
+        -d, --dispatcher <architecture>
+            The architecture of the event dispatcher. Can be one of the following:
+                serial
+                preemptive (disabled)
+                cooperative (disabled)
 
-      -e, --eventhandler <architecture>
-        The architecture of the event handler. Same alternatives as for the
-        dispatcher.
+        -e, --eventhandler <architecture>
+            The architecture of the event handler. Same alternatives as for the
+            dispatcher.
 
-      -l, --logserver <address>:<port>
-        The address and port of the log server.
+        -l, --logserver <address>:<port>
+            The address and port of the log server.
 
-      -n, --nameservice <address>:<port>
-        The address and port of the nameservice.
+        -n, --nameservice <address>:<port>
+            The address and port of the nameservice.
     """
 )
 
@@ -110,14 +110,26 @@ def main(argv):
     if verify_parameters(configuration):
         writer = UDPWriter(configuration[LOG_SERVER_ADDRESS])
         Log.config(level=Log.LEVEL_DEBUG, default_writer=writer)
+
         gw = PassiveGateway(configuration[NAMESERVICE_ADDRESS], argv)
+        gw.start_server()
+
+        if gw.verify_configuration(configuration):
+            logger.info('Config OK')
+            gw.register_devices()
+        else:
+            logger.error('Config not OK! Closing...')
+            gw.close_server()
+            sys.exit(2)
 
         logger.info('Start')
-        logger.info('Output piped to {}', LOG_SERVER_ADDRESS)
 
-        while True:
-            gw.get_events()
-            time.sleep(1)
+        try:
+            while True:
+                gw.get_events()
+                time.sleep(1)
+        except KeyboardInterrupt:
+            gw.close_server()
 
     else:
         usage()

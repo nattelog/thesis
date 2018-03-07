@@ -1,0 +1,122 @@
+#!/usr/bin/python
+
+
+import sys
+import getopt
+from log import Log, LogServer, UDPWriter
+from device import PassiveDevice
+from testmanager import TestManager
+
+
+logger = Log.get_logger(__name__)
+
+NAMESERVICE_PORT = 0
+LOG_SERVER_PORT = 0
+
+DEVICE_QUANTITY = 'DEVICE_QUANTITY'
+DEVICE_FREQUENCY = 'DEVICE_FREQUENCY'
+DEVICE_DELAY = 'DEVICE_DELAY'
+DISPATCHER = 'DISPATCHER'
+EVENT_HANDLER = 'EVENT_HANDLER'
+DEVICE_TYPE = 'DEVICE_TYPE'
+
+
+def usage():
+    print(
+    """
+    usage: ./run_test [<options>...]
+
+    OPTIONS
+        -h
+            Show this message
+
+        -q, --quantity <value>
+            The number of simulated devices to run in the test.
+
+        -f, --frequency <value>
+            The frequency in which one device creates new events, expressed in
+            times / second.
+
+        -l, --delay <value>
+            The delay expressed in seconds in which one device waits to sends a
+            response upon a request.
+
+        -d, --dispatcher <architecture>
+            The architecture of the event dispatcher. Can be one of the following:
+                serial
+                preemptive (disabled)
+                cooperative (disabled)
+
+        -e, --eventhandler <architecture>
+            The architecture of the event handler. Same alternatives as for the
+            dispatcher.
+    """
+    )
+
+
+def main(argv):
+    configuration = {}
+
+    if len(argv) == 0:
+        usage()
+        return
+
+    try:
+        opts, args = getopt.getopt(
+            argv,
+            'hq:f:l:d:e:',
+            [
+                'quantity=',
+                'frequency=',
+                'delay=',
+                'dispatcher=',
+                'eventhandler='
+            ])
+    except getopt.GetoptError:
+        usage()
+        sys.exit(2)
+
+    for opt, arg in opts:
+        if opt == '-h':
+            usage()
+            return
+        if opt in ('-q', '--quantity'):
+            configuration[DEVICE_QUANTITY] = int(arg)
+        if opt in ('-f', '--frequency'):
+            configuration[DEVICE_FREQUENCY] = float(arg)
+        if opt in ('-l', '--delay'):
+            configuration[DEVICE_DELAY] = float(arg)
+        if opt in ('-d', '--dispatcher'):
+            configuration[DISPATCHER] = arg
+        if opt in ('-e', '--eventhandler'):
+            configuration[EVENT_HANDLER] = arg
+
+    configuration[DEVICE_TYPE] = PassiveDevice
+
+    tm = TestManager(NAMESERVICE_PORT, configuration)
+    ls = LogServer(('', LOG_SERVER_PORT), tm)
+
+    writer = UDPWriter(ls.hostname())
+    Log.config(default_writer=writer)
+
+    ls.start()
+
+    logger.info('Waiting for gateway...')
+    if tm.verify_gateway(ls.hostname()):
+        tm.sync_time()
+        tm.start_test()
+
+        try:
+            while True:
+                tm.listen_for_message()
+        except KeyboardInterrupt:
+            tm.end_test()
+            ls.close()
+    else:
+        logger.error('Gateway verification failed')
+        tm.end_test()
+        ls.close()
+
+
+if __name__ == '__main__':
+    main(sys.argv[1:])

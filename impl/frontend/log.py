@@ -1,9 +1,10 @@
 import socket
-import sys
-import time
 import threading
-from util import now
-from db import Scenario, EventLifecycle
+import time
+
+
+def now():
+    return int(time.time() * 1000)
 
 
 class UDPWriter():
@@ -19,7 +20,7 @@ class UDPWriter():
 
 
 class StandardWriter():
-    """ Prints to stdout.
+    """ Prints to stdout. Not thread safe.
     """
 
     @staticmethod
@@ -104,6 +105,9 @@ class LogServer(threading.Thread):
         self.server = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         self.server.bind(address)
         LogServer.logger.debug('{}: Start', self.server.getsockname())
+
+    def hostname(self):
+        return self.server.getsockname()
 
     def close(self):
         addr = self.server.getsockname()

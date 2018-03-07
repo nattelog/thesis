@@ -1,9 +1,10 @@
 import Queue
 import re
 import threading
-from util import now
+import time
 from device import PassiveDevice, NameService
 from log import (\
+        now,
         Log,
         UDPWriter,
         StandardWriter,
@@ -14,71 +15,74 @@ from log import (\
 
 Log.config(level=Log.LEVEL_DEBUG)
 
-LOG_SERVER_PORT = 5001
-NAMESERVICE_PORT = 5000
-DEVICE_QUANTITY = 2
-DEVICE_DELAY = 0
-EVENT_FREQUENCY = 0.1
-
 
 class TestManager:
-    logger = Log.get_logger('TestManager', StandardWriter)
+    logger = Log.get_logger('TestManager')
 
-    def __init__(self, nsport, DeviceType, dquan, efreq, ddelay):
-        self.gateway_event = threading.Event()
-        self.nameservice = NameService(
-                ('', nsport),
-                DeviceType,
-                dquan,
-                efreq,
-                ddelay,
-                self.gateway_event)
+    def __init__(self, nsport, configuration):
+        self.configuration = configuration
+        nsaddr = ('', nsport)
+        self.nameservice = NameService(nsaddr, configuration)
         self.scenario = Scenario()
         self.lifecycle = EventLifecycle()
         self.sid = self.scenario.create_scenario()
-        self.queue = Queue.Queue(10)
+        self.queue = Queue.Queue(100)
+
+    def sync_time(self):
+        """ Time must be synced between the gateway and the test manager, since
+        they can run on different machines. This time syncing algorithm is
+        inspired by the one from
+        http://www.mine-control.com/zack/timesync/timesync.html.
+
+        This function returns the time difference between the gateway and the
+        test manager.
+        """
+
+        gwstub = self.nameservice.get_gateway_stub()
+        offsets = []
+        TestManager.logger.info('Start time sync')
+
+        for i in range(5): # running too many times will fill log queue
+            t0 = now()
+            t1 = gwstub.get_timestamp()
+            t2 = now()
+            latency = int((t2 - t0) / 2)
+            offset = t1 - t2 + latency
+            offsets.append(offset)
+            TestManager.logger.debug('Time sync iteration {}: offset {}', i, offset)
+            time.sleep(1)
+
+        offsets.sort()
+        self.offset = offsets[len(offsets) / 2] # cache offset for further use
+
+        TestManager.logger.info('Time offset is {} ms', self.offset)
+        self.scenario.set_offset_time(self.sid, self.offset)
+
+    def verify_gateway(self, lsaddress):
+        nsaddress = self.nameservice.hostname()
+        self.nameservice.start()
+        TestManager.logger.info(
+                'Start gateway with ./gateway -l {}:{} -n {}:{} -d {} -e {}',
+                lsaddress[0],
+                lsaddress[1],
+                nsaddress[0],
+                nsaddress[1],
+                self.configuration['DISPATCHER'],
+                self.configuration['EVENT_HANDLER']
+                )
+
+        return self.nameservice.verify_gateway()
+
 
     def start_test(self):
-        self.nameservice.start()
-        TestManager.logger.info('Waiting for gateway...')
-        self.gateway_event.wait()
-        self.scenario.set_start_time(self.sid, now())
+        self.start_time = now()
+        self.scenario.set_start_time(self.sid, self.start_time)
         self.nameservice.start_devices()
 
     def end_test(self):
         self.nameservice.close()
         self.scenario.set_end_time(self.sid, now())
-
-    def event_create(self, eid, time):
-        self.lifecycle.register_time_created(eid, self.sid, time)
-
-    def event_fetched(self, eid, time):
-        self.lifecycle.register_time_fetched(eid, self.sid, time)
-
-    def event_retrieved(self, eid, time):
-        self.lifecycle.register_time_retrieved(eid, self.sid, time)
-
-    def event_dispatched(self, eid, time):
-        self.lifecycle.register_time_dispatched(eid, self.sid, time)
-
-    def event_done(self, eid, time):
-        self.lifecycle.register_time_done(eid, self.sid, time)
-
-    def update_db(self, event_keyword, event_id, timestamp):
-        if event_keyword == 'CREATED':
-            return self.event_create(event_id, timestamp)
-        if event_keyword == 'FETCHED':
-            return self.event_fetched(event_id, timestamp)
-        if event_keyword == 'RETRIEVED':
-            return self.event_retrieved(event_id, timestamp)
-        if event_keyword == 'DISPATCHED':
-            return self.event_dispatched(event_id, timestamp)
-        if event_keyword == 'DONE':
-            return self.event_done(event_id, timestamp)
-        else:
-            raise AttributeError(
-                'Unknown event keyword {}'.format(repr(event_keyword))
-                )
+        TestManager.logger.info('Test ended')
 
     @staticmethod
     def extract_message(message):
@@ -91,17 +95,39 @@ class TestManager:
         m = re.match(r'^(\w+):(\d+):(\w+):EVENT_LIFECYCLE_(\w+):([\w\-]+)$', message)
 
         if m:
-            timestamp = m.group(2)
-            lifecycle_event = m.group(4)
-            eid = m.group(5)
-
             return {
-                'timestamp': m.group(2),
+                'timestamp': int(m.group(2)),
                 'event_keyword': m.group(4),
                 'event_id': m.group(5)
             }
         else:
             return None
+
+    def update_event_lifecycle_time(self, event_keyword, event_id, timestamp):
+        rel_time = timestamp - self.start_time
+
+        if event_keyword == 'CREATED':
+            self.lifecycle.register_time_created(event_id, self.sid, rel_time)
+            return
+        if event_keyword == 'FETCHED':
+            self.lifecycle.register_time_fetched(event_id, self.sid, rel_time)
+            return
+        if event_keyword == 'RETRIEVED':
+            rel_time -= self.offset
+            self.lifecycle.register_time_retrieved(event_id, self.sid, rel_time)
+            return
+        if event_keyword == 'DISPATCHED':
+            rel_time -= self.offset
+            self.lifecycle.register_time_dispatched(event_id, self.sid, rel_time)
+            return
+        if event_keyword == 'DONE':
+            rel_time -= self.offset
+            self.lifecycle.register_time_done(event_id, self.sid, rel_time)
+            return
+        else:
+            raise AttributeError(
+                'Unknown event keyword {}'.format(repr(event_keyword))
+                )
 
     def register_message(self, message):
         self.queue.put(message, True, 10) # raise if queue is full for 10 sec
@@ -111,27 +137,5 @@ class TestManager:
         extr = TestManager.extract_message(message)
 
         if extr is not None:
-            self.update_db(**extr)
+            self.update_event_lifecycle_time(**extr)
 
-
-if __name__ == '__main__':
-    tm = TestManager(
-            NAMESERVICE_PORT,
-            PassiveDevice,
-            DEVICE_QUANTITY,
-            EVENT_FREQUENCY,
-            DEVICE_DELAY)
-    ls = LogServer(('', LOG_SERVER_PORT), tm)
-
-    writer = UDPWriter(('', LOG_SERVER_PORT))
-    Log.config(default_writer=writer)
-
-    ls.start()
-    tm.start_test()
-
-    try:
-        while True:
-            tm.listen_for_message()
-    except KeyboardInterrupt:
-        tm.end_test()
-        ls.close()

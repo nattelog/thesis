@@ -3,57 +3,39 @@ A python version of the gateway. Used primarily for bootstraping the rest of
 the model.
 """
 
-import socket
-import json
+
 import time
-import sys
-import getopt
-from log import Log, UDPWriter, StandardWriter
-from testmanager import LOG_SERVER_PORT, NAMESERVICE_PORT
+import threading
+from log import now, Log, StandardWriter
+from net import Stub, TCPServer
 
 
-class Stub():
-    """ Wraps the socket request to the device.
+class GatewayAPI():
+    """ API callable by the nameservice.
     """
 
-    logger = Log.get_logger('Stub', StandardWriter)
+    def get_timestamp(self):
+        return now()
 
-    def __init__(self, address):
-        self.address = tuple(address)
 
-    def _rmi(self, method, *args):
-        sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        sock.connect(self.address)
-        conn = sock.makefile(mode='rw')
+class GatewayServer(threading.Thread):
 
-        payload = json.dumps({
-            'method': method,
-            'args': args
-        })
+    logger = Log.get_logger('GatewayServer')
 
-        Stub.logger.debug('{}: <<<< {}', sock.getsockname(), payload)
+    def __init__(self):
+        threading.Thread.__init__(self)
+        self.daemon = True
+        self.server = TCPServer(('', 0), GatewayAPI())
 
-        conn.write(payload + '\n')
-        conn.flush()
+    def run(self):
+        while True:
+            self.server.accept()
 
-        response = json.loads(conn.readline())
-        Stub.logger.debug('{}: >>>> {}', sock.getsockname(), response)
+    def hostname(self):
+        return self.server.hostname()
 
-        if 'result' in response:
-            return response['result']
-
-        if 'error' in response:
-            err = response['error']
-            name = str(err['name'])
-            err_args = err['args']
-            E = type(name, (Exception, ), {})
-
-            raise E(*err_args)
-
-    def __getattr__(self, attr):
-        def rmi_call(*args):
-            return self._rmi(attr, *args)
-        return rmi_call
+    def close(self):
+        self.server.close()
 
 
 class PassiveGateway():
@@ -65,12 +47,24 @@ class PassiveGateway():
     local_logger = Log.get_logger('PassiveGatewayLocal', StandardWriter)
 
     def __init__(self, nsaddress, argv):
-        ns = Stub(nsaddress)
-        ns.verify_gateway()
-        self.devices = ns.hostnames()
+        self.server = GatewayServer()
+        self.ns = Stub(nsaddress)
+
+    def start_server(self):
+        self.server.start()
+
+    def close_server(self):
+        self.server.close()
+
+    def verify_configuration(self, configuration):
+        addr = self.server.hostname()
+        return self.ns.verify_gateway(configuration, addr)
+
+    def register_devices(self):
+        self.devices = self.ns.hostnames()
         PassiveGateway.local_logger.info(
-            'Retrieved devices from nameserver on {}: {}',
-            nsaddress, self.devices)
+            'Retrieved devices from nameserver: {}',
+            self.devices)
 
     def get_events(self):
         for daddress in self.devices:
