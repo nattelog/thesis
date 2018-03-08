@@ -34,7 +34,7 @@ class TestManager:
         inspired by the one from
         http://www.mine-control.com/zack/timesync/timesync.html.
 
-        This functions caches the offset time in self.offset and stores it in 
+        This functions caches the offset time in self.offset and stores it in
         the database.
         """
 
@@ -62,13 +62,15 @@ class TestManager:
         nsaddress = self.nameservice.hostname()
         self.nameservice.start()
         TestManager.logger.info(
-                'Start gateway with ./gateway -l {}:{} -n {}:{} -d {} -e {}',
+                'Start gateway with ./gateway -l {}:{} -n {}:{} -d {} -e {} -c {} -i {}',
                 lsaddress[0],
                 lsaddress[1],
                 nsaddress[0],
                 nsaddress[1],
                 self.configuration['DISPATCHER'],
-                self.configuration['EVENT_HANDLER']
+                self.configuration['EVENT_HANDLER'],
+                self.configuration['CPU_INTENSITY'],
+                self.configuration['IO_INTENSITY']
                 )
 
         return self.nameservice.verify_gateway()

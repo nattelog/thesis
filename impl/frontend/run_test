@@ -19,6 +19,8 @@ DEVICE_FREQUENCY = 'DEVICE_FREQUENCY'
 DEVICE_DELAY = 'DEVICE_DELAY'
 DISPATCHER = 'DISPATCHER'
 EVENT_HANDLER = 'EVENT_HANDLER'
+CPU_INTENSITY = 'CPU_INTENSITY'
+IO_INTENSITY = 'IO_INTENSITY'
 DEVICE_TYPE = 'DEVICE_TYPE'
 
 
@@ -51,6 +53,12 @@ def usage():
         -e, --eventhandler <architecture>
             The architecture of the event handler. Same alternatives as for the
             dispatcher.
+
+        -c, --cpu <value>
+            The CPU intensity each event induce. Value between 0 and 1.
+
+        -i, --io <value>
+            The I/O intensity each event induce. Value between 0 and 1.
     """
     )
 
@@ -83,13 +91,15 @@ def main(argv):
     try:
         opts, args = getopt.getopt(
             argv,
-            'hq:f:l:d:e:t:',
+            'hq:f:l:d:e:c:i:t:',
             [
                 'quantity=',
                 'frequency=',
                 'delay=',
                 'dispatcher=',
                 'eventhandler=',
+                'cpu=',
+                'io=',
                 'duration='
             ])
     except getopt.GetoptError:
@@ -110,6 +120,10 @@ def main(argv):
             configuration[DISPATCHER] = arg
         if opt in ('-e', '--eventhandler'):
             configuration[EVENT_HANDLER] = arg
+        if opt in ('-c', '--cpu'):
+            configuration[CPU_INTENSITY] = float(arg)
+        if opt in ('-i', '--io'):
+            configuration[IO_INTENSITY] = float(arg)
         if opt in ('-t', '--duration'):
             duration = parse_time(arg)
 
@@ -135,6 +149,10 @@ def main(argv):
                 configuration[DISPATCHER])
         tm.save_configuration(EVENT_HANDLER,
                 configuration[EVENT_HANDLER])
+        tm.save_configuration(CPU_INTENSITY,
+                configuration[CPU_INTENSITY])
+        tm.save_configuration(IO_INTENSITY,
+                configuration[IO_INTENSITY])
 
         tm.sync_time()
         end_time = now() + duration

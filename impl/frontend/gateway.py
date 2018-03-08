@@ -4,10 +4,38 @@ the model.
 """
 
 
-import time
 import threading
 from log import now, Log, StandardWriter
 from net import Stub, TCPServer
+
+
+def nth_prime(n):
+    def is_prime(v):
+        return all(v % k > 0 for k in range(2, v))
+
+    i = 0
+    j = 1
+
+    while i < n+1:
+        if is_prime(j):
+            i += 1
+        j += 1
+
+    return j - 1
+
+
+def do_cpu(intensity):
+    """
+    Simulates a CPU intensive task by calculating the nth prime, where n is
+    2^10 * intensity, and intensity varies between 0 and 1.
+    """
+
+    if intensity < 0 or intensity > 1:
+        raise AttributeError(
+            'Cannot simulate CPU intensity: value must be between 0 and 1')
+
+    n = int((2 ** 12) * intensity)
+    nth_prime(n)
 
 
 class GatewayAPI():
@@ -46,9 +74,11 @@ class PassiveGateway():
     logger = Log.get_logger('PassiveGateway')
     local_logger = Log.get_logger('PassiveGatewayLocal', StandardWriter)
 
-    def __init__(self, nsaddress, argv):
+    def __init__(self, nsaddress, cpu_intensity, io_intensity):
         self.server = GatewayServer()
         self.ns = Stub(nsaddress)
+        self.cpu_intensity = cpu_intensity
+        self.io_intensity = io_intensity
 
     def start_server(self):
         self.server.start()
@@ -73,9 +103,8 @@ class PassiveGateway():
                 event = device.next_event()
                 PassiveGateway.logger.info('EVENT_LIFECYCLE_RETRIEVED:{}',
                         event)
-                time.sleep(1)
                 PassiveGateway.logger.info('EVENT_LIFECYCLE_DISPATCHED:{}',
                         event)
-                time.sleep(1)
+                do_cpu(self.cpu_intensity)
                 PassiveGateway.logger.info('EVENT_LIFECYCLE_DONE:{}',
                         event)
