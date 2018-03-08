@@ -1,8 +1,9 @@
 #!/usr/bin/python
 
 import sys
+import getopt
 import time
-from db import Scenario, EventLifecycle, Configuration
+from db import Database, Scenario, EventLifecycle, Configuration
 
 class Report:
     """ Read test data from the database.
@@ -104,7 +105,11 @@ def parse_input(argv):
 def usage():
     print(
     """
-    usage: ./report <method> [<arg>...]
+    usage: ./report [<options>...] <method> [<arg>...]
+
+    OPTIONS
+        -b, --dbpath <path>
+            The path and name to the database. Defaults to \"db\".
 
     METHODS
         print_scenarios
@@ -120,11 +125,24 @@ def usage():
     )
 
 def main(argv):
+    db_path = 'db'
+
     if len(argv) == 0:
         usage()
         return
 
-    cmd = parse_input(argv)
+    try:
+        opts, args = getopt.getopt(argv, 'b:', ['dbpath='])
+    except getopt.GetoptError:
+        usage()
+        sys.exit(2)
+
+    for opt, arg in opts:
+        if opt in ('-b', '--dbpath'):
+            db_path = arg
+
+    Database.PATH = db_path
+    cmd = parse_input(args)
     report = Report()
     getattr(report, cmd['method'])(*cmd['args'])
 

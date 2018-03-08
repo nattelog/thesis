@@ -4,6 +4,7 @@ import sys
 import getopt
 import re
 from log import now, Log, LogServer, UDPWriter
+from db import Database
 from device import PassiveDevice
 from testmanager import TestManager
 
@@ -61,6 +62,9 @@ def usage():
         -g, --loglevel <value>
             The log level to print to stdout. One of 0 (DEBUG), 1 (INFO)
             (default) and 2 (ERROR).
+
+        -b, --dbpath <path>
+            The path and name to the database. Defaults to \"db\".
     """
     )
 
@@ -84,6 +88,7 @@ def main(argv):
     configuration = {}
     configuration[LOG_LEVEL] = Log.LEVEL_INFO # default
     duration = 0
+    db_path = 'db'
 
     if len(argv) == 0:
         usage()
@@ -92,7 +97,7 @@ def main(argv):
     try:
         opts, args = getopt.getopt(
             argv,
-            'hq:f:l:d:e:c:i:t:g:',
+            'hq:f:l:d:e:c:i:t:g:b:',
             [
                 'quantity=',
                 'frequency=',
@@ -102,7 +107,8 @@ def main(argv):
                 'cpu=',
                 'io=',
                 'duration=',
-                'loglevel='
+                'loglevel=',
+                'dbpath='
             ])
     except getopt.GetoptError:
         usage()
@@ -111,7 +117,6 @@ def main(argv):
     for opt, arg in opts:
         if opt == '-h':
             usage()
-            return
         if opt in ('-q', '--quantity'):
             configuration[DEVICE_QUANTITY] = int(arg)
         if opt in ('-f', '--frequency'):
@@ -130,7 +135,10 @@ def main(argv):
             duration = parse_time(arg)
         if opt in ('-g', '--loglevel'):
             configuration[LOG_LEVEL] = int(arg)
+        if opt in ('-b', '--dbpath'):
+            db_path = arg
 
+    Database.PATH = db_path
     configuration[DEVICE_TYPE] = PassiveDevice
 
     tm = TestManager(NAMESERVICE_PORT, configuration)
