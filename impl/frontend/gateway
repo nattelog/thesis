@@ -1,12 +1,10 @@
 #!/usr/bin/python
 
-
 import sys
 import getopt
 import re
 from gateway import PassiveGateway
 from log import Log, UDPWriter, StandardWriter
-
 
 DISPATCHER = 'DISPATCHER'
 EVENT_HANDLER = 'EVENT_HANDLER'
@@ -14,7 +12,6 @@ CPU_INTENSITY = 'CPU_INTENSITY'
 IO_INTENSITY = 'IO_INTENSITY'
 LOG_SERVER_ADDRESS = 'LOG_SERVER_ADDRESS'
 NAMESERVICE_ADDRESS = 'NAMESERVICE_ADDRESS'
-
 
 def usage():
     print(
@@ -53,7 +50,6 @@ def usage():
     """
 )
 
-
 def parse_address(address_string):
     """ Parses address on the format <address>:<port> and returns a tuple.
     """
@@ -67,7 +63,6 @@ def parse_address(address_string):
     else:
         raise AttributeError('Not a valid address format')
 
-
 def verify_parameters(configuration):
     valid_parameters = [
         DISPATCHER,
@@ -79,13 +74,11 @@ def verify_parameters(configuration):
 
     return all(param in configuration for param in valid_parameters)
 
-
 def get_configuration_string(configuration):
     result = ''
     for param in configuration:
         result += '  {}: {}\n'.format(param, configuration[param])
     return result
-
 
 def main(argv):
     logger = Log.get_logger(__name__, StandardWriter)
@@ -162,7 +155,6 @@ def main(argv):
     else:
         usage()
         return
-
 
 if __name__ == '__main__':
     main(sys.argv[1:])

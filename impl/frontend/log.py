@@ -3,10 +3,8 @@ import threading
 import time
 import re
 
-
 def now():
     return int(time.time() * 1000)
-
 
 class UDPWriter():
     """ Writer object that writes messages to UDP socket.
@@ -19,7 +17,6 @@ class UDPWriter():
     def write(self, message):
         self.socket.send(message)
 
-
 class StandardWriter():
     """ Prints to stdout. Not thread safe.
     """
@@ -27,7 +24,6 @@ class StandardWriter():
     @staticmethod
     def write(message):
         print(message)
-
 
 class Log():
     """ Logging client that passes all formatted log messages to a writer
@@ -90,7 +86,6 @@ class Log():
 
     def error(self, message, *args):
         self._write('ERROR', message, *args)
-
 
 class LogServer(threading.Thread):
     """ UDP server handling incoming log messages from the model. Forwards

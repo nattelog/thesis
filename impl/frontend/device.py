@@ -4,7 +4,6 @@ Systems", TDDD25 at Linkoping University. Implements a remote method invocation
 model.
 """
 
-
 import threading
 import Queue
 import socket
@@ -12,11 +11,9 @@ import uuid
 from log import Log
 from net import TCPServer, Stub
 
-
 class EventError(Exception):
     def __init__(self, message):
         self.message = message
-
 
 class Event:
     """ Event class containing information for an event.
@@ -27,7 +24,6 @@ class Event:
 
     def __str__(self):
         return str(self.id)
-
 
 class Device:
     """ The local device abstraction.
@@ -66,7 +62,6 @@ class Device:
 
         return str(event)
 
-
 class Producer(threading.Thread):
     """ Produces new events and puts them on the device event queue.
     """
@@ -94,7 +89,6 @@ class Producer(threading.Thread):
     def stop(self):
         self.stop_event.set()
         Producer.logger.debug('{}: Stop', id(self))
-
 
 class PassiveDevice(threading.Thread):
     """ A passive device is a socket server listening for requests that call
@@ -126,7 +120,6 @@ class PassiveDevice(threading.Thread):
     def hostname(self):
         return self.server.hostname()
 
-
 class NameServiceAPI:
     """ API callable by the gateway.
     """
@@ -156,7 +149,6 @@ class NameServiceAPI:
 
         self.gateway_event.set()
         return self.configuration['GATEWAY_ADDRESS'] is not None
-
 
 class NameService(threading.Thread):
     """ Keeps track of all devices and the gateway in the test.

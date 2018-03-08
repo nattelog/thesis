@@ -1,13 +1,11 @@
 #!/usr/bin/python
 
-
 import sys
 import getopt
 import re
 from log import now, Log, LogServer, UDPWriter
 from device import PassiveDevice
 from testmanager import TestManager
-
 
 logger = Log.get_logger(__name__)
 
@@ -23,7 +21,6 @@ CPU_INTENSITY = 'CPU_INTENSITY'
 IO_INTENSITY = 'IO_INTENSITY'
 DEVICE_TYPE = 'DEVICE_TYPE'
 LOG_LEVEL = 'LOG_LEVEL'
-
 
 def usage():
     print(
@@ -67,7 +64,6 @@ def usage():
     """
     )
 
-
 def parse_time(time_str):
     match = re.match(r'^(\d+h)?(\d+m)?(\d+s)?$', time_str)
 
@@ -83,7 +79,6 @@ def parse_time(time_str):
         return ((h * 3600) + (m * 60) + s) * 1000
     else:
         return 0
-
 
 def main(argv):
     configuration = {}
@@ -186,7 +181,6 @@ def main(argv):
         logger.error('Gateway verification failed')
         tm.end_test()
         ls.close()
-
 
 if __name__ == '__main__':
     main(sys.argv[1:])

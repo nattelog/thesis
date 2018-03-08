@@ -4,7 +4,6 @@ import time
 import json
 from log import Log, StandardWriter
 
-
 class Stub():
     """ Wraps the socket request to support RMI.
     """
@@ -47,7 +46,6 @@ class Stub():
         def rmi_call(*args):
             return self._rmi(attr, *args)
         return rmi_call
-
 
 class Request(threading.Thread):
     """ Representation of a request coming from the network.
@@ -104,7 +102,6 @@ class Request(threading.Thread):
         finally:
             Request.logger.debug('{}: Close', self.addr)
             self.conn.close()
-
 
 class TCPServer():
     """ Handles incoming TCP connections and requests on the socket. All

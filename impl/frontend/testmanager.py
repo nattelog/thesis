@@ -10,7 +10,6 @@ from log import (\
         StandardWriter,
         LogServer)
 
-
 class TestManager:
 
     logger = Log.get_logger('TestManager')

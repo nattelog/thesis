@@ -3,11 +3,9 @@ A python version of the gateway. Used primarily for bootstraping the rest of
 the model.
 """
 
-
 import threading
 from log import now, Log, StandardWriter
 from net import Stub, TCPServer
-
 
 def nth_prime(n):
     def is_prime(v):
@@ -23,7 +21,6 @@ def nth_prime(n):
 
     return j - 1
 
-
 def do_cpu(intensity):
     """
     Simulates a CPU intensive task by calculating the nth prime, where n is
@@ -37,14 +34,12 @@ def do_cpu(intensity):
     n = int((2 ** 12) * intensity)
     nth_prime(n)
 
-
 class GatewayAPI():
     """ API callable by the nameservice.
     """
 
     def get_timestamp(self):
         return now()
-
 
 class GatewayServer(threading.Thread):
 
@@ -64,7 +59,6 @@ class GatewayServer(threading.Thread):
 
     def close(self):
         self.server.close()
-
 
 class PassiveGateway():
     """ A passive gateway is a TCP client that requests events from passive

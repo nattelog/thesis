@@ -1,7 +1,6 @@
 import sqlite3
 import uuid
 
-
 class Database:
     """ Abstract class that exposes database methods used by its concrete
     subclasses.
@@ -42,7 +41,6 @@ class Database:
         Database._db.commit()
 
         return (rv[0] if rv else None) if one else rv
-
 
 class Scenario(Database):
     """ A table containing information on a test scenario.
@@ -120,7 +118,6 @@ class Scenario(Database):
             (time, sid)
         )
 
-
 class EventLifecycle(Database):
     """ A table that contains all the timestamps for an entire event lifecycle.
     """
@@ -163,7 +160,6 @@ class EventLifecycle(Database):
             """,
             (sid, )
         )
-
 
     def register_time_created(self, eid, sid, time):
         self._execute(
@@ -209,7 +205,6 @@ class EventLifecycle(Database):
             """,
             (time, eid, sid)
         )
-
 
 class Configuration(Database):
     """ Contains configuration keys and values for a test.
