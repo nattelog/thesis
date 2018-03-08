@@ -36,7 +36,7 @@ class Log():
     LEVEL_DEBUG = 0
     LEVEL_INFO = 1
     LEVEL_ERROR = 2
-    level = LEVEL_DEBUG
+    level = LEVEL_INFO
 
     _loggers = {}
     _default_writer = StandardWriter

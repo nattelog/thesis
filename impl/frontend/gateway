@@ -7,7 +7,7 @@ import time
 from gateway import PassiveGateway
 from log import Log, UDPWriter, StandardWriter
 
-Log.config(level=Log.LEVEL_DEBUG)
+Log.config(level=Log.LEVEL_INFO)
 
 DISPATCHER = 'DISPATCHER'
 EVENT_HANDLER = 'EVENT_HANDLER'
@@ -109,7 +109,7 @@ def main(argv):
 
     if verify_parameters(configuration):
         writer = UDPWriter(configuration[LOG_SERVER_ADDRESS])
-        Log.config(level=Log.LEVEL_DEBUG, default_writer=writer)
+        Log.config(default_writer=writer)
 
         gw = PassiveGateway(configuration[NAMESERVICE_ADDRESS], argv)
         gw.start_server()

@@ -3,7 +3,8 @@
 
 import sys
 import getopt
-from log import Log, LogServer, UDPWriter
+import re
+from log import now, Log, LogServer, UDPWriter
 from device import PassiveDevice
 from testmanager import TestManager
 
@@ -54,8 +55,26 @@ def usage():
     )
 
 
+def parse_time(time_str):
+    match = re.match(r'^(\d+h)?(\d+m)?(\d+s)?$', time_str)
+
+    if match:
+        h = match.group(1)
+        m = match.group(2)
+        s = match.group(3)
+
+        h = int(h[:-1]) if h is not None else 0
+        m = int(m[:-1]) if m is not None else 0
+        s = int(s[:-1]) if s is not None else 0
+
+        return ((h * 3600) + (m * 60) + s) * 1000
+    else:
+        return 0
+
+
 def main(argv):
     configuration = {}
+    duration = 0
 
     if len(argv) == 0:
         usage()
@@ -64,13 +83,14 @@ def main(argv):
     try:
         opts, args = getopt.getopt(
             argv,
-            'hq:f:l:d:e:',
+            'hq:f:l:d:e:t:',
             [
                 'quantity=',
                 'frequency=',
                 'delay=',
                 'dispatcher=',
-                'eventhandler='
+                'eventhandler=',
+                'duration='
             ])
     except getopt.GetoptError:
         usage()
@@ -90,6 +110,8 @@ def main(argv):
             configuration[DISPATCHER] = arg
         if opt in ('-e', '--eventhandler'):
             configuration[EVENT_HANDLER] = arg
+        if opt in ('-t', '--duration'):
+            duration = parse_time(arg)
 
     configuration[DEVICE_TYPE] = PassiveDevice
 
@@ -97,7 +119,7 @@ def main(argv):
     ls = LogServer(('', LOG_SERVER_PORT), tm)
 
     writer = UDPWriter(ls.hostname())
-    Log.config(default_writer=writer)
+    Log.config(level=Log.LEVEL_INFO, default_writer=writer)
 
     ls.start()
 
@@ -115,12 +137,22 @@ def main(argv):
                 configuration[EVENT_HANDLER])
 
         tm.sync_time()
+        end_time = now() + duration
         tm.start_test()
 
+        if duration > 0:
+            logger.info('Starting test with timeout {} ms', duration)
+        else:
+            logger.info('Starting test')
+
         try:
-            while True:
+            while duration == 0 or now() < end_time:
                 tm.listen_for_message()
+
+            logger.info('Timeout')
         except KeyboardInterrupt:
+            pass
+        finally:
             tm.end_test()
             ls.close()
     else:

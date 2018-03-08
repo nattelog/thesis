@@ -12,9 +12,6 @@ from log import (\
         LogServer)
 
 
-Log.config(level=Log.LEVEL_DEBUG)
-
-
 class TestManager:
 
     logger = Log.get_logger('TestManager')
