@@ -76,6 +76,14 @@ class Scenario(Database):
             """
         )
 
+    def get_last_scenario(self):
+        return self._execute(
+            """
+            select * from scenario order by start desc;
+            """,
+            (), True
+        )
+
     def create_scenario(self):
         sid = str(uuid.uuid4())
 

@@ -28,14 +28,23 @@ class Report:
 
         for scenario in scenarios:
             sid = scenario[0]
-            start_time = time.localtime(int(scenario[2] / 1000))
-            start_time = time.asctime(start_time)
+            start_time = scenario[2]
+
+            if start_time is not None:
+                start_time = time.localtime(int(start_time) / 1000)
+                start_time = time.asctime(start_time)
+
             print('{}: {}'.format(start_time, sid))
             self.print_configuration(sid)
             print('')
 
-    def print_events(self, sid):
+    def print_events(self, sid=None):
         tpad = 12
+
+        if sid is None:
+            scenario = self.scenario_table.get_last_scenario()
+            sid = scenario[0]
+
         events = self.lifecycle_table.get_events(sid)
 
         print('{}{}{}{}{}{}'.format(
@@ -47,7 +56,7 @@ class Report:
             'Done'.rjust(tpad)))
 
         for event in events:
-            eid = event[1]
+            eid = event[0]
             created_time = str(event[2])
             fetched_time = str(event[3])
             retrieved_time = str(event[4])
