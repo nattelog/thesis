@@ -11,6 +11,7 @@ impl/gateway/include/android*
 impl/gateway/include/tree*
 impl/gateway/lib
 db
+*.csv
 
 # Created by https://www.gitignore.io/api/tex,vim
 

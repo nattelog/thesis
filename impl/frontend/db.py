@@ -69,12 +69,11 @@ class Scenario(Database):
             );
             """
 
-    def get_scenario(self, sid):
+    def get_scenarios(self):
         return self._execute(
             """
-            select * from scenario where sid=?
-            """,
-            (sid, )
+            select * from scenario order by start;
+            """
         )
 
     def create_scenario(self):
@@ -226,6 +225,14 @@ class Configuration(Database):
         foreign key (sid) references scenario(sid)
         );
         """
+
+    def get_configuration(self, sid):
+        return self._execute(
+            """
+            select * from configuration where sid=?
+            """,
+            (sid, )
+        )
 
     def register_key(self, sid, key, value):
         self._execute(

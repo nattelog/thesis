@@ -1,0 +1,123 @@
+#!/usr/bin/python
+
+import sys
+import time
+from db import Scenario, EventLifecycle, Configuration
+
+class Report:
+    """ Read test data from the database.
+    """
+
+    def __init__(self):
+        self.lifecycle_table = EventLifecycle()
+        self.scenario_table = Scenario()
+        self.configuration_table = Configuration()
+
+    def print_configuration(self, sid):
+        config = self.configuration_table.get_configuration(sid)
+
+        for row in config:
+            key = row[1]
+            value = row[2]
+
+            print('  {}{}'.format(key.ljust(20), value))
+
+    def print_scenarios(self):
+        scenarios = self.scenario_table.get_scenarios()
+        result = ''
+
+        for scenario in scenarios:
+            sid = scenario[0]
+            start_time = time.localtime(int(scenario[2] / 1000))
+            start_time = time.asctime(start_time)
+            print('{}: {}'.format(start_time, sid))
+            self.print_configuration(sid)
+            print('')
+
+    def print_events(self, sid):
+        tpad = 12
+        events = self.lifecycle_table.get_events(sid)
+
+        print('{}{}{}{}{}{}'.format(
+            'Event'.ljust(45),
+            'Created'.rjust(tpad),
+            'Fetched'.rjust(tpad),
+            'Retrieved'.rjust(tpad),
+            'Dispatched'.rjust(tpad),
+            'Done'.rjust(tpad)))
+
+        for event in events:
+            eid = event[1]
+            created_time = str(event[2])
+            fetched_time = str(event[3])
+            retrieved_time = str(event[4])
+            dispatched_time = str(event[5])
+            done_time = str(event[6])
+
+            print('{}{}{}{}{}{}'.format(
+                eid.ljust(45),
+                created_time.rjust(tpad),
+                fetched_time.rjust(tpad),
+                retrieved_time.rjust(tpad),
+                dispatched_time.rjust(tpad),
+                done_time.rjust(tpad)))
+
+    def print_events_csv(self, sid):
+        events = self.lifecycle_table.get_events(sid)
+
+        print('Event,Created,Fetched,Retrieved,Dispatched,Done')
+
+        for event in events:
+            eid = event[1]
+            created_time = str(event[2])
+            fetched_time = str(event[3])
+            retrieved_time = str(event[4])
+            dispatched_time = str(event[5])
+            done_time = str(event[6])
+
+            print('{},{},{},{},{},{}'.format(
+                eid,
+                created_time,
+                fetched_time,
+                retrieved_time,
+                dispatched_time,
+                done_time))
+
+def parse_input(argv):
+    method = argv.pop(0)
+    args = argv if len(argv) > 0 else []
+
+    return {
+        'method': method,
+        'args': args
+    }
+
+def usage():
+    print(
+    """
+    usage: ./report <method> [<arg>...]
+
+    METHODS
+        print_scenarios
+            Print all scenarios and their configurations in the database
+            ordered by date.
+
+        print_events <sid>
+            Print all events from scenario <sid>.
+
+        print_events_csv <sid>
+            Print all events in a csv format.
+    """
+    )
+
+def main(argv):
+    if len(argv) == 0:
+        usage()
+        return
+
+    cmd = parse_input(argv)
+    report = Report()
+    getattr(report, cmd['method'])(*cmd['args'])
+
+if __name__ == '__main__':
+    main(sys.argv[1:])
