@@ -165,7 +165,7 @@ def main(argv):
 
         try:
             while duration == 0 or now() < end_time:
-                tm.listen_for_message()
+                tm.handle_event_message()
 
             logger.info('Timeout')
         except KeyboardInterrupt:

@@ -1,6 +1,7 @@
 import socket
 import threading
 import time
+import re
 
 
 def now():
@@ -92,11 +93,13 @@ class Log():
 
 
 class LogServer(threading.Thread):
-    """ UDP server handling incoming log messages from the model. Registers all
-    messages to the test manager and prints them to stdout.
+    """ UDP server handling incoming log messages from the model. Forwards
+    lifecycle events to the testmanager and prints everything to stdout.
     """
 
     logger = Log.get_logger('LogServer', StandardWriter)
+    # pre compile for better performance
+    event_msg_regex = re.compile(r'^(\w+):(\d+):(\w+):EVENT_LIFECYCLE_(\w+):([\w\-]+)$')
 
     def __init__(self, address, testmanager):
         threading.Thread.__init__(self)
@@ -114,8 +117,31 @@ class LogServer(threading.Thread):
         self.server.close()
         LogServer.logger.debug('{}: Stop', addr)
 
+    @staticmethod
+    def extract_message(message):
+        """ Extracts lifecycle event keywords from the message. It is formatted as follows:
+        <level>:<timestamp>:<classname>:<lifecycle_event_keyword>:<event_id>.
+        Returns the matched keywords in a dict, or None if no match could be
+        made.
+        """
+
+        m = LogServer.event_msg_regex.match(message)
+
+        if m:
+            return {
+                'timestamp': int(m.group(2)),
+                'event_keyword': m.group(4),
+                'event_id': m.group(5)
+            }
+        else:
+            return None
+
     def run(self):
         while True:
             message, addr = self.server.recvfrom(1024)
-            self.testmanager.register_message(message)
+            extr = LogServer.extract_message(message)
+
+            if extr is not None:
+                self.testmanager.register_event_message(extr)
+
             print(message)

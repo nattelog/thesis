@@ -1,5 +1,4 @@
 import Queue
-import re
 import threading
 import time
 from device import PassiveDevice, NameService
@@ -15,8 +14,6 @@ from log import (\
 class TestManager:
 
     logger = Log.get_logger('TestManager')
-    # pre compile for better performance
-    event_msg_regex = re.compile(r'^(\w+):(\d+):(\w+):EVENT_LIFECYCLE_(\w+):([\w\-]+)$')
 
     def __init__(self, nsport, configuration):
         self.configuration = configuration
@@ -26,7 +23,7 @@ class TestManager:
         self.lifecycle = EventLifecycle()
         self.configuration_table = Configuration()
         self.sid = self.scenario.create_scenario()
-        self.queue = Queue.Queue(100)
+        self.event_messages = Queue.Queue(100)
 
     def sync_time(self):
         """ Time must be synced between the gateway and the test manager, since
@@ -88,25 +85,6 @@ class TestManager:
         self.scenario.set_end_time(self.sid, now())
         TestManager.logger.info('Test ended')
 
-    @staticmethod
-    def extract_message(message):
-        """ Extracts lifecycle event keywords from the message. It is formatted as follows:
-        <level>:<timestamp>:<classname>:<lifecycle_event_keyword>:<event_id>.
-        Returns the matched keywords in a dict, or None if no match could be
-        made.
-        """
-
-        m = TestManager.event_msg_regex.match(message)
-
-        if m:
-            return {
-                'timestamp': int(m.group(2)),
-                'event_keyword': m.group(4),
-                'event_id': m.group(5)
-            }
-        else:
-            return None
-
     def update_event_lifecycle_time(self, event_keyword, event_id, timestamp):
         rel_time = timestamp - self.start_time
 
@@ -133,13 +111,9 @@ class TestManager:
                 'Unknown event keyword {}'.format(repr(event_keyword))
                 )
 
-    def register_message(self, message):
-        self.queue.put(message, True, 10) # raise if queue is full for 10 sec
+    def register_event_message(self, message):
+        self.event_messages.put(message, True, 10) # raise if queue is full for 10 sec
 
-    def listen_for_message(self):
-        message = self.queue.get()
-        extr = TestManager.extract_message(message)
-
-        if extr is not None:
-            self.update_event_lifecycle_time(**extr)
-
+    def handle_event_message(self):
+        message = self.event_messages.get()
+        self.update_event_lifecycle_time(**message)
