@@ -22,6 +22,7 @@ EVENT_HANDLER = 'EVENT_HANDLER'
 CPU_INTENSITY = 'CPU_INTENSITY'
 IO_INTENSITY = 'IO_INTENSITY'
 DEVICE_TYPE = 'DEVICE_TYPE'
+LOG_LEVEL = 'LOG_LEVEL'
 
 
 def usage():
@@ -59,6 +60,10 @@ def usage():
 
         -i, --io <value>
             The I/O intensity each event induce. Value between 0 and 1.
+
+        -g, --loglevel <value>
+            The log level to print to stdout. One of 0 (DEBUG), 1 (INFO)
+            (default) and 2 (ERROR).
     """
     )
 
@@ -82,6 +87,7 @@ def parse_time(time_str):
 
 def main(argv):
     configuration = {}
+    configuration[LOG_LEVEL] = Log.LEVEL_INFO # default
     duration = 0
 
     if len(argv) == 0:
@@ -91,7 +97,7 @@ def main(argv):
     try:
         opts, args = getopt.getopt(
             argv,
-            'hq:f:l:d:e:c:i:t:',
+            'hq:f:l:d:e:c:i:t:g:',
             [
                 'quantity=',
                 'frequency=',
@@ -100,7 +106,8 @@ def main(argv):
                 'eventhandler=',
                 'cpu=',
                 'io=',
-                'duration='
+                'duration=',
+                'loglevel='
             ])
     except getopt.GetoptError:
         usage()
@@ -126,6 +133,8 @@ def main(argv):
             configuration[IO_INTENSITY] = float(arg)
         if opt in ('-t', '--duration'):
             duration = parse_time(arg)
+        if opt in ('-g', '--loglevel'):
+            configuration[LOG_LEVEL] = int(arg)
 
     configuration[DEVICE_TYPE] = PassiveDevice
 
@@ -133,7 +142,7 @@ def main(argv):
     ls = LogServer(('', LOG_SERVER_PORT), tm)
 
     writer = UDPWriter(ls.hostname())
-    Log.config(level=Log.LEVEL_INFO, default_writer=writer)
+    Log.config(level=configuration[LOG_LEVEL], default_writer=writer)
 
     ls.start()
 

@@ -1,12 +1,12 @@
 #!/usr/bin/python
 
+
 import sys
 import getopt
 import re
 from gateway import PassiveGateway
 from log import Log, UDPWriter, StandardWriter
 
-Log.config(level=Log.LEVEL_INFO)
 
 DISPATCHER = 'DISPATCHER'
 EVENT_HANDLER = 'EVENT_HANDLER'
@@ -46,6 +46,10 @@ def usage():
 
         -n, --nameservice <address>:<port>
             The address and port of the nameservice.
+
+        -g, --loglevel <value>
+            The log level to print to stdout. One of 0 (DEBUG), 1 (INFO)
+            (default) and 2 (ERROR).
     """
 )
 
@@ -75,26 +79,30 @@ def verify_parameters(configuration):
 
     return all(param in configuration for param in valid_parameters)
 
+
 def get_configuration_string(configuration):
     result = ''
     for param in configuration:
         result += '  {}: {}\n'.format(param, configuration[param])
     return result
 
+
 def main(argv):
     logger = Log.get_logger(__name__, StandardWriter)
+    log_level = Log.LEVEL_INFO # default
 
     try:
         opts, args = getopt.getopt(
             argv,
-            'hd:e:c:i:l:n:',
+            'hd:e:c:i:l:n:g:',
             [
                 'dispatcher=',
                 'eventhandler=',
                 'cpu=',
                 'io=',
                 'logserver=',
-                'nameservice='
+                'nameservice=',
+                'loglevel='
             ])
     except getopt.GetoptError:
         usage()
@@ -118,7 +126,10 @@ def main(argv):
             configuration[LOG_SERVER_ADDRESS] = parse_address(arg)
         if opt in ('-n', '--nameservice'):
             configuration[NAMESERVICE_ADDRESS] = parse_address(arg)
+        if opt in ('-g', '--loglevel'):
+            log_level = int(arg)
 
+    Log.config(level=log_level)
     logger.debug('Read configuration: \n{}',
             get_configuration_string(configuration))
 
