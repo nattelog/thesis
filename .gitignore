@@ -3,15 +3,10 @@
 *.pyc
 *.log
 *.o
-impl/gateway/include/uv*
-impl/gateway/include/sqlite3*
-impl/gateway/include/pthread*
-impl/gateway/include/std*
-impl/gateway/include/android*
-impl/gateway/include/tree*
-impl/gateway/lib
+impl/gateway/libuv
 db
 *.csv
+impl/gateway/gateway
 
 # Created by https://www.gitignore.io/api/tex,vim
 
