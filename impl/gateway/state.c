@@ -145,10 +145,9 @@ state_t* state_next(state_t* state, const char* edge_name, void* payload) {
     if (current_edge != NULL && current_edge->name == edge_name) {
         state_t* next_state = current_edge->next_state;
         (*next_state->callback)(next_state, payload);
-        return current_edge->next_state;
+    } else {
+        log_error("state %s has no edge %s", state->name, edge_name);
     }
-
-    log_error("state %s has no edge %s", state->name, edge_name);
 }
 
 void state_print_tree(state_lookup_t* lookup, state_t* parent, int indent)

@@ -161,7 +161,6 @@ void on_connecting(state_t* state, void* payload)
     log_info("accepting connection");
 
     uv_tcp_t* server = (uv_tcp_t*) payload;
-    server->data = state;
     uv_tcp_t* client = malloc(sizeof(uv_tcp_t));
     r = uv_tcp_init(server->loop, client);
     check_r(r, "uv_tcp_init");
@@ -176,7 +175,7 @@ void on_connecting(state_t* state, void* payload)
         r = uv_shutdown(shutdown_req, (uv_stream_t*) client, on_shutdown);
         check_r(r, "uv_shutdown");
     } else {
-        client->data = server->data;
+        client->data = state;
         r = uv_read_start((uv_stream_t*) client, on_alloc, on_chunk);
         check_r(r, "uv_read_start");
     }
