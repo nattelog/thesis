@@ -59,7 +59,7 @@ state_t* lookup_search(state_lookup_t* lookup, const char* state_name)
  */
 int lookup_has(state_lookup_t* lookup, const char* state_name)
 {
-    log_verbose("lookup_has::lookup=%p, state=%p", lookup, state);
+    log_verbose("lookup_has::lookup=%p, state_name=\"%s\"", lookup, state_name);
 
     return lookup_search(lookup, state_name) != NULL;
 }

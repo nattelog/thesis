@@ -19,12 +19,11 @@ int main()
     state_t* server = tcp_server_machine(
             loop,
             "0.0.0.0",
-            5000,
+            5002,
             on_request,
             &server_context);
 
-    log_debug("state in main is");
-    state_print(server);
+    log_init(loop, "0.0.0.0", 5001);
 
     state_machine_run(server, &server_context);
     uv_run(loop, UV_RUN_DEFAULT);

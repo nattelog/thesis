@@ -100,6 +100,7 @@ void tcp_on_listening(state_t* state, void* payload)
 
     struct sockaddr_in addr;
     r = uv_ip4_addr(context->address, context->port, &addr);
+    log_check_uv_r(r, "uv_ip4_addr");
 
     r = uv_tcp_bind(server_handle, &addr, 0);
     log_check_uv_r(r, "uv_tcp_bind");
@@ -241,7 +242,7 @@ void tcp_on_reading(state_t* state, void* payload)
         log_check_uv_r(r, "uv_shutdown");
     }
     else if (nread > 0) {
-        log_info(">>>> \"%s\"", buf->base);
+        log_debug("tcp_server:>>>> \"%s\"", buf->base);
 
         char result[512];
         json_value* j_val = json_parse(buf->base, nread);
@@ -263,7 +264,7 @@ void tcp_on_reading(state_t* state, void* payload)
             json_value_free(j_val);
         }
 
-        log_info("<<<< \"%s\"", result);
+        log_debug("tcp_server:<<<< \"%s\"", result);
         strcat(result, "\n");
 
         uv_buf_t write_buf[] = {
