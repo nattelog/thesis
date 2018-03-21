@@ -1,12 +1,5 @@
 .DS_Store
 *.pdf
-*.pyc
-*.log
-*.o
-impl/gateway/libuv
-db
-*.csv
-impl/gateway/gateway
 
 # Created by https://www.gitignore.io/api/tex,vim
 

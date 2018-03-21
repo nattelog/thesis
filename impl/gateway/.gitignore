@@ -1,0 +1,5 @@
+*.o
+json.c
+json.h
+libuv
+gateway
