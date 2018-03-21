@@ -1,162 +1,33 @@
 #include <stdlib.h>
+#include <stdio.h>
 #include <string.h>
 #include "log.h"
-#include "uv.h"
 #include "state.h"
+#include "net.h"
 
-typedef struct {
-    ssize_t n;
-    const uv_buf_t* buf;
-} chunk_context_t;
-
-void check_r(int r, char* msg)
+char* on_request(char* method, char** args, size_t argc)
 {
-    if (r != 0) {
-        log_error("%s: [%s(%d): %s]\n", msg, uv_err_name((r)), (int) r, uv_strerror((r)));
-        exit(1);
-    }
-}
+    log_info("got request \"%s\"", method);
 
-void on_connection(uv_stream_t* server, int status)
-{
-    check_r(status, "on_connection");
-    state_next((state_t*) server->data, "connect", server);
-}
-
-void on_start(state_t* state, void* payload)
-{
-    log_info("on_start::%s", state->name);
-
-    int r = 0;
-    uv_loop_t* loop = uv_default_loop();
-    struct sockaddr_in addr;
-    uv_tcp_t server;
-
-    r = uv_tcp_init(loop, &server);
-    check_r(r, "uv_tcp_init");
-
-    server.data = state;
-
-    r = uv_ip4_addr("0.0.0.0", 5000, &addr);
-    check_r(r, "uv_ip4_addr");
-
-    r = uv_tcp_bind(&server, &addr, 0);
-    check_r(r, "uv_tcp_bind");
-
-    r = uv_listen((uv_stream_t*) &server, 0, on_connection);
-    check_r(r, "uv_listen");
-
-    log_info("listening on 0.0.0.0:5000");
-
-    uv_run(loop, UV_RUN_DEFAULT);
-}
-
-void on_close(uv_handle_t* client)
-{
-    free(client);
-    log_info("closed connection");
-}
-
-void on_shutdown(uv_shutdown_t* req, int status)
-{
-    uv_close((uv_handle_t*) req->handle, on_close);
-    free(req);
-}
-
-void on_alloc(uv_handle_t* client, size_t n, uv_buf_t* buf)
-{
-    buf->base = malloc(n);
-    buf->len = n;
-}
-
-void on_chunk(uv_handle_t* client, ssize_t n, const uv_buf_t* buf)
-{
-    chunk_context_t* context = malloc(sizeof(chunk_context_t));
-    context->n = n;
-    context->buf = buf;
-
-    state_next((state_t*) client->data, "chunk", context);
-}
-
-void on_connecting(state_t* state, void* payload)
-{
-    log_info("on_connecting::%s", state->name);
-
-    int r = 0;
-
-    log_info("accepting connection");
-
-    uv_tcp_t* server = (uv_tcp_t*) payload;
-    uv_tcp_t* client = malloc(sizeof(uv_tcp_t));
-    r = uv_tcp_init(server->loop, client);
-    check_r(r, "uv_tcp_init");
-
-    r = uv_accept((uv_stream_t*) server, (uv_stream_t*) client);
-
-    if (r) {
-        uv_shutdown_t* shutdown_req = malloc(sizeof(uv_shutdown_t));
-
-        log_error("trying to accept connection %d", r);
-
-        r = uv_shutdown(shutdown_req, (uv_stream_t*) client, on_shutdown);
-        check_r(r, "uv_shutdown");
-    } else {
-        client->data = state;
-        r = uv_read_start((uv_stream_t*) client, on_alloc, on_chunk);
-        check_r(r, "uv_read_start");
-    }
-}
-
-void on_read(state_t* state, void* payload)
-{
-    log_info("on_read::%s", state->name);
-
-    chunk_context_t* context = (chunk_context_t*) payload;
-    ssize_t n = context->n;
-    const uv_buf_t* buf = context->buf;
-
-    if (n < 0) {
-        if (n != UV_EOF) {
-            check_r(n, "on_read");
-        }
-    }
-
-    log_info("%s", buf->base);
-}
-
-void on_processing(state_t* state, void* payload)
-{
-    log_info("on_processing::%s", state->name);
-}
-
-void on_writing(state_t* state, void* payload)
-{
-    log_info("on_writing::%s", state->name);
+    return "result";
 }
 
 int main()
 {
-    const state_initializer_t si[] = {
-        { .name = "start", .callback = on_start },
-        { .name = "connecting", .callback = on_connecting },
-        { .name = "reading", .callback = on_read },
-        { .name = "processing", .callback = on_processing },
-        { .name = "writing", .callback = on_writing }
-    };
-    const edge_initializer_t ei[] = {
-        { .name = "connect", .from = "start", .to = "connecting" },
-        { .name = "chunk", .from = "connecting", .to = "reading" },
-        { .name = "chunk", .from = "reading", .to = "reading" },
-        { .name = "done", .from = "reading", .to = "processing" },
-        { .name = "done", .from = "processing", .to = "writing" }
-    };
-    const int nsi = sizeof(si) / sizeof(si[0]);
-    const int nei = sizeof(ei) / sizeof(ei[0]);
+    uv_loop_t* loop = uv_default_loop();
+    tcp_server_context_t server_context;
+    state_t* server = tcp_server_machine(
+            loop,
+            "0.0.0.0",
+            5000,
+            on_request,
+            &server_context);
 
-    state_t* state = state_machine_build(si, nsi, ei, nei);
-    state_print(state);
+    log_debug("state in main is");
+    state_print(server);
 
-    state_machine_run(state, NULL);
+    state_machine_run(server, &server_context);
+    uv_run(loop, UV_RUN_DEFAULT);
 
     return 0;
 }

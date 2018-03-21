@@ -8,6 +8,13 @@
 #include "log.h"
 #include "state.h"
 
+void lookup_init(state_lookup_t* lookup)
+{
+    for (int i = 0; i < LOOKUP_SIZE; ++i) {
+        lookup->table[i] = NULL;
+    }
+}
+
 /**
  * djb2 hash from http://www.cse.yorku.ca/~oz/hash.html
  */
@@ -23,19 +30,10 @@ unsigned long hash(const char* str)
     return hash;
 }
 
-void lookup_insert(state_lookup_t* lookup, state_t* state)
-{
-    const unsigned long key = hash(state->name) % LOOKUP_SIZE;
-    state_lookup_slot_t* new_slot = malloc(sizeof(state_lookup_slot_t));
-    state_lookup_slot_t* next_slot = lookup->table[key];
-
-    new_slot->state = state;
-    new_slot->next = next_slot;
-    lookup->table[key] = new_slot;
-}
-
 state_t* lookup_search(state_lookup_t* lookup, const char* state_name)
 {
+    log_verbose("lookup_search::lookup=%p, state_name=\"%s\"", lookup, state_name);
+
     const unsigned long key = hash(state_name) % LOOKUP_SIZE;
     state_lookup_slot_t* slot = lookup->table[key];
 
@@ -52,11 +50,56 @@ state_t* lookup_search(state_lookup_t* lookup, const char* state_name)
 
 int lookup_has(state_lookup_t* lookup, state_t* state)
 {
+    log_verbose("lookup_has::lookup=%p, state=%p", lookup, state);
+
+    if (state == NULL) {
+        log_error("cannot search lookup: state is NULL");
+        return 0;
+    }
+
     return lookup_search(lookup, state->name) != NULL;
+}
+
+void lookup_insert(state_lookup_t* lookup, state_t* state)
+{
+    log_verbose("lookup_insert::lookup=%p, state=%p", lookup, state);
+
+    if (lookup_has(lookup, state)) {
+        log_error("cannot insert state \"%s\": already inserted", state->name);
+        return;
+    }
+
+    const unsigned long key = hash(state->name) % LOOKUP_SIZE;
+    state_lookup_slot_t* new_slot = malloc(sizeof(state_lookup_slot_t));
+    state_lookup_slot_t* next_slot = lookup->table[key];
+
+    new_slot->state = state;
+    new_slot->next = next_slot;
+    lookup->table[key] = new_slot;
+}
+
+void lookup_insert_machine(state_lookup_t* lookup, state_t* start_state)
+{
+    log_verbose("lookup_insert_machine::lookup=%p, start_state=%p", lookup, start_state);
+
+    edge_t* next_edge = start_state->edges;
+    lookup_insert(lookup, start_state);
+
+    while (next_edge != NULL) {
+        state_t* next_state = next_edge->next_state;
+
+        if (!lookup_has(lookup, next_state)) {
+            lookup_insert_machine(lookup, next_edge->next_state);
+        }
+
+        next_edge = next_edge->next_edge;
+    }
 }
 
 void lookup_clear_slot(state_lookup_slot_t* slot)
 {
+    log_verbose("lookup_clear_slot::slot=%p", slot);
+
     if (slot->next != NULL) {
         lookup_clear_slot(slot->next);
     }
@@ -66,6 +109,8 @@ void lookup_clear_slot(state_lookup_slot_t* slot)
 
 void lookup_clear(state_lookup_t* lookup)
 {
+    log_verbose("lookup_clear::lookup=%p", lookup);
+
     for (int i = 0; i < LOOKUP_SIZE; ++i) {
         state_lookup_slot_t* slot = lookup->table[i];
 
@@ -75,8 +120,44 @@ void lookup_clear(state_lookup_t* lookup)
     }
 }
 
+void lookup_print_slot(state_lookup_slot_t* slot)
+{
+    printf("%s", slot->state->name);
+
+    if (slot->next != NULL) {
+        printf(", ");
+        lookup_print_slot(slot->next);
+    }
+}
+
+void lookup_print(state_lookup_t* lookup)
+{
+    for (int i = 0; i < LOOKUP_SIZE; ++i) {
+        state_lookup_slot_t* slot = lookup->table[i];
+
+        if (slot != NULL) {
+            printf("[%d]\t", i);
+            lookup_print_slot(slot);
+            printf("\n");
+        }
+    }
+}
+
+void state_add_edge(const char* name, state_t* from_state, state_t* to_state) {
+    log_verbose("state_add_edge::name=\"%s\", from_state=%p, to_state=%p", name, from_state, to_state);
+
+    edge_t* new_edge = malloc(sizeof(edge_t));
+
+    new_edge->name = name;
+    new_edge->next_state = to_state;
+    new_edge->next_edge = from_state->edges;
+    from_state->edges = new_edge;
+}
+
 state_t* state_create(const char* name, state_callback callback)
 {
+    log_verbose("state_create::name=\"%s\", callback=%p", name, callback);
+
     state_t* new_state = malloc(sizeof(state_t));
 
     new_state->name = name;
@@ -86,44 +167,35 @@ state_t* state_create(const char* name, state_callback callback)
     return new_state;
 }
 
-void state_add_edge(const char* name, state_t* from_state, state_t* to_state) {
-    edge_t* new_edge = malloc(sizeof(edge_t));
-
-    new_edge->name = name;
-    new_edge->next_state = to_state;
-    new_edge->next_edge = from_state->edges;
-    from_state->edges = new_edge;
-}
-
 state_t* state_machine_build(
         const state_initializer_t* si,
         const size_t nsi,
         const edge_initializer_t* ei,
-        const size_t nei)
+        const size_t nei,
+        state_lookup_t* lookup)
 {
-    if (nsi > 0) {
-        state_lookup_t lookup = { .table = { NULL } };
+    log_verbose("state_machine_build::si=%p, nsi=%zu, ei=%p, nei=%zu, lookup=%p", si, nsi, ei, nei, lookup);
 
+    if (nsi > 0) {
         for (int i = 0; i < nsi; ++i) {
             const char* name = si[i].name;
             state_callback callback = si[i].callback;
             state_t* state = state_create(name, callback);
 
-            lookup_insert(&lookup, state);
+            lookup_insert(lookup, state);
         }
 
         for (int i = 0; i < nei; ++i) {
             const char* name = ei[i].name;
             const char* from = ei[i].from;
             const char* to = ei[i].to;
-            state_t* from_state = lookup_search(&lookup, from);
-            state_t* to_state = lookup_search(&lookup, to);
+            state_t* from_state = lookup_search(lookup, from);
+            state_t* to_state = lookup_search(lookup, to);
 
             state_add_edge(name, from_state, to_state);
         }
 
-        state_t* first_state = lookup_search(&lookup, si[0].name);
-        lookup_clear(&lookup);
+        state_t* first_state = lookup_search(lookup, si[0].name);
 
         return first_state;
     }
@@ -132,10 +204,14 @@ state_t* state_machine_build(
 }
 
 void state_machine_run(state_t* start_state, void* payload) {
+    log_verbose("state_machine_run::start_state=%p, payload=%p", start_state, payload);
+
     (*start_state->callback)(start_state, payload);
 }
 
-state_t* state_next(state_t* state, const char* edge_name, void* payload) {
+void state_run_next(state_t* state, const char* edge_name, void* payload) {
+    log_verbose("state_run_next::state=%p, edge_name=\"%s\", payload=%p", state, edge_name, payload);
+
     edge_t* current_edge = state->edges;
 
     while (current_edge != NULL && current_edge->name != edge_name) {
@@ -170,7 +246,8 @@ void state_print_tree(state_lookup_t* lookup, state_t* parent, int indent)
 
 void state_print(state_t* state)
 {
-    state_lookup_t lookup = { .table = { NULL } };
+    state_lookup_t lookup;
+    lookup_init(&lookup);
 
     lookup_insert(&lookup, state);
     printf("%s\n", state->name);

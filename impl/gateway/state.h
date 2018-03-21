@@ -1,6 +1,8 @@
 #ifndef __STATE_h__
 #define __STATE_h__
 
+#include <stdlib.h>
+
 #define LOOKUP_SIZE 20
 
 typedef struct state_s state_t;
@@ -44,15 +46,28 @@ struct state_lookup_s {
     state_lookup_slot_t* table[LOOKUP_SIZE];
 };
 
+void lookup_init(state_lookup_t*);
+
+void lookup_insert_machine(state_lookup_t*, state_t*);
+
+void lookup_clear(state_lookup_t*);
+
+void lookup_print(state_lookup_t*);
+
+void state_add_edge(const char*, state_t*, state_t*);
+
+void state_copy(state_t*, state_t*);
+
 state_t* state_machine_build(
         const state_initializer_t*,
-        const size_t,
+        const size_t nsi,
         const edge_initializer_t*,
-        const size_t);
+        const size_t nei,
+        state_lookup_t*);
 
 void state_machine_run(state_t*, void*);
 
-state_t* state_next(state_t*, const char*, void*);
+void state_run_next(state_t*, const char*, void*);
 
 void state_print(state_t*);
 
