@@ -2,6 +2,10 @@
 #include "net.h"
 #include "log.h"
 
+/**
+ * Returns the value associated with the "method" key in a json object. Returns
+ * NULL if no "method" key was found.
+ */
 json_value* get_method(json_object_entry* values, unsigned int length)
 {
     for (int i = 0; i < length; ++i) {
@@ -40,6 +44,9 @@ void net_parse_request(json_value* value, net_request_t* request)
     request->parse_error = 1;
 }
 
+/**
+ * Creates a json string in an error format and copies it into buf.
+ */
 void net_response_error(char* name, char* message, char* buf)
 {
     strcpy(buf, "{\"error\":{\"name\":\"");
@@ -49,6 +56,9 @@ void net_response_error(char* name, char* message, char* buf)
     strcat(buf, "\"]}}");
 }
 
+/**
+ * Creates a json string in a success format and copies it into buf.
+ */
 void net_response_success(char* result, char* buf)
 {
     strcpy(buf, "{\"result\":");
@@ -56,6 +66,9 @@ void net_response_success(char* result, char* buf)
     strcat(buf, "}");
 }
 
+/**
+ * Run when the tcp handle retrieves a connection request.
+ */
 void on_connection_cb(uv_stream_t* server_handle, int status)
 {
     log_check_uv_r(status, "on_connection_cb");
@@ -66,6 +79,10 @@ void on_connection_cb(uv_stream_t* server_handle, int status)
     state_run_next(state, "connect", context);
 }
 
+/**
+ * The listening state of the tcp server. Assumes payload is a
+ * tcp_server_context pointer.
+ */
 void tcp_on_listening(state_t* state, void* payload)
 {
     log_debug("tcp_on_listening");
@@ -105,18 +122,28 @@ void tcp_on_listening(state_t* state, void* payload)
     log_info("tcp server listening on %s:%d", straddr, intport);
 }
 
+/**
+ * Called by the shutdown request. Closes the tcp client connection.
+ */
 void on_close_cb(uv_handle_t* client_handle)
 {
     free(client_handle);
     log_debug("closed connection");
 }
 
+/**
+ * Shutdown the tcp client connection.
+ */
 void on_shutdown_cb(uv_shutdown_t* req, int status)
 {
     uv_close((uv_handle_t*) req->handle, on_close_cb);
     free(req);
 }
 
+/**
+ * Allocate memory with the suggested size to retrieve incoming data from the
+ * tcp client.
+ */
 void on_alloc_cb(uv_handle_t* client_handle, size_t size, uv_buf_t* buf)
 {
     buf->base = malloc(size);
@@ -127,6 +154,9 @@ void on_alloc_cb(uv_handle_t* client_handle, size_t size, uv_buf_t* buf)
     }
 }
 
+/**
+ * Called when a chunk of data has been read.
+ */
 void on_read_cb(uv_stream_t* client_handle, ssize_t nread, const uv_buf_t* buf)
 {
     tcp_client_context_t* context = (tcp_client_context_t*) client_handle->data;
@@ -136,6 +166,10 @@ void on_read_cb(uv_stream_t* client_handle, ssize_t nread, const uv_buf_t* buf)
     state_run_next(context->state, "accept", context);
 }
 
+/**
+ * The connecting state of the tcp server. Accepts the connection and starts
+ * reading data. Assumes payload is a tcp_server_context pointer.
+ */
 void tcp_on_connecting(state_t* state, void* payload)
 {
     log_debug("tcp_on_connecting");
@@ -170,11 +204,21 @@ void tcp_on_connecting(state_t* state, void* payload)
     }
 }
 
+/**
+ * Called when the write is finished.
+ */
 void on_write_cb(uv_write_t* req, int status)
 {
     log_check_uv_r(status, "on_write_cb");
 }
 
+/**
+ * The reading state of the tcp server. Assumes the entire data has been read.
+ * Parses the json and calls the req_callback with the given "method" and
+ * "args" fields in the json. Start a write request with the result. Note the
+ * "args" fields in not supported. Assumes payload is a tcp_client_context
+ * pointer.
+ */
 void tcp_on_reading(state_t* state, void* payload)
 {
     log_debug("tcp_on_reading");
@@ -233,6 +277,10 @@ void tcp_on_reading(state_t* state, void* payload)
     free(buf->base);
 }
 
+/**
+ * Creates a tcp server state machine and returns the first state. When the
+ * state is run, the server context should be passed on as the payload.
+ */
 state_t* tcp_server_machine(
         uv_loop_t* loop,
         char* address,

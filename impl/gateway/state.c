@@ -8,6 +8,9 @@
 #include "log.h"
 #include "state.h"
 
+/**
+ * Initializes the lookup table with NULL pointers.
+ */
 void lookup_init(state_lookup_t* lookup)
 {
     for (int i = 0; i < LOOKUP_SIZE; ++i) {
@@ -30,6 +33,9 @@ unsigned long hash(const char* str)
     return hash;
 }
 
+/**
+ * Returns the state corresponding to state_name in lookup.
+ */
 state_t* lookup_search(state_lookup_t* lookup, const char* state_name)
 {
     log_verbose("lookup_search::lookup=%p, state_name=\"%s\"", lookup, state_name);
@@ -48,23 +54,29 @@ state_t* lookup_search(state_lookup_t* lookup, const char* state_name)
     return slot->state;
 }
 
-int lookup_has(state_lookup_t* lookup, state_t* state)
+/**
+ * Returns 1 if lookup has a state with name state_name. 0 otherwise.
+ */
+int lookup_has(state_lookup_t* lookup, const char* state_name)
 {
     log_verbose("lookup_has::lookup=%p, state=%p", lookup, state);
 
-    if (state == NULL) {
-        log_error("cannot search lookup: state is NULL");
-        return 0;
-    }
-
-    return lookup_search(lookup, state->name) != NULL;
+    return lookup_search(lookup, state_name) != NULL;
 }
 
+/**
+ * Inserts state into lookup if it isn't already inserted.
+ */
 void lookup_insert(state_lookup_t* lookup, state_t* state)
 {
     log_verbose("lookup_insert::lookup=%p, state=%p", lookup, state);
 
-    if (lookup_has(lookup, state)) {
+    if (state == NULL) {
+        log_error("cannot insert state: state is NULL");
+        return;
+    }
+
+    if (lookup_has(lookup, state->name)) {
         log_error("cannot insert state \"%s\": already inserted", state->name);
         return;
     }
@@ -78,24 +90,10 @@ void lookup_insert(state_lookup_t* lookup, state_t* state)
     lookup->table[key] = new_slot;
 }
 
-void lookup_insert_machine(state_lookup_t* lookup, state_t* start_state)
-{
-    log_verbose("lookup_insert_machine::lookup=%p, start_state=%p", lookup, start_state);
-
-    edge_t* next_edge = start_state->edges;
-    lookup_insert(lookup, start_state);
-
-    while (next_edge != NULL) {
-        state_t* next_state = next_edge->next_state;
-
-        if (!lookup_has(lookup, next_state)) {
-            lookup_insert_machine(lookup, next_edge->next_state);
-        }
-
-        next_edge = next_edge->next_edge;
-    }
-}
-
+/**
+ * Releases memory allocated by slot. If there is a chain of slots, recursively
+ * releases the tail first.
+ */
 void lookup_clear_slot(state_lookup_slot_t* slot)
 {
     log_verbose("lookup_clear_slot::slot=%p", slot);
@@ -107,6 +105,9 @@ void lookup_clear_slot(state_lookup_slot_t* slot)
     free(slot);
 }
 
+/**
+ * Releases memory allocated by lookup.
+ */
 void lookup_clear(state_lookup_t* lookup)
 {
     log_verbose("lookup_clear::lookup=%p", lookup);
@@ -143,6 +144,9 @@ void lookup_print(state_lookup_t* lookup)
     }
 }
 
+/**
+ * Allocates and adds a new edge between from_state and to_state.
+ */
 void state_add_edge(const char* name, state_t* from_state, state_t* to_state) {
     log_verbose("state_add_edge::name=\"%s\", from_state=%p, to_state=%p", name, from_state, to_state);
 
@@ -154,6 +158,9 @@ void state_add_edge(const char* name, state_t* from_state, state_t* to_state) {
     from_state->edges = new_edge;
 }
 
+/**
+ * Allocates and returns a new state.
+ */
 state_t* state_create(const char* name, state_callback callback)
 {
     log_verbose("state_create::name=\"%s\", callback=%p", name, callback);
@@ -167,6 +174,10 @@ state_t* state_create(const char* name, state_callback callback)
     return new_state;
 }
 
+/**
+ * Builds an entire state machine as described by si and ei. Any states inside
+ * lookup can be added as well.
+ */
 state_t* state_machine_build(
         const state_initializer_t* si,
         const size_t nsi,
@@ -203,12 +214,18 @@ state_t* state_machine_build(
     return NULL;
 }
 
+/**
+ * Runs the callback associated with start_state with the given payload.
+ */
 void state_machine_run(state_t* start_state, void* payload) {
     log_verbose("state_machine_run::start_state=%p, payload=%p", start_state, payload);
 
     (*start_state->callback)(start_state, payload);
 }
 
+/**
+ * Runs the callback associated with the next state of the given state, determined by edge_name.
+ */
 void state_run_next(state_t* state, const char* edge_name, void* payload) {
     log_verbose("state_run_next::state=%p, edge_name=\"%s\", payload=%p", state, edge_name, payload);
 
@@ -235,7 +252,7 @@ void state_print_tree(state_lookup_t* lookup, state_t* parent, int indent)
 
         printf("  %*s%s -> %s\n", indent, "", edge->name, next_state->name);
 
-        if (!lookup_has(lookup, next_state)) {
+        if (!lookup_has(lookup, next_state->name)) {
             lookup_insert(lookup, next_state);
             state_print_tree(lookup, next_state, indent + 2);
         }

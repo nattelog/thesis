@@ -36,8 +36,6 @@ struct net_request_s {
     size_t argc;
 };
 
-void net_parse_request(json_value* value, net_request_t* request);
-
 state_t* tcp_server_machine(
         uv_loop_t* loop,
         char* address,
