@@ -139,6 +139,8 @@ def main(argv):
         if gw.verify_configuration(configuration):
             logger.info('Config OK')
             gw.register_devices()
+            logger.info('Waiting for testmanager to start test...')
+            gw.wait_for_start()
         else:
             logger.error('Config not OK! Closing...')
             gw.close_server()

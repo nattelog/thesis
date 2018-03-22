@@ -38,8 +38,14 @@ class GatewayAPI():
     """ API callable by the nameservice.
     """
 
+    def __init__(self, start_test_event):
+        self.start_test_event = start_test_event
+
     def get_timestamp(self):
         return now()
+
+    def start_test(self):
+        self.start_test_event.set()
 
 class GatewayServer(threading.Thread):
 
@@ -48,7 +54,8 @@ class GatewayServer(threading.Thread):
     def __init__(self):
         threading.Thread.__init__(self)
         self.daemon = True
-        self.server = TCPServer(('', 0), GatewayAPI())
+        self.test_start_event = threading.Event()
+        self.server = TCPServer(('', 0), GatewayAPI(self.test_start_event))
 
     def run(self):
         while True:
@@ -56,6 +63,9 @@ class GatewayServer(threading.Thread):
 
     def hostname(self):
         return self.server.hostname()
+
+    def wait_for_start(self):
+        self.test_start_event.wait()
 
     def close(self):
         self.server.close()
@@ -89,6 +99,9 @@ class PassiveGateway():
         PassiveGateway.local_logger.info(
             'Retrieved devices from nameserver: {}',
             self.devices)
+
+    def wait_for_start(self):
+        self.server.wait_for_start()
 
     def get_events(self):
         for daddress in self.devices:

@@ -79,6 +79,7 @@ class TestManager:
         self.start_time = now()
         self.scenario.set_start_time(self.sid, self.start_time)
         self.nameservice.start_devices()
+        self.nameservice.notify_test_start()
 
     def end_test(self):
         self.nameservice.close()

@@ -198,6 +198,9 @@ class NameService(threading.Thread):
 
         return self.gateway
 
+    def notify_test_start(self):
+        self.get_gateway_stub().start_test()
+
     def hostname(self):
         return self.server.hostname()
 
