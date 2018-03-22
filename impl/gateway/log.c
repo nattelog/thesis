@@ -101,5 +101,8 @@ void log_write(const char* level, const char* format, ...)
     log_format(buf, level, format, args);
     va_end(args);
     printf("%s\n", buf); // todo: add guard so this is not run in test
-    log_send(buf);
+
+    if (uv_is_writable((uv_stream_t*) &udp_handle)) { // todo: will this be a bottleneck?
+        log_send(buf);
+    }
 }
