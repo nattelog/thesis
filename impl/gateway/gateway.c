@@ -4,6 +4,7 @@
 #include "state.h"
 #include "net.h"
 #include "config.h"
+#include "machine.h"
 
 void usage()
 {
@@ -38,8 +39,14 @@ char* on_request(char* method, char** args, size_t argc)
     return "result";
 }
 
+void tcp_req_done(state_t* state, void* payload)
+{
+    log_info("callback done");
+}
+
 int main(int argc, char** argv)
 {
+    /*
     int r = 0;
     config_data_t config;
     int input_flag;
@@ -100,6 +107,28 @@ int main(int argc, char** argv)
     log_init(loop, config.logserver_address, config.logserver_port);
 
     state_machine_run(server, &server_context);
+    uv_run(loop, UV_RUN_DEFAULT);
+    */
+
+    int r = 0;
+    uv_loop_t* loop = uv_default_loop();
+
+    state_lookup_t lookup;
+    lookup_init(&lookup);
+    state_t* req = machine_tcp_request(&lookup, tcp_req_done);
+
+    net_request_t req_payload;
+    net_tcp_context_t context;
+
+    r = net_tcp_context_init(&context, loop, "0.0.0.0", 5001);
+    log_check_uv_r(r, "net_tcp_context_init");
+
+    r = net_request_init(&req_payload, "verify_gateway", 2, "hello", "world!");
+    log_check_r(r, "net_request_payload_init");
+
+    context.net_payload = &req_payload;
+
+    state_machine_run(req, &context);
     uv_run(loop, UV_RUN_DEFAULT);
 
     return 0;

@@ -1,8 +1,3 @@
-/**
- * Credits to Thorten Lorenz.
- * https://github.com/thlorenz/log.h
- */
-
 #ifndef __LOG_h__
 #define __LOG_h__
 
@@ -17,6 +12,8 @@ static uv_udp_t udp_handle;
 static struct sockaddr_in remote_addr;
 
 void log_check_uv_r(int r, char* msg);
+
+void log_check_r(int r, char* msg);
 
 void log_init(uv_loop_t* loop, const char* address, const int port);
 

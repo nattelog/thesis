@@ -4,6 +4,7 @@
 #include <time.h>
 #include "log.h"
 #include "uv.h"
+#include "err.h"
 
 /**
  * Helper function for checking return values from uv functions.
@@ -11,7 +12,15 @@
 void log_check_uv_r(int r, char* msg)
 {
     if (r != 0) {
-        log_error("%s: [%s(%d): %s]\n", msg, uv_err_name((r)), (int) r, uv_strerror((r)));
+        log_error("%s: [%s(%d): %s]", msg, uv_err_name(r), r, uv_strerror(r));
+        exit(1);
+    }
+}
+
+void log_check_r(int r, char* msg)
+{
+    if (r != 0) {
+        log_error("%s: [(%d): %s]", msg, r, gw_strerror(r));
         exit(1);
     }
 }

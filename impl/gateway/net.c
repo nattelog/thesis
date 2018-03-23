@@ -1,6 +1,49 @@
+#include <stdarg.h>
 #include <string.h>
 #include "net.h"
 #include "log.h"
+#include "err.h"
+
+/**
+ * Casts payload and updates the state field.
+ */
+net_tcp_context_t* net_get_context(state_t* state, void* payload)
+{
+    net_tcp_context_t* context = (net_tcp_context_t*) payload;
+    context->state = state;
+    return context;
+}
+
+/**
+ * Initializes the context. Allocates memory for the tcp handle and the address
+ * struct. Returns a uv error code if somethings goes wrong.
+ */
+int net_tcp_context_init(
+        net_tcp_context_t* context,
+        uv_loop_t* loop,
+        char* address,
+        int port)
+{
+    int r = 0;
+    uv_tcp_t* handle = malloc(sizeof(uv_tcp_t));
+    struct sockaddr* addr = malloc(sizeof(struct sockaddr));
+
+    r = uv_tcp_init(loop, handle);
+
+    if (r) {
+        return r;
+    }
+
+    r = uv_ip4_addr(address, port, addr);
+
+    if (r) {
+        return r;
+    }
+
+    handle->data = context;
+    context->addr = addr;
+    context->handle = handle;
+}
 
 /**
  * Returns the value associated with the "method" key in a json object. Returns
@@ -32,8 +75,9 @@ void net_parse_request(json_value* value, net_request_t* request)
         if (method_value != NULL && method_value->type == json_string) {
             request->parse_error = 0;
             request->method = (char*) method_value->u.string.ptr;
-            request->argv = NULL; // no support for args
             request->argc = 0;
+            // argv is not set because the api does not support args at the
+            // moment
             return;
         }
     }
@@ -45,9 +89,179 @@ void net_parse_request(json_value* value, net_request_t* request)
 }
 
 /**
+ * Returns the json_value object associated with key.
+ */
+json_value* net_json_get_key(json_value* value, char* key)
+{
+    if (value->type == json_object) {
+        for (int i = 0; i < value->u.object.length; ++i) {
+            json_object_entry current_key = value->u.object.values[i];
+
+            if (strcmp(current_key.name, key) == 0) {
+                return current_key.value;
+            }
+        }
+    }
+
+    return NULL;
+}
+
+/**
+ * Parses the json string in buf and depending on whether the response was
+ * successful (the "result" key is set) or failed (the "error" key is set), the
+ * associated fields are set in the response object. Returns an error code if
+ * parsing goes wrong.
+ */
+int net_parse_response(net_response_t* response, char* buf)
+{
+    json_value* json = json_parse((json_char*) buf, strlen(buf));
+    json_value* result_val;
+
+    if (json == NULL) {
+        return EJSON;
+    }
+
+    if (json->type != json_object || json->u.object.length != 1) {
+        json_value_free(json);
+        return EJSON;
+    }
+
+    result_val = net_json_get_key(json, "result");
+
+    if (result_val != NULL) {
+        char* str;
+
+        if (result_val->type != json_string) {
+            return EPTCL;
+        }
+
+        str = malloc(result_val->u.string.length);
+        strcpy(str, result_val->u.string.ptr);
+
+        response->result = str;
+        json_value_free(json);
+        return 0;
+    }
+
+    result_val = net_json_get_key(json, "error");
+
+    if (result_val != NULL) {
+        json_value* name_val = net_json_get_key(result_val, "name");
+        json_value* args_val = net_json_get_key(result_val, "args");
+        json_value* msg_val;
+        char* name_str;
+        char* msg_str;
+
+        if (name_val == NULL || args_val == NULL) {
+            json_value_free(json);
+            return EPTCL;
+        }
+
+        if (name_val->type != json_string || args_val->type != json_array) {
+            return EPTCL;
+        }
+
+        name_str = malloc(name_val->u.string.length);
+        strcpy(name_str, name_val->u.string.ptr);
+        response->error_name = name_str;
+
+        if (args_val->u.array.length == 0) {
+            response->error_message = NULL;
+        }
+        else {
+            msg_val = args_val->u.array.values[0];
+
+            if (msg_val->type != json_string) {
+                json_value_free(json);
+                return EPTCL;
+            }
+
+            msg_str = malloc(msg_val->u.string.length);
+            strcpy(msg_str, msg_val->u.string.ptr);
+            response->error_message = msg_str;
+        }
+
+        json_value_free(json);
+        return 0;
+    }
+
+    json_value_free(json);
+    return EPTCL;
+}
+
+/**
+ * Initializes payload with method, argc and the variable arguments are
+ * allocated and copied into argv as char* pointers.
+ */
+int net_request_init(net_request_t* payload, char* method, int argc, ...)
+{
+    if (argc > MAX_PAYLOAD_ARGS) {
+        return EARGC;
+    }
+
+    va_list args;
+
+    payload->method = method;
+    payload->argc = argc;
+    va_start(args, argc);
+
+    for (int i = 0; i < argc; ++i) {
+        char* arg = va_arg(args, char*);
+        size_t argsize = strlen(arg);
+        char* buf = malloc(argsize);
+
+        strcpy(buf, arg);
+        payload->argv[i] = buf;
+    }
+
+    va_end(args);
+
+    return 0;
+}
+
+int net_response_success_init(net_response_t* response, char* result)
+{
+    return ENULL;
+}
+
+/**
+ * Converts payload into a json string and copies it into buf.
+ */
+int net_request_to_json(net_request_t* payload, char* buf)
+{
+    if (payload == NULL) {
+        return ENULL;
+    }
+
+    char* method = payload->method;
+    char** argv = (char**) payload->argv;
+    size_t argc = payload->argc;
+
+    if (method == NULL || (argc > 0 && argv == NULL)) {
+        return ENULL;
+    }
+
+    strcpy(buf, "{\"method\":\"");
+    strcat(buf, method);
+    strcat(buf, "\", \"args\":[\"");
+
+    for (int i = 0; i < argc; ++i) {
+        strcat(buf, argv[i]);
+
+        if (i < argc - 1) {
+            strcat(buf, "\", \"");
+        }
+    }
+
+    strcat(buf, "\"]}");
+
+    return 0;
+}
+
+/**
  * Creates a json string in an error format and copies it into buf.
  */
-void net_response_error(char* name, char* message, char* buf)
+void net_response_error_to_json(char* name, char* message, char* buf)
 {
     strcpy(buf, "{\"error\":{\"name\":\"");
     strcat(buf, name);
@@ -59,85 +273,54 @@ void net_response_error(char* name, char* message, char* buf)
 /**
  * Creates a json string in a success format and copies it into buf.
  */
-void net_response_success(char* result, char* buf)
+void net_response_success_to_json(char* result, char* buf)
 {
     strcpy(buf, "{\"result\":");
     strcat(buf, result);
     strcat(buf, "}");
 }
 
+int net_response_to_json(net_response_t* response, char* buf)
+{
+    if (response->result != NULL) {
+        net_response_success_to_json(response->result, buf);
+        return 0;
+    }
+    else if (response->error_name != NULL && response->error_message != NULL) {
+        net_response_error_to_json(response->error_name, response->error_message, buf);
+        return 0;
+    }
+
+    return ENULL;
+}
+
 /**
  * Run when the tcp handle retrieves a connection request.
  */
-void on_connection_cb(uv_stream_t* server_handle, int status)
+void net_on_connection(uv_connect_t* req, int status)
 {
     log_check_uv_r(status, "on_connection_cb");
 
-    tcp_server_context_t* context = (tcp_server_context_t*) server_handle->data;
-    state_t* state = context->listening_state;
-
-    state_run_next(state, "connect", context);
+    net_tcp_context_t* context = (net_tcp_context_t*) req->data;
+    state_run_next(context->state, "connect", context);
+    free(req);
 }
 
 /**
- * The listening state of the tcp server. Assumes payload is a
- * tcp_server_context pointer.
+ * Called by the shutdown request. Closes the tcp connection.
  */
-void tcp_on_listening(state_t* state, void* payload)
+void net_on_close(uv_handle_t* handle)
 {
-    log_debug("tcp_on_listening");
-
-    int r = 0;
-    tcp_server_context_t* context = (tcp_server_context_t*) payload;
-    uv_tcp_t* server_handle = malloc(sizeof(uv_tcp_t));
-
-    r = uv_tcp_init(context->loop, server_handle);
-    log_check_uv_r(r, "uv_tcp_init");
-
-    context->listening_state = state;
-    context->server_handle = server_handle;
-    server_handle->data = context;
-
-    struct sockaddr_in addr;
-    r = uv_ip4_addr(context->address, context->port, &addr);
-    log_check_uv_r(r, "uv_ip4_addr");
-
-    r = uv_tcp_bind(server_handle, &addr, 0);
-    log_check_uv_r(r, "uv_tcp_bind");
-
-    r = uv_listen((uv_stream_t*) server_handle, 0, on_connection_cb);
-    log_check_uv_r(r, "uv_listen");
-
-    // print the address of the server handle
-    struct sockaddr s;
-    struct sockaddr_in* sin;
-    int addr_len;
-
-    r = uv_tcp_getsockname(server_handle, &s, &addr_len);
-    log_check_uv_r(r, "uv_tcp_getsockname");
-
-    sin = (struct sockaddr_in*) &s;
-    char* straddr = inet_ntoa(sin->sin_addr);
-    unsigned short intport = htons(sin->sin_port);
-
-    log_info("tcp server listening on %s:%d", straddr, intport);
-}
-
-/**
- * Called by the shutdown request. Closes the tcp client connection.
- */
-void on_close_cb(uv_handle_t* client_handle)
-{
-    free(client_handle);
+    free(handle);
     log_debug("closed connection");
 }
 
 /**
  * Shutdown the tcp client connection.
  */
-void on_shutdown_cb(uv_shutdown_t* req, int status)
+void net_on_shutdown(uv_shutdown_t* req, int status)
 {
-    uv_close((uv_handle_t*) req->handle, on_close_cb);
+    uv_close((uv_handle_t*) req->handle, net_on_close);
     free(req);
 }
 
@@ -145,7 +328,7 @@ void on_shutdown_cb(uv_shutdown_t* req, int status)
  * Allocate memory with the suggested size to retrieve incoming data from the
  * tcp client.
  */
-void on_alloc_cb(uv_handle_t* client_handle, size_t size, uv_buf_t* buf)
+void net_on_alloc(uv_handle_t* handle, size_t size, uv_buf_t* buf)
 {
     buf->base = malloc(size);
     buf->len = size;
@@ -158,77 +341,10 @@ void on_alloc_cb(uv_handle_t* client_handle, size_t size, uv_buf_t* buf)
 /**
  * Called when a chunk of data has been read.
  */
-void on_read_cb(uv_stream_t* client_handle, ssize_t nread, const uv_buf_t* buf)
+void net_on_read(uv_stream_t* handle, ssize_t nread, const uv_buf_t* buf)
 {
-    tcp_client_context_t* context = (tcp_client_context_t*) client_handle->data;
-    context->nread = nread;
-    context->buf = buf;
-
-    state_run_next(context->state, "accept", context);
-}
-
-/**
- * The connecting state of the tcp server. Accepts the connection and starts
- * reading data. Assumes payload is a tcp_server_context pointer.
- */
-void tcp_on_connecting(state_t* state, void* payload)
-{
-    log_debug("tcp_on_connecting");
-
-    tcp_server_context_t* server_context = (tcp_server_context_t*) payload;
-    uv_loop_t* loop = server_context->loop;
-    uv_tcp_t* server_handle = server_context->server_handle;
     int r = 0;
-    uv_tcp_t* client_handle = malloc(sizeof(uv_tcp_t));
-
-    r = uv_tcp_init(loop, client_handle);
-    log_check_uv_r(r, "uv_tcp_init");
-
-    r = uv_accept((uv_stream_t*) server_handle, (uv_stream_t*) client_handle);
-
-    if (r) {
-        uv_shutdown_t* shutdown_req = malloc(sizeof(uv_shutdown_t));
-
-        log_error("trying to accept connection %d", r);
-        r = uv_shutdown(shutdown_req, (uv_stream_t*) client_handle, on_shutdown_cb);
-        log_check_uv_r(r, "uv_shutdown");
-    } else {
-        tcp_client_context_t* client_context = malloc(sizeof(tcp_client_context_t));
-
-        client_context->state = state;
-        client_context->req_callback = server_context->req_callback;
-        client_context->client_handle = client_handle;
-        client_handle->data = client_context;
-
-        r = uv_read_start((uv_stream_t*) client_handle, on_alloc_cb, on_read_cb);
-        log_check_uv_r(r, "uv_read_start");
-    }
-}
-
-/**
- * Called when the write is finished.
- */
-void on_write_cb(uv_write_t* req, int status)
-{
-    log_check_uv_r(status, "on_write_cb");
-}
-
-/**
- * The reading state of the tcp server. Assumes the entire data has been read.
- * Parses the json and calls the req_callback with the given "method" and
- * "args" fields in the json. Start a write request with the result. Note the
- * "args" fields in not supported. Assumes payload is a tcp_client_context
- * pointer.
- */
-void tcp_on_reading(state_t* state, void* payload)
-{
-    log_debug("tcp_on_reading");
-
-    tcp_client_context_t* context = (tcp_client_context_t*) payload;
-    uv_tcp_t* client_handle = context->client_handle;
-    ssize_t nread = context->nread;
-    uv_buf_t* buf = context->buf;
-    int r = 0;
+    net_tcp_context_t* context = (net_tcp_context_t*) handle->data;
 
     if (nread < 0) {
         uv_shutdown_t* shutdown_req = malloc(sizeof(uv_shutdown_t));
@@ -238,79 +354,56 @@ void tcp_on_reading(state_t* state, void* payload)
         }
 
         free(context);
-        r = uv_shutdown(shutdown_req, (uv_stream_t*) client_handle, on_shutdown_cb);
+        r = uv_shutdown(shutdown_req, handle, net_on_shutdown);
         log_check_uv_r(r, "uv_shutdown");
     }
     else if (nread > 0) {
-        log_debug("tcp_server:>>>> \"%s\"", buf->base);
+        log_debug("net:>>>> \"%s\"", buf->base);
 
-        char result[512];
-        json_value* j_val = json_parse(buf->base, nread);
-        uv_write_t* write_req = malloc(sizeof(uv_write_t));
-        request_callback req_callback = context->req_callback;
-        net_request_t tcp_req = { .parse_error = 0, .method = NULL, .argv = NULL, .argc = 0 };
+        char* edge_name = context->data;
 
-        net_parse_request(j_val, &tcp_req);
-
-        if (tcp_req.parse_error == 1) {
-            net_response_error("ParseError", tcp_req.method, &result);
-        }
-        else {
-            char* str_result = (*req_callback)(tcp_req.method, tcp_req.argv, tcp_req.argc);
-            net_response_success(str_result, &result);
-        }
-
-        if (j_val != NULL) {
-            json_value_free(j_val);
-        }
-
-        log_debug("tcp_server:<<<< \"%s\"", result);
-        strcat(result, "\n");
-
-        uv_buf_t write_buf[] = {
-            { .base = result, .len = strlen(result) }
-        };
-
-        r = uv_write(write_req, (uv_stream_t*) client_handle, write_buf, 1, on_write_cb);
-        log_check_uv_r(r, "uv_write");
+        uv_read_stop(handle);
+        context->data = buf->base;
+        state_run_next(context->state, edge_name, context);
     }
 
     free(buf->base);
 }
 
 /**
- * Creates a tcp server state machine and returns the first state. When the
- * state is run, the server context should be passed on as the payload.
+ * Read incoming data on the stream handle set in context. Go to the state
+ * associated with edge_name when read is finished.
  */
-state_t* tcp_server_machine(
-        uv_loop_t* loop,
-        char* address,
-        int port,
-        request_callback req_callback,
-        tcp_server_context_t* context)
+int net_read(net_tcp_context_t* context, char* edge_name)
 {
-    const state_initializer_t si[] = {
-        { .name = "tcp_server_listening", .callback = tcp_on_listening },
-        { .name = "tcp_server_connecting", .callback = tcp_on_connecting },
-        { .name = "tcp_server_reading", .callback = tcp_on_reading },
+    context->data = edge_name;
+
+    return uv_read_start((uv_stream_t*) context->handle, net_on_alloc, net_on_read);
+}
+
+void net_on_write(uv_write_t* req, int status)
+{
+    log_check_uv_r(status, "net_on_write");
+
+    net_tcp_context_t* context = (net_tcp_context_t*) req->data;
+    char* edge_name = context->data;
+    state_run_next(context->state, edge_name, context);
+}
+
+/**
+ * Write buf to the stream handle set in context. Go to the state associated
+ * with edge_name when write is finished.
+ */
+int net_write(net_tcp_context_t* context, char* buf, char* edge_name)
+{
+    int r = 0;
+    uv_write_t* write_req = malloc(sizeof(write_req));
+    uv_buf_t bufs[] = {
+        { .base = buf, .len = strlen(buf) }
     };
-    const edge_initializer_t ei[] = {
-        { .name = "connect", .from = "tcp_server_listening", .to = "tcp_server_connecting" },
-        { .name = "accept", .from = "tcp_server_connecting", .to = "tcp_server_reading" },
-    };
-    const int nsi = sizeof(si) / sizeof(si[0]);
-    const int nei = sizeof(ei) / sizeof(ei[0]);
 
-    state_lookup_t lookup;
-    lookup_init(&lookup);
-    state_t* state = state_machine_build(si, nsi, ei, nei, &lookup);
-    lookup_clear(&lookup);
+    context->data = edge_name;
+    write_req->data = context;
 
-    context->loop = loop;
-    context->address = address;
-    context->port = port;
-    context->req_callback = req_callback;
-    context->listening_state = NULL;
-
-    return state;
+    return uv_write(write_req, (uv_stream_t*) context->handle, bufs, 1, net_on_write);
 }
