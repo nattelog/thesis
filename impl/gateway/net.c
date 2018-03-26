@@ -34,7 +34,7 @@ int net_tcp_context_init(
         return r;
     }
 
-    r = uv_ip4_addr(address, port, addr);
+    r = uv_ip4_addr(address, port, (struct sockaddr_in*) addr);
 
     if (r) {
         return r;
@@ -43,6 +43,8 @@ int net_tcp_context_init(
     handle->data = context;
     context->addr = addr;
     context->handle = handle;
+
+    return 0;
 }
 
 /**
@@ -61,34 +63,6 @@ json_value* get_method(json_object_entry* values, unsigned int length)
 }
 
 /**
- * Validates the json_value* object and puts the "method" and "args" fields in
- * a net_request_t container for further use.
- */
-void net_parse_request(json_value* value, net_request_t* request)
-{
-    if (value == NULL) {
-        request->method = "could not parse json";
-    }
-    else if (value->type == json_object && value->u.object.length == 2) {
-        json_value* method_value = get_method(value->u.object.values, value->u.object.length);
-
-        if (method_value != NULL && method_value->type == json_string) {
-            request->parse_error = 0;
-            request->method = (char*) method_value->u.string.ptr;
-            request->argc = 0;
-            // argv is not set because the api does not support args at the
-            // moment
-            return;
-        }
-    }
-    else {
-        request->method = "corrupt json message: must be an object with \"method\" and \"args\" field";
-    }
-
-    request->parse_error = 1;
-}
-
-/**
  * Returns the json_value object associated with key.
  */
 json_value* net_json_get_key(json_value* value, char* key)
@@ -104,6 +78,47 @@ json_value* net_json_get_key(json_value* value, char* key)
     }
 
     return NULL;
+}
+
+/**
+ * Parses the json string in buf and sets the "method" and "args" values in
+ * request. Returns an error code if parsing fails.
+ */
+int net_parse_request(net_request_t* request, char* buf)
+{
+    json_value* json = json_parse((json_char*) buf, strlen(buf));
+    json_value* method_val;
+    json_value* args_val;
+    char* method_str;
+
+    if (json == NULL) {
+        return EJSON;
+    }
+
+    if (json->type != json_object || json->u.object.length != 2) {
+        json_value_free(json);
+        return EJSON;
+    }
+
+    method_val = net_json_get_key(json, "method");
+    args_val = net_json_get_key(json, "args");
+
+    if (method_val == NULL || args_val == NULL) {
+        json_value_free(json);
+        return EPTCL;
+    }
+
+    if (method_val->type != json_string || args_val->type != json_array) {
+        json_value_free(json);
+        return EPTCL;
+    }
+
+    method_str = malloc(method_val->u.string.length);
+    strcpy(method_str, method_val->u.string.ptr);
+    request->method = method_str;
+    request->argc = 0;
+
+    return 0;
 }
 
 /**
@@ -137,10 +152,9 @@ int net_parse_response(net_response_t* response, char* buf)
 
         str = malloc(result_val->u.string.length);
         strcpy(str, result_val->u.string.ptr);
-
-        response->result = str;
         json_value_free(json);
-        return 0;
+
+        return net_response_success_init(response, str);
     }
 
     result_val = net_json_get_key(json, "error");
@@ -164,6 +178,8 @@ int net_parse_response(net_response_t* response, char* buf)
         name_str = malloc(name_val->u.string.length);
         strcpy(name_str, name_val->u.string.ptr);
         response->error_name = name_str;
+        response->error_message = NULL;
+        response->result = NULL;
 
         if (args_val->u.array.length == 0) {
             response->error_message = NULL;
@@ -193,16 +209,16 @@ int net_parse_response(net_response_t* response, char* buf)
  * Initializes payload with method, argc and the variable arguments are
  * allocated and copied into argv as char* pointers.
  */
-int net_request_init(net_request_t* payload, char* method, int argc, ...)
+int net_request_init(net_request_t* request, char* method, int argc, ...)
 {
-    if (argc > MAX_PAYLOAD_ARGS) {
+    if (argc > MAX_REQUEST_ARGS) {
         return EARGC;
     }
 
     va_list args;
 
-    payload->method = method;
-    payload->argc = argc;
+    request->method = method;
+    request->argc = argc;
     va_start(args, argc);
 
     for (int i = 0; i < argc; ++i) {
@@ -211,7 +227,7 @@ int net_request_init(net_request_t* payload, char* method, int argc, ...)
         char* buf = malloc(argsize);
 
         strcpy(buf, arg);
-        payload->argv[i] = buf;
+        request->argv[i] = buf;
     }
 
     va_end(args);
@@ -219,23 +235,50 @@ int net_request_init(net_request_t* payload, char* method, int argc, ...)
     return 0;
 }
 
+/**
+ * Initializes a successful response object with the value in result.
+ */
 int net_response_success_init(net_response_t* response, char* result)
 {
-    return ENULL;
+    if (response == NULL || result == NULL) {
+        return ENULL;
+    }
+
+    response->error_name = NULL;
+    response->error_message = NULL;
+    response->result = result;
+
+    return 0;
+}
+
+/**
+ * Initializes an errorneous response with the values in name and message.
+ */
+int net_response_error_init(net_response_t* response, char* name, char* message)
+{
+    if (response == NULL || name == NULL || message == NULL) {
+        return ENULL;
+    }
+
+    response->error_name = name;
+    response->error_message = message;
+    response->result = NULL;
+
+    return 0;
 }
 
 /**
  * Converts payload into a json string and copies it into buf.
  */
-int net_request_to_json(net_request_t* payload, char* buf)
+int net_request_to_json(net_request_t* request, char* buf)
 {
-    if (payload == NULL) {
+    if (request == NULL) {
         return ENULL;
     }
 
-    char* method = payload->method;
-    char** argv = (char**) payload->argv;
-    size_t argc = payload->argc;
+    char* method = request->method;
+    char** argv = (char**) request->argv;
+    size_t argc = request->argc;
 
     if (method == NULL || (argc > 0 && argv == NULL)) {
         return ENULL;
@@ -396,7 +439,6 @@ void net_on_write(uv_write_t* req, int status)
  */
 int net_write(net_tcp_context_t* context, char* buf, char* edge_name)
 {
-    int r = 0;
     uv_write_t* write_req = malloc(sizeof(write_req));
     uv_buf_t bufs[] = {
         { .base = buf, .len = strlen(buf) }

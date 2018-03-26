@@ -42,20 +42,20 @@ void config_to_json(config_data_t* config, char* buf)
     }
 
     strcat(buf, "\", \"CPU_INTENSITY\":");
-    sprintf(&pre, "%f", config->cpu);
-    strcat(buf, &pre);
+    sprintf((char*) &pre, "%f", config->cpu);
+    strcat(buf, (char*) &pre);
 
     strcat(buf, ", \"IO_INTENSITY\":");
-    sprintf(&pre, "%f", config->io);
-    strcat(buf, &pre);
+    sprintf((char*) &pre, "%f", config->io);
+    strcat(buf, (char*) &pre);
 
     strcat(buf, ", \"LOGSERVER_ADDRESS\":\"");
-    sprintf(&pre, "%s:%d", config->logserver_address, config->logserver_port);
-    strcat(buf, &pre);
+    sprintf((char*) &pre, "%s:%d", config->logserver_address, config->logserver_port);
+    strcat(buf, (char*) &pre);
 
     strcat(buf, ", \"NAMESERVICE_ADDRESS\":\"");
-    sprintf(&pre, "%s:%d", config->nameservice_address, config->nameservice_port);
-    strcat(buf, &pre);
+    sprintf((char*) &pre, "%s:%d", config->nameservice_address, config->nameservice_port);
+    strcat(buf, (char*) &pre);
 
     strcat(buf, "\"}");
 }
@@ -79,7 +79,7 @@ int config_parse_address(char* addr_string, char* target_addr, int* target_port)
         return 1;
     }
 
-    r = regexec(&regex, addr_string, nmatch, &matches, 0);
+    r = regexec(&regex, addr_string, nmatch, (regmatch_t*) &matches, 0);
 
     if (r) {
         return 1;
@@ -93,7 +93,7 @@ int config_parse_address(char* addr_string, char* target_addr, int* target_port)
 
         memcpy(target_addr, addr_string, addr_len);
         memcpy(port_str, &addr_string[port_match.rm_so], port_len);
-        *target_port = atoi(port_str);
+        *target_port = atoi((char*) port_str);
 
         return 0;
     }

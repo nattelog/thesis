@@ -43,7 +43,7 @@ void log_init(uv_loop_t* loop, const char* address, const int port)
     r = uv_ip4_addr("0.0.0.0", 0, &local_addr); // the local host
     log_check_uv_r(r, "uv_up4_addr");
 
-    r = uv_udp_bind(&udp_handle, &local_addr, 0);
+    r = uv_udp_bind(&udp_handle, (struct sockaddr*) &local_addr, 0);
     log_check_uv_r(r, "uv_udp_bind");
 }
 
@@ -92,7 +92,7 @@ void log_send(char* message)
     };
     send_req->data = message;
 
-    r = uv_udp_send(send_req, &udp_handle, bufs, 1, &remote_addr, on_send_cb);
+    r = uv_udp_send(send_req, &udp_handle, bufs, 1, (struct sockaddr*) &remote_addr, on_send_cb);
     log_check_uv_r(r, "uv_udp_send");
 }
 

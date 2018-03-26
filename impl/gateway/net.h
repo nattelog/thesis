@@ -6,7 +6,7 @@
 #include "json.h"
 #include "state.h"
 
-#define MAX_PAYLOAD_ARGS 8
+#define MAX_REQUEST_ARGS 8
 
 typedef char* (*request_callback)(char* method, char** argv, size_t argc);
 
@@ -25,7 +25,7 @@ struct net_tcp_context_s {
 struct net_request_s {
     int parse_error;
     char* method;
-    char* argv[MAX_PAYLOAD_ARGS];
+    char* argv[MAX_REQUEST_ARGS];
     size_t argc;
 };
 
@@ -43,9 +43,15 @@ int net_tcp_context_init(
 
 net_tcp_context_t* net_get_context(state_t* state, void* payload);
 
+int net_parse_request(net_request_t* request, char* buf);
+
 int net_parse_response(net_response_t* response, char* buf);
 
 int net_request_init(net_request_t* payload, char* method, int argc, ...);
+
+int net_response_success_init(net_response_t* response, char* result);
+
+int net_response_error_init(net_response_t* response, char* name, char* message);
 
 int net_request_to_json(net_request_t* payload, char* buf);
 
