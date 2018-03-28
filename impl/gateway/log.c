@@ -27,24 +27,38 @@ void log_check_r(int r, char* msg)
 
 /**
  * Initiates the global udp variables. address and port refers to the remote
- * log server.
+ * log server. Returns an uv error code if something goes wrong.
  */
-void log_init(uv_loop_t* loop, const char* address, const int port)
+int log_init(uv_loop_t* loop, const char* address, const int port)
 {
-    int r = 0;
+    int r;
 
     r = uv_ip4_addr(address, port, &remote_addr); // the remote host
-    log_check_uv_r(r, "uv_ip4_addr");
+
+    if (r) {
+        return r;
+    }
 
     r = uv_udp_init(loop, &udp_handle);
-    log_check_uv_r(r, "uv_udp_init");
+
+    if (r) {
+        return r;
+    }
 
     struct sockaddr_in local_addr;
     r = uv_ip4_addr("0.0.0.0", 0, &local_addr); // the local host
-    log_check_uv_r(r, "uv_up4_addr");
+
+    if (r) {
+        return r;
+    }
 
     r = uv_udp_bind(&udp_handle, (struct sockaddr*) &local_addr, 0);
-    log_check_uv_r(r, "uv_udp_bind");
+
+    if (r) {
+        return r;
+    }
+
+    return 0;
 }
 
 /**
