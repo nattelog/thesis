@@ -5,6 +5,7 @@ UVDIR="libuv"
 UVCOMMIT="c5afc37e2a8a70d8ab0da8dac10b77ba78c0488c"
 CHECKDIR="check"
 CHECKCOMMIT="65e8c5e36f2841be16c4c96bae7a7bc171ff7d67"
+JSONDIR="json"
 
 if [ ! -d ${UVDIR} ]; then
     echo "Installing libuv..."
@@ -30,8 +31,14 @@ if [ ! -d ${CHECKDIR} ]; then
     cd ${WORKDIR}
 fi;
 
-if [ ! -f json.c ]; then
-    echo "Downloading json-parser..."
-    curl https://raw.githubusercontent.com/udp/json-parser/master/json.c > json.c
-    curl https://raw.githubusercontent.com/udp/json-parser/master/json.h > json.h
+if [ ! -d ${JSONDIR} ]; then
+    echo "Downloading json lib..."
+    curl https://raw.githubusercontent.com/udp/json-parser/master/json.c > \
+        ${JSONDIR}/json.c
+    curl https://raw.githubusercontent.com/udp/json-parser/master/json.h > \
+        ${JSONDIR}/json.h
+    curl https://raw.githubusercontent.com/udp/json-builder/master/json-builder.c \
+        ${JSONDIR}/json-builder.c
+    curl https://raw.githubusercontent.com/udp/json-builder/master/json-builder.h \
+        ${JSONDIR}/json-builder.h
 fi;

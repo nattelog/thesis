@@ -1,7 +1,6 @@
 *.o
-json.c
-json.h
 libuv
 check
 gateway
 test
+json
