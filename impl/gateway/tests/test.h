@@ -5,5 +5,6 @@
 #include "check.h"
 
 extern Suite* net_suite();
+extern Suite* protocol_suite();
 
 #endif
