@@ -101,7 +101,6 @@ int main(int argc, char** argv)
     log_check_uv_r(r, "net_tcp_context_init");
 
     boot_context.config = &config;
-    boot_context.request_count = 0;
 
     r = log_init(loop, config.logserver_address, config.logserver_port);
     log_check_uv_r(r, "log_init");
