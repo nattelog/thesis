@@ -1,7 +1,10 @@
 #include <stdlib.h>
 #include <regex.h>
-#include "config.h"
+#include "conf.h"
+#include "json.h"
+#include "json-builder.h"
 #include "log.h"
+#include "err.h"
 
 /**
  * Initializes the config object with default values.
@@ -17,47 +20,31 @@ void config_init(config_data_t* config)
 }
 
 /**
- * Writes the config object to a json format and puts it in buf.
+ * Converts the config object to a protocol type object.
  */
-void config_to_json(config_data_t* config, char* buf)
+int config_to_protocol_type(config_data_t* config, protocol_value_t** protocol)
 {
+    log_verbose("config_to_protocol_type:config=%p, protocol=%p", config, *protocol);
+
     char pre[128];
 
-    strcpy(buf, "{\"DISPATCHER\":\"");
-
-    if (config->dispatcher == NULL) {
-        strcat(buf, "");
-    }
-    else {
-        strcat(buf, config->dispatcher);
+    if (config->dispatcher == NULL || config->eventhandler == NULL) {
+        return ENULL;
     }
 
-    strcat(buf, "\", \"EVENT_HANDLER\":\"");
+    *protocol = json_object_new(0);
+    json_object_push(*protocol, "DISPATCHER", json_string_new(config->dispatcher));
+    json_object_push(*protocol, "EVENT_HANDLER", json_string_new(config->eventhandler));
+    json_object_push(*protocol, "CPU_INTENSITY", json_double_new(config->cpu));
+    json_object_push(*protocol, "IO_INTENSITY", json_double_new(config->io));
 
-    if (config->eventhandler == NULL) {
-        strcat(buf, "");
-    }
-    else {
-        strcat(buf, config->eventhandler);
-    }
-
-    strcat(buf, "\", \"CPU_INTENSITY\":");
-    sprintf((char*) &pre, "%f", config->cpu);
-    strcat(buf, (char*) &pre);
-
-    strcat(buf, ", \"IO_INTENSITY\":");
-    sprintf((char*) &pre, "%f", config->io);
-    strcat(buf, (char*) &pre);
-
-    strcat(buf, ", \"LOGSERVER_ADDRESS\":\"");
-    sprintf((char*) &pre, "%s:%d", config->logserver_address, config->logserver_port);
-    strcat(buf, (char*) &pre);
-
-    strcat(buf, ", \"NAMESERVICE_ADDRESS\":\"");
     sprintf((char*) &pre, "%s:%d", config->nameservice_address, config->nameservice_port);
-    strcat(buf, (char*) &pre);
+    json_object_push(*protocol, "NAMESERVICE_ADDRESS", json_string_new((char*) &pre));
 
-    strcat(buf, "\"}");
+    sprintf((char*) &pre, "%s:%d", config->logserver_address, config->logserver_port);
+    json_object_push(*protocol, "LOGSERVER_ADDRESS", json_string_new((char*) &pre));
+
+    return 0;
 }
 
 /**

@@ -7,10 +7,12 @@ int main()
     int n_failed;
     SRunner* sr;
 
-    sr = srunner_create(net_suite());
-    srunner_add_suite(sr, protocol_suite());
+    sr = srunner_create(protocol_suite());
+    srunner_add_suite(sr, conf_suite());
 
     srunner_run_all(sr, CK_VERBOSE);
+    //srunner_run(sr, "conf", "convert to protocol", CK_VERBOSE);
+
     n_failed = srunner_ntests_failed(sr);
     srunner_free(sr);
 

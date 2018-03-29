@@ -450,7 +450,25 @@ START_TEST(protocol_build_response_error_test)
 }
 END_TEST
 
-START_TEST(protocol_serialize_test)
+START_TEST(protocol_get_response_error_test)
+{
+    int r;
+    protocol_value_t* err;
+    char* error_name = "Error";
+    char* error_msg = "An error occurred";
+    char name_result[28];
+    char msg_result[28];
+
+    r = protocol_build_response_error(&err, error_name, error_msg);
+    ck_assert_int_eq(r, 0);
+    r = protocol_get_response_error(err, (char*) &name_result, (char*) &msg_result);
+    ck_assert_int_eq(r, 0);
+    ck_assert_str_eq(name_result, error_name);
+    ck_assert_str_eq(msg_result, error_msg);
+}
+END_TEST
+
+START_TEST(protocol_to_json_test)
 {
     int r;
     protocol_value_t* value;
@@ -485,7 +503,8 @@ Suite* protocol_suite()
     tcase_add_test(tc, protocol_build_request_test);
     tcase_add_test(tc, protocol_build_response_success_test);
     tcase_add_test(tc, protocol_build_response_error_test);
-    tcase_add_test(tc, protocol_serialize_test);
+    tcase_add_test(tc, protocol_get_response_error_test);
+    tcase_add_test(tc, protocol_to_json_test);
 
     suite_add_tcase(s, tc);
 

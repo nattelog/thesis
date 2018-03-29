@@ -4,7 +4,7 @@
 #include "config.h"
 #include "check.h"
 
-extern Suite* net_suite();
 extern Suite* protocol_suite();
+extern Suite* conf_suite();
 
 #endif

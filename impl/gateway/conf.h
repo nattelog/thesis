@@ -1,5 +1,7 @@
-#ifndef __CONFIG_h__
-#define __CONFIG_h__
+#ifndef __CONF_h__
+#define __CONF_h__
+
+#include "protocol.h"
 
 typedef struct config_data_s config_data_t;
 
@@ -16,7 +18,7 @@ struct config_data_s {
 
 void config_init(config_data_t* config);
 
-void config_to_json(config_data_t* config, char* buf);
+int config_to_protocol_type(config_data_t* config, protocol_value_t** protocol);
 
 int config_parse_address(char* addr_string, char* target_addr, int* target_port);
 
