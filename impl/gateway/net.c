@@ -95,13 +95,11 @@ void net_on_shutdown(uv_shutdown_t* req, int status)
     log_check_uv_r(status, "net_on_disconnect");
 
     net_tcp_context_t* context = (net_tcp_context_t*) req->data;
-    state_t* state = context->state;
-    char* edge_name = context->data;
-    //req->handle->data = context;
+    uv_tcp_t* handle = context->handle;
 
-    // uv_close((uv_handle_t*) req->handle, net_on_close);
+    handle->data = context;
     free(req);
-    state_run_next(state, edge_name, context);
+    uv_close((uv_handle_t*) handle, net_on_close);
 }
 
 int net_disconnect(net_tcp_context_t* context, char* edge_name)
