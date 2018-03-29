@@ -181,9 +181,9 @@ void boot_process_tcp_done(state_t* state, void* payload) {
     log_debug("boot_process_tcp_done");
 
     machine_boot_context_t* context = (machine_boot_context_t*) payload;
+    static int count = 0;
 
-    if (context->request_count == 0) {
-        context->request_count++;
+    if (count++ == 0) {
         state_run_next(state, "verification_response", context);
     } else {
         state_run_next(state, "devices_response", context);
