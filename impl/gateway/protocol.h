@@ -44,6 +44,10 @@ int protocol_build_response_success(protocol_value_t** protocol, protocol_value_
 
 int protocol_build_response_error(protocol_value_t** protocol, char* name, char* message);
 
+int protocol_get_response_error(protocol_value_t* protocol, char* error_name, char* error_message);
+
+void protocol_check_response_error(protocol_value_t* protocol);
+
 int protocol_to_json(protocol_value_t* protocol, char* buf);
 
 void protocol_free_parse(protocol_value_t* protocol);

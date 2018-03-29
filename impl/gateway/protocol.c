@@ -262,6 +262,83 @@ int protocol_build_response_error(protocol_value_t** protocol, char* name, char*
     return 0;
 }
 
+/**
+ * Retrieves the error name and the error message found in the errorenous
+ * protocol. If protocol does not follow the error standard, return an error
+ * code. Returns 0 otherwise.
+ */
+int protocol_get_response_error(protocol_value_t* protocol, char* error_name, char* error_message)
+{
+    if (protocol_has_key(protocol, "error")) {
+        int r;
+        protocol_value_t* error;
+        protocol_value_t* name_str;
+        protocol_value_t* args_arr;
+
+        r = protocol_get_key(protocol, &error, "error");
+
+        if (r) {
+            return r;
+        }
+
+        r = protocol_get_key(error, &name_str, "name");
+
+        if (r) {
+            return r;
+        }
+
+        r = protocol_get_key(error, &args_arr, "args");
+
+        if (r) {
+            return r;
+        }
+
+        if (protocol_get_length(args_arr) > 0) {
+            protocol_value_t* msg_str;
+
+            r = protocol_get_at(args_arr, &msg_str, 0);
+
+            if (r) {
+                return r;
+            }
+
+            r = protocol_get_string(msg_str, error_message);
+
+            if (r) {
+                return r;
+            }
+        }
+
+        r = protocol_get_string(name_str, error_name);
+
+        if (r) {
+            return r;
+        }
+
+        return 0;
+    }
+
+    return EPTCL;
+}
+
+/**
+ * Checks whether protocol is an errorenous response or not. Exits if so, does
+ * nothing otherwise.
+ */
+void protocol_check_response_error(protocol_value_t* protocol)
+{
+    int r;
+    char err_name[48];
+    char err_msg[48];
+
+    r = protocol_get_response_error(protocol, (char*) &err_name, (char*) &err_msg);
+
+    if (r == 0) {
+        log_error("%s:%s", err_name, err_msg);
+        exit(1);
+    }
+}
+
 int protocol_to_json(protocol_value_t* protocol, char* buf)
 {
     log_verbose("protocol_to_json:protocol=%p, buf=%p", protocol, buf);

@@ -1,5 +1,5 @@
 /**
- * State machine implementation do describe and execute a reactive system.
+ * State machine implementation to describe and execute a reactive system.
  */
 
 #include "stddef.h"

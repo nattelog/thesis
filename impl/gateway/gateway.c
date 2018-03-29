@@ -3,7 +3,7 @@
 #include "log.h"
 #include "state.h"
 #include "net.h"
-#include "config.h"
+#include "conf.h"
 #include "machine.h"
 
 void usage()
@@ -46,16 +46,20 @@ void tcp_req_done(state_t* state, void* payload)
 
 int main(int argc, char** argv)
 {
-    /*
     int r = 0;
     config_data_t config;
     int input_flag;
     uv_loop_t* loop = uv_default_loop();
-    tcp_server_context_t server_context;
-    state_t* server;
+    machine_boot_context_t boot_context;
+    state_t* boot_process;
 
     opterr = 0;
     config_init(&config);
+
+    if (argc == 1) {
+        usage();
+        return 0;
+    }
 
     while ((input_flag = getopt(argc, argv, "hd:e:c:i:l:n:")) != -1) {
         switch (input_flag) {
@@ -75,14 +79,14 @@ int main(int argc, char** argv)
                 config.io = atof(optarg);
                 break;
             case 'l':
-                r = config_parse_address(optarg, &config.logserver_address, &config.logserver_port);
+                r = config_parse_address(optarg, (char*) &config.logserver_address, &config.logserver_port);
                 if (r) {
                     log_error("could not parse logserver address");
                     return 1;
                 }
                 break;
             case 'n':
-                r = config_parse_address(optarg, &config.nameservice_address, &config.nameservice_port);
+                r = config_parse_address(optarg, (char*) &config.nameservice_address, &config.nameservice_port);
                 if (r) {
                     log_error("could not parse nameserver address");
                     return 1;
@@ -93,42 +97,18 @@ int main(int argc, char** argv)
         }
     }
 
-    char j_str[1024];
-    config_to_json(&config, &j_str);
-    printf("%s\n", j_str);
-
-    server = tcp_server_machine(
-            loop,
-            "0.0.0.0",
-            5002,
-            on_request,
-            &server_context);
-
-    log_init(loop, config.logserver_address, config.logserver_port);
-
-    state_machine_run(server, &server_context);
-    uv_run(loop, UV_RUN_DEFAULT);
-    */
-
-    int r = 0;
-    uv_loop_t* loop = uv_default_loop();
-
-    state_lookup_t lookup;
-    lookup_init(&lookup);
-    state_t* req = machine_tcp_request(&lookup, tcp_req_done);
-
-    net_request_t req_payload;
-    net_tcp_context_t context;
-
-    r = net_tcp_context_init(&context, loop, "0.0.0.0", 5001);
+    r = net_tcp_context_init((net_tcp_context_t*) &boot_context, loop, (char*) &config.nameservice_address, config.nameservice_port);
     log_check_uv_r(r, "net_tcp_context_init");
 
-    r = net_request_init(&req_payload, "verify_gateway", 2, "hello", "world!");
-    log_check_r(r, "net_request_payload_init");
+    boot_context.config = &config;
+    boot_context.request_count = 0;
 
-    context.net_payload = &req_payload;
+    r = log_init(loop, config.logserver_address, config.logserver_port);
+    log_check_uv_r(r, "log_init");
 
-    state_machine_run(req, &context);
+    boot_process = machine_boot_process();
+
+    state_machine_run(boot_process, &boot_context);
     uv_run(loop, UV_RUN_DEFAULT);
 
     return 0;
