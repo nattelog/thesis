@@ -240,23 +240,32 @@ void __net_on_write(uv_write_t* req, int status)
 
     net_tcp_context_t* context = (net_tcp_context_t*) req->data;
     char* edge_name = context->data;
+
+    free(context->buf);
     state_run_next(context->state, edge_name, context);
 }
 
 /**
- * Write buf to the stream handle set in context. Go to the state associated
- * with edge_name when write is finished.
+ * Writes protocol to the tcp handle specified in context. Proceeds to the
+ * state associated with edge_name when writing is finished.
  */
-int net_write(net_tcp_context_t* context, char* buf, char* edge_name)
+int net_write(net_tcp_context_t* context, protocol_value_t* protocol, char* edge_name)
 {
-    log_verbose("net_write:context=%p, buf=%s, edge_name=\"%s\"", context, buf, edge_name);
+    log_verbose("net_write:context=%p, protocol=%p, edge_name=\"%s\"", context, protocol, edge_name);
 
     uv_write_t* write_req = malloc(sizeof(write_req));
+    char pre[1024];
+    char* buf = malloc(1024);
+
+    protocol_to_json(protocol, (char*) &pre);
+    sprintf(buf, "%s\n", &pre);
+
     uv_buf_t bufs[] = {
         { .base = buf, .len = strlen(buf) }
     };
 
     context->data = edge_name;
+    context->buf = buf;
     write_req->data = context;
 
     return uv_write(write_req, (uv_stream_t*) context->handle, bufs, 1, __net_on_write);

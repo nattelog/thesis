@@ -21,6 +21,7 @@ struct net_tcp_context_s {
     protocol_value_t* read_payload;
     protocol_value_t* write_payload;
     void* data;
+    char* buf;
 };
 
 int net_tcp_context_init(
@@ -39,7 +40,7 @@ int net_listen(net_tcp_context_t* context, char* edge_name);
 
 int net_read(net_tcp_context_t* context, char* edge_name);
 
-int net_write(net_tcp_context_t* context, char* buf, char* edge_name);
+int net_write(net_tcp_context_t* context, protocol_value_t* protocol, char* edge_name);
 
 int net_hostname(net_tcp_context_t* context, char* addr, int* port);
 

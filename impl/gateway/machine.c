@@ -22,12 +22,8 @@ void __tcp_request_writing(state_t* state, void* payload)
     int r = 0;
     net_tcp_context_t* context = net_get_context(state, payload);
     protocol_value_t* request = context->write_payload;
-    char* json_buf = malloc(256);
 
-    r = protocol_to_json(request, json_buf);
-    log_check_r(r, "protocol_to_json");
-
-    net_write(context, json_buf, "done");
+    net_write(context, request, "done");
 }
 
 void __tcp_request_reading(state_t* state, void* payload)
@@ -265,7 +261,6 @@ void __server_processing(state_t* state, void* payload)
     request_callback on_request = context->on_request;
     protocol_value_t* request = ((net_tcp_context_t*) context)->read_payload;
     protocol_value_t* response;
-    char* json_buf = malloc(1024);
 
     ((net_tcp_context_t*) context)->state = state;
 
@@ -277,10 +272,7 @@ void __server_processing(state_t* state, void* payload)
         response = (*on_request)(request);
     }
 
-    r = protocol_to_json(response, json_buf);
-    log_check_r(r, "protocol_to_json");
-
-    net_write((net_tcp_context_t*) context, json_buf, "disconnect");
+    net_write((net_tcp_context_t*) context, response, "disconnect");
 }
 
 void __server_disconnecting(state_t* state, void* payload)

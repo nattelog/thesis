@@ -343,7 +343,7 @@ void protocol_check_response_error(protocol_value_t* protocol)
 
     int r;
     char err_name[48];
-    char err_msg[48];
+    char err_msg[1024];
 
     r = protocol_get_response_error(protocol, (char*) &err_name, (char*) &err_msg);
 
