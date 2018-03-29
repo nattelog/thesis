@@ -4,7 +4,7 @@
 #include "log.h"
 #include "err.h"
 
-void tcp_request_connecting(state_t* state, void* payload)
+void __tcp_request_connecting(state_t* state, void* payload)
 {
     log_debug("tcp_request_connecting");
 
@@ -15,7 +15,7 @@ void tcp_request_connecting(state_t* state, void* payload)
     log_check_uv_r(r, "req_connect");
 }
 
-void tcp_request_writing(state_t* state, void* payload)
+void __tcp_request_writing(state_t* state, void* payload)
 {
     log_debug("tcp_request_writing");
 
@@ -30,7 +30,7 @@ void tcp_request_writing(state_t* state, void* payload)
     net_write(context, json_buf, "done");
 }
 
-void tcp_request_reading(state_t* state, void* payload)
+void __tcp_request_reading(state_t* state, void* payload)
 {
     log_debug("tcp_request_reading");
 
@@ -38,7 +38,7 @@ void tcp_request_reading(state_t* state, void* payload)
     net_read(context, "done");
 }
 
-void tcp_request_closing(state_t* state, void* payload)
+void __tcp_request_closing(state_t* state, void* payload)
 {
     log_debug("tcp_request_closing");
 
@@ -52,10 +52,10 @@ void tcp_request_closing(state_t* state, void* payload)
 state_t* machine_tcp_request(state_lookup_t* lookup, state_callback done)
 {
     const state_initializer_t si[] = {
-        { .name = "tcp_request_connecting", .callback = tcp_request_connecting },
-        { .name = "tcp_request_writing", .callback = tcp_request_writing },
-        { .name = "tcp_request_reading", .callback = tcp_request_reading },
-        { .name = "tcp_request_closing", .callback = tcp_request_closing },
+        { .name = "tcp_request_connecting", .callback = __tcp_request_connecting },
+        { .name = "tcp_request_writing", .callback = __tcp_request_writing },
+        { .name = "tcp_request_reading", .callback = __tcp_request_reading },
+        { .name = "tcp_request_closing", .callback = __tcp_request_closing },
         { .name = "tcp_request_done", .callback = done }
     };
     const edge_initializer_t ei[] = {
@@ -70,7 +70,7 @@ state_t* machine_tcp_request(state_lookup_t* lookup, state_callback done)
     return state_machine_build(si, nsi, ei, nei, lookup);
 }
 
-void boot_process_verify_config(state_t* state, void* payload) {
+void __boot_process_verify_config(state_t* state, void* payload) {
     log_debug("boot_process_verify_config");
 
     int r;
@@ -96,7 +96,7 @@ void boot_process_verify_config(state_t* state, void* payload) {
     state_run_next(state, "start", context);
 }
 
-void boot_process_check_verification(state_t* state, void* payload) {
+void __boot_process_check_verification(state_t* state, void* payload) {
     log_verbose("boot_process_check_verification:state=%p, payload=%p", state, payload);
 
     int r;
@@ -136,7 +136,7 @@ void boot_process_check_verification(state_t* state, void* payload) {
     }
 }
 
-void boot_process_get_devices(state_t* state, void* payload) {
+void __boot_process_get_devices(state_t* state, void* payload) {
     log_debug("boot_process_get_devices");
 
     int r;
@@ -150,7 +150,7 @@ void boot_process_get_devices(state_t* state, void* payload) {
     state_run_next(state, "start", context);
 }
 
-void boot_process_done(state_t* state, void* payload) {
+void __boot_process_done(state_t* state, void* payload) {
     log_debug("boot_process_done");
 
     net_tcp_context_t* context = (net_tcp_context_t*) payload;
@@ -160,7 +160,7 @@ void boot_process_done(state_t* state, void* payload) {
     protocol_free_build(context->write_payload);
 }
 
-void boot_process_tcp_done(state_t* state, void* payload) {
+void __boot_process_tcp_done(state_t* state, void* payload) {
     log_debug("boot_process_tcp_done");
 
     machine_boot_context_t* context = (machine_boot_context_t*) payload;
@@ -185,10 +185,10 @@ state_t* machine_boot_process(
     int nameservice_port;
 
     const state_initializer_t si[] = {
-        { .name = "boot_process_verify_config", .callback = boot_process_verify_config },
-        { .name = "boot_process_check_verification", .callback = boot_process_check_verification },
-        { .name = "boot_process_get_devices", .callback = boot_process_get_devices },
-        { .name = "boot_process_done", .callback = boot_process_done }
+        { .name = "boot_process_verify_config", .callback = __boot_process_verify_config },
+        { .name = "boot_process_check_verification", .callback = __boot_process_check_verification },
+        { .name = "boot_process_get_devices", .callback = __boot_process_get_devices },
+        { .name = "boot_process_done", .callback = __boot_process_done }
     };
     const edge_initializer_t ei[] = {
         { .name = "start", .from = "boot_process_verify_config", .to = "tcp_request_connecting" },
@@ -201,7 +201,7 @@ state_t* machine_boot_process(
     const int nei = sizeof(ei) / sizeof(ei[0]);
 
     lookup_init(&lookup);
-    machine_tcp_request(&lookup, boot_process_tcp_done);
+    machine_tcp_request(&lookup, __boot_process_tcp_done);
     boot_process = state_machine_build(si, nsi, ei, nei, &lookup);
     lookup_clear(&lookup);
 

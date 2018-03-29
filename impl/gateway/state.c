@@ -21,7 +21,7 @@ void lookup_init(state_lookup_t* lookup)
 /**
  * djb2 hash from http://www.cse.yorku.ca/~oz/hash.html
  */
-unsigned long hash(const char* str)
+unsigned long __hash(const char* str)
 {
     unsigned long hash = 5381;
     int c;
@@ -40,7 +40,7 @@ state_t* lookup_search(state_lookup_t* lookup, const char* state_name)
 {
     log_verbose("lookup_search::lookup=%p, state_name=\"%s\"", lookup, state_name);
 
-    const unsigned long key = hash(state_name) % LOOKUP_SIZE;
+    const unsigned long key = __hash(state_name) % LOOKUP_SIZE;
     state_lookup_slot_t* slot = lookup->table[key];
 
     while (slot != NULL && slot->state->name != state_name) {
@@ -81,7 +81,7 @@ void lookup_insert(state_lookup_t* lookup, state_t* state)
         return;
     }
 
-    const unsigned long key = hash(state->name) % LOOKUP_SIZE;
+    const unsigned long key = __hash(state->name) % LOOKUP_SIZE;
     state_lookup_slot_t* new_slot = malloc(sizeof(state_lookup_slot_t));
     state_lookup_slot_t* next_slot = lookup->table[key];
 

@@ -31,12 +31,6 @@ int net_tcp_context_init(
 
 net_tcp_context_t* net_get_context(state_t* state, void* payload);
 
-int net_tcp_context_init(
-        net_tcp_context_t* context,
-        uv_loop_t* loop,
-        char* address,
-        int port);
-
 int net_connect(net_tcp_context_t* context, char* edge_name);
 
 int net_disconnect(net_tcp_context_t* context, char* edge_name);

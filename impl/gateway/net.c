@@ -5,16 +5,6 @@
 #include "err.h"
 
 /**
- * Casts payload and updates the state field.
- */
-net_tcp_context_t* net_get_context(state_t* state, void* payload)
-{
-    net_tcp_context_t* context = (net_tcp_context_t*) payload;
-    context->state = state;
-    return context;
-}
-
-/**
  * Initializes the context. Allocates memory for the address struct. Returns an
  * uv error code if something goes wrong.
  */
@@ -40,9 +30,19 @@ int net_tcp_context_init(
 }
 
 /**
+ * Casts payload and updates the state field.
+ */
+net_tcp_context_t* net_get_context(state_t* state, void* payload)
+{
+    net_tcp_context_t* context = (net_tcp_context_t*) payload;
+    context->state = state;
+    return context;
+}
+
+/**
  * Run when the tcp handle retrieves a connection request.
  */
-void net_on_connection(uv_connect_t* req, int status)
+void __net_on_connection(uv_connect_t* req, int status)
 {
     log_check_uv_r(status, "on_connection_cb");
 
@@ -73,13 +73,13 @@ int net_connect(net_tcp_context_t* context, char* edge_name)
     handle->data = context;
     context->data = edge_name;
 
-    return uv_tcp_connect(connect_req, handle, context->addr, net_on_connection);
+    return uv_tcp_connect(connect_req, handle, context->addr, __net_on_connection);
 }
 
 /**
  * Called by the shutdown request. Closes the tcp connection.
  */
-void net_on_close(uv_handle_t* handle)
+void __net_on_close(uv_handle_t* handle)
 {
     log_verbose("net_on_close:handle=%p", handle);
 
@@ -91,7 +91,7 @@ void net_on_close(uv_handle_t* handle)
     state_run_next(state, edge_name, context);
 }
 
-void net_on_shutdown(uv_shutdown_t* req, int status)
+void __net_on_shutdown(uv_shutdown_t* req, int status)
 {
     log_verbose("net_on_shutdown:req=%p, status=%d", req, status);
     log_check_uv_r(status, "net_on_disconnect");
@@ -101,7 +101,7 @@ void net_on_shutdown(uv_shutdown_t* req, int status)
 
     handle->data = context;
     free(req);
-    uv_close((uv_handle_t*) handle, net_on_close);
+    uv_close((uv_handle_t*) handle, __net_on_close);
 }
 
 int net_disconnect(net_tcp_context_t* context, char* edge_name)
@@ -113,7 +113,7 @@ int net_disconnect(net_tcp_context_t* context, char* edge_name)
     context->data = edge_name;
     shutdown_req->data = context;
 
-    return uv_shutdown(shutdown_req, (uv_stream_t*) context->handle, net_on_shutdown);
+    return uv_shutdown(shutdown_req, (uv_stream_t*) context->handle, __net_on_shutdown);
 }
 
 /**
@@ -167,7 +167,7 @@ int net_listen(net_tcp_context_t* context, char* edge_name)
  * Allocate memory with the suggested size to retrieve incoming data from the
  * tcp client.
  */
-void net_on_alloc(uv_handle_t* handle, size_t size, uv_buf_t* buf)
+void __net_on_alloc(uv_handle_t* handle, size_t size, uv_buf_t* buf)
 {
     log_verbose("net_on_alloc:handle=%p, size=%d, buf=%p", handle, size, buf);
 
@@ -183,7 +183,7 @@ void net_on_alloc(uv_handle_t* handle, size_t size, uv_buf_t* buf)
  * Called when a chunk of data has been read. The chunk buffer is pointed to by
  * context->data.
  */
-void net_on_read(uv_stream_t* handle, ssize_t nread, const uv_buf_t* buf)
+void __net_on_read(uv_stream_t* handle, ssize_t nread, const uv_buf_t* buf)
 {
     log_verbose("net_on_read:handle=%p, nread=%d, buf=%p", handle, nread, buf);
 
@@ -231,10 +231,10 @@ int net_read(net_tcp_context_t* context, char* edge_name)
 
     context->data = edge_name;
 
-    return uv_read_start((uv_stream_t*) context->handle, net_on_alloc, net_on_read);
+    return uv_read_start((uv_stream_t*) context->handle, __net_on_alloc, __net_on_read);
 }
 
-void net_on_write(uv_write_t* req, int status)
+void __net_on_write(uv_write_t* req, int status)
 {
     log_check_uv_r(status, "net_on_write");
 
@@ -259,7 +259,7 @@ int net_write(net_tcp_context_t* context, char* buf, char* edge_name)
     context->data = edge_name;
     write_req->data = context;
 
-    return uv_write(write_req, (uv_stream_t*) context->handle, bufs, 1, net_on_write);
+    return uv_write(write_req, (uv_stream_t*) context->handle, bufs, 1, __net_on_write);
 }
 
 int net_hostname(net_tcp_context_t* context, char* addr, int* port)
