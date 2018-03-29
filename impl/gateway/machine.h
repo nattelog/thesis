@@ -18,6 +18,6 @@ struct machine_boot_context_s {
 
 state_t* machine_tcp_request(state_lookup_t* lookup, state_callback done);
 
-state_t* machine_boot_process();
+state_t* machine_boot_process(machine_boot_context_t* context, config_data_t* config);
 
 #endif

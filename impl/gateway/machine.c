@@ -190,7 +190,7 @@ void boot_process_tcp_done(state_t* state, void* payload) {
     }
 }
 
-state_t* machine_boot_process()
+state_t* machine_boot_process(machine_boot_context_t* context, config_data_t* config)
 {
     state_t* boot_process;
     state_lookup_t lookup;
@@ -214,6 +214,8 @@ state_t* machine_boot_process()
     machine_tcp_request(&lookup, boot_process_tcp_done);
     boot_process = state_machine_build(si, nsi, ei, nei, &lookup);
     lookup_clear(&lookup);
+
+    context->config = config;
 
     return boot_process;
 }

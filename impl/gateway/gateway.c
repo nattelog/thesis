@@ -100,12 +100,10 @@ int main(int argc, char** argv)
     r = net_tcp_context_init((net_tcp_context_t*) &boot_context, loop, (char*) &config.nameservice_address, config.nameservice_port);
     log_check_uv_r(r, "net_tcp_context_init");
 
-    boot_context.config = &config;
-
     r = log_init(loop, config.logserver_address, config.logserver_port);
     log_check_uv_r(r, "log_init");
 
-    boot_process = machine_boot_process();
+    boot_process = machine_boot_process(&boot_context, &config);
 
     state_machine_run(boot_process, &boot_context);
     uv_run(loop, UV_RUN_DEFAULT);
