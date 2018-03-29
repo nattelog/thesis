@@ -81,7 +81,8 @@ int net_connect(net_tcp_context_t* context, char* edge_name)
  */
 void net_on_close(uv_handle_t* handle)
 {
-    log_debug("net_on_close");
+    log_verbose("net_on_close:handle=%p", handle);
+
     net_tcp_context_t* context = (net_tcp_context_t*) handle->data;
     state_t* state = context->state;
     char* edge_name = context->data;
@@ -92,6 +93,7 @@ void net_on_close(uv_handle_t* handle)
 
 void net_on_shutdown(uv_shutdown_t* req, int status)
 {
+    log_verbose("net_on_shutdown:req=%p, status=%d", req, status);
     log_check_uv_r(status, "net_on_disconnect");
 
     net_tcp_context_t* context = (net_tcp_context_t*) req->data;
@@ -104,12 +106,61 @@ void net_on_shutdown(uv_shutdown_t* req, int status)
 
 int net_disconnect(net_tcp_context_t* context, char* edge_name)
 {
+    log_verbose("net_disconnect:context=%p, edge_name=\"%s\"", context, edge_name);
+
     uv_shutdown_t* shutdown_req = malloc(sizeof(uv_shutdown_t));
 
     context->data = edge_name;
     shutdown_req->data = context;
 
     return uv_shutdown(shutdown_req, (uv_stream_t*) context->handle, net_on_shutdown);
+}
+
+/**
+ * Called by net_listen on the event of an incoming connection.
+ */
+void __net_on_incoming_connection(uv_stream_t* handle, int status)
+{
+    log_verbose("__net_on_incoming_connection:handle=%p, status=%d", handle, status);
+    log_check_uv_r(status, "__net_on_incoming_connection");
+
+    net_tcp_context_t* context = (net_tcp_context_t*) handle->data;
+    state_t* state = context->state;
+    char* edge_name = context->data;
+
+    state_run_next(state, edge_name, context);
+}
+
+/**
+ * Starts listening to tcp connections on context->addr. Goes to edge_name on
+ * connection. Returns an uv error code if something goes wrong.
+ */
+int net_listen(net_tcp_context_t* context, char* edge_name)
+{
+    log_verbose("net_listen:context=%p, edge_name=\"%s\"", context, edge_name);
+
+    int r;
+    uv_tcp_t* handle = malloc(sizeof(uv_tcp_t));
+    uv_loop_t* loop = context->loop;
+    struct sockaddr* addr = context->addr;
+
+    r = uv_tcp_init(loop, handle);
+
+    if (r) {
+        return r;
+    }
+    r = uv_tcp_bind(handle, addr, 0);
+
+    if (r) {
+        return r;
+    }
+
+    context->data = edge_name;
+    context->handle = handle;
+    handle->data = context;
+    r = uv_listen((uv_stream_t*) handle, 10, __net_on_incoming_connection);
+
+    return r;
 }
 
 /**
@@ -129,12 +180,14 @@ void net_on_alloc(uv_handle_t* handle, size_t size, uv_buf_t* buf)
 }
 
 /**
- * Called when a chunk of data has been read.
+ * Called when a chunk of data has been read. The chunk buffer is pointed to by
+ * context->data.
  */
 void net_on_read(uv_stream_t* handle, ssize_t nread, const uv_buf_t* buf)
 {
     log_verbose("net_on_read:handle=%p, nread=%d, buf=%p", handle, nread, buf);
 
+    int r;
     net_tcp_context_t* context = (net_tcp_context_t*) handle->data;
     char* edge_name = context->data;
 
@@ -148,8 +201,22 @@ void net_on_read(uv_stream_t* handle, ssize_t nread, const uv_buf_t* buf)
     else if (nread > 0) {
         log_debug("net:>>>> \"%s\"", buf->base);
 
-        uv_read_stop(handle);
-        context->data = buf->base;
+        protocol_value_t* read_payload;
+
+        r = uv_read_stop(handle);
+        log_check_uv_r(r, "uv_read_stop");
+
+        r = protocol_parse(&read_payload, buf->base);
+
+        if (r) {
+            log_error("could not parse read data (%d)", r);
+            context->read_payload = NULL;
+        }
+        else {
+            context->read_payload = read_payload;
+        }
+
+        free(buf->base);
         state_run_next(context->state, edge_name, context);
     }
 }
@@ -182,6 +249,8 @@ void net_on_write(uv_write_t* req, int status)
  */
 int net_write(net_tcp_context_t* context, char* buf, char* edge_name)
 {
+    log_verbose("net_write:context=%p, buf=%s, edge_name=\"%s\"", context, buf, edge_name);
+
     uv_write_t* write_req = malloc(sizeof(write_req));
     uv_buf_t bufs[] = {
         { .base = buf, .len = strlen(buf) }

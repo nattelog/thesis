@@ -32,16 +32,17 @@ void usage()
     printf("%s\n", usage_str);
 }
 
-char* on_request(char* method, char** args, size_t argc)
+protocol_value_t* on_request(protocol_value_t* request)
 {
-    log_info("got request \"%s\"", method);
+    log_info("got request %p", request);
 
-    return "result";
-}
+    int r;
+    protocol_value_t* response;
 
-void tcp_req_done(state_t* state, void* payload)
-{
-    log_info("callback done");
+    r = protocol_build_response_error(&response, "Error", "API not implemented");
+    log_check_r(r, "protocol_build_response_error");
+
+    return response;
 }
 
 int main(int argc, char** argv)
@@ -51,7 +52,9 @@ int main(int argc, char** argv)
     int input_flag;
     uv_loop_t* loop = uv_default_loop();
     machine_boot_context_t boot_context;
+    machine_server_context_t server_context;
     state_t* boot_process;
+    state_t* server;
 
     opterr = 0;
     config_init(&config);
@@ -97,15 +100,14 @@ int main(int argc, char** argv)
         }
     }
 
-    r = net_tcp_context_init((net_tcp_context_t*) &boot_context, loop, (char*) &config.nameservice_address, config.nameservice_port);
-    log_check_uv_r(r, "net_tcp_context_init");
-
     r = log_init(loop, config.logserver_address, config.logserver_port);
     log_check_uv_r(r, "log_init");
 
-    boot_process = machine_boot_process(&boot_context, &config);
+    boot_process = machine_boot_process(&boot_context, loop, &config);
+    server = machine_tcp_server(&server_context, loop, &config, on_request);
 
-    state_machine_run(boot_process, &boot_context);
+    //state_machine_run(boot_process, &boot_context);
+    state_machine_run(server, &server_context);
     uv_run(loop, UV_RUN_DEFAULT);
 
     return 0;

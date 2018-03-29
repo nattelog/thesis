@@ -21,7 +21,7 @@ void tcp_request_writing(state_t* state, void* payload)
 
     int r = 0;
     net_tcp_context_t* context = net_get_context(state, payload);
-    protocol_value_t* request = context->request;
+    protocol_value_t* request = context->write_payload;
     char* json_buf = malloc(256);
 
     r = protocol_to_json(request, json_buf);
@@ -36,23 +36,6 @@ void tcp_request_reading(state_t* state, void* payload)
 
     net_tcp_context_t* context = net_get_context(state, payload);
     net_read(context, "done");
-}
-
-void tcp_request_processing(state_t* state, void* payload)
-{
-    log_debug("tcp_request_processing");
-
-    int r = 0;
-    net_tcp_context_t* context = net_get_context(state, payload);
-    char* buf = context->data;
-    protocol_value_t* response;
-
-    r = protocol_parse(&response, buf);
-    log_check_r(r, "protocol_parse");
-
-    free(buf);
-    context->response = response;
-    state_run_next(state, "done", context);
 }
 
 void tcp_request_closing(state_t* state, void* payload)
@@ -72,15 +55,13 @@ state_t* machine_tcp_request(state_lookup_t* lookup, state_callback done)
         { .name = "tcp_request_connecting", .callback = tcp_request_connecting },
         { .name = "tcp_request_writing", .callback = tcp_request_writing },
         { .name = "tcp_request_reading", .callback = tcp_request_reading },
-        { .name = "tcp_request_processing", .callback = tcp_request_processing },
         { .name = "tcp_request_closing", .callback = tcp_request_closing },
         { .name = "tcp_request_done", .callback = done }
     };
     const edge_initializer_t ei[] = {
         { .name = "connect", .from = "tcp_request_connecting", .to = "tcp_request_writing" },
         { .name = "done", .from = "tcp_request_writing", .to = "tcp_request_reading" },
-        { .name = "done", .from = "tcp_request_reading", .to = "tcp_request_processing" },
-        { .name = "done", .from = "tcp_request_processing", .to = "tcp_request_closing" },
+        { .name = "done", .from = "tcp_request_reading", .to = "tcp_request_closing" },
         { .name = "done", .from = "tcp_request_closing", .to = "tcp_request_done" }
     };
     const int nsi = sizeof(si) / sizeof(si[0]);
@@ -111,18 +92,20 @@ void boot_process_verify_config(state_t* state, void* payload) {
     r = protocol_build_request(&request, "verify_gateway", 1, config_val); //, &straddr, &strport);
     log_check_r(r, "protocol_build_request");
 
-    ((net_tcp_context_t*) context)->request = request;
+    ((net_tcp_context_t*) context)->write_payload = request;
     state_run_next(state, "start", context);
 }
 
 void boot_process_check_verification(state_t* state, void* payload) {
-    log_debug("boot_process_check_verification");
+    log_verbose("boot_process_check_verification:state=%p, payload=%p", state, payload);
 
     int r;
     net_tcp_context_t* context = (net_tcp_context_t*) payload;
-    protocol_value_t* response = context->response;
+    protocol_value_t* response = context->read_payload;
 
-    protocol_free_parse(context->request);
+    // this free function complains that the write_payload struct has not been
+    // properly allocated, this causes a memory leak
+    // protocol_free_build(context->write_payload);
     protocol_check_response_error(response);
 
     if (protocol_has_key(response, "result")) {
@@ -163,18 +146,18 @@ void boot_process_get_devices(state_t* state, void* payload) {
     r = protocol_build_request(&request, "hostnames", 0);
     log_check_r(r, "protocol_build_request");
 
-    context->request = request;
+    context->write_payload = request;
     state_run_next(state, "start", context);
 }
 
 void boot_process_done(state_t* state, void* payload) {
     log_debug("boot_process_done");
 
-    int r;
     net_tcp_context_t* context = (net_tcp_context_t*) payload;
-    protocol_value_t* response = context->response;
+    protocol_value_t* response = context->read_payload;
 
     protocol_check_response_error(response);
+    protocol_free_build(context->write_payload);
 }
 
 void boot_process_tcp_done(state_t* state, void* payload) {
@@ -190,10 +173,17 @@ void boot_process_tcp_done(state_t* state, void* payload) {
     }
 }
 
-state_t* machine_boot_process(machine_boot_context_t* context, config_data_t* config)
+state_t* machine_boot_process(
+        machine_boot_context_t* context,
+        uv_loop_t* loop,
+        config_data_t* config)
 {
+    int r;
     state_t* boot_process;
     state_lookup_t lookup;
+    char* nameservice_address;
+    int nameservice_port;
+
     const state_initializer_t si[] = {
         { .name = "boot_process_verify_config", .callback = boot_process_verify_config },
         { .name = "boot_process_check_verification", .callback = boot_process_check_verification },
@@ -215,7 +205,144 @@ state_t* machine_boot_process(machine_boot_context_t* context, config_data_t* co
     boot_process = state_machine_build(si, nsi, ei, nei, &lookup);
     lookup_clear(&lookup);
 
+    nameservice_address = (char*) config->nameservice_address;
+    nameservice_port = config->nameservice_port;
+
+    r = net_tcp_context_init((net_tcp_context_t*) context, loop, nameservice_address, nameservice_port);
+    log_check_uv_r(r, "net_tcp_context_init");
+
     context->config = config;
 
     return boot_process;
+}
+
+void __server_listening(state_t* state, void* payload)
+{
+    log_verbose("__server_listening:state=%p, payload=%p", state, payload);
+
+    int r;
+    net_tcp_context_t* context = net_get_context(state, payload);
+
+    r = net_listen(context, "connect");
+    log_check_uv_r(r, "net_listen");
+}
+
+void __server_connecting(state_t* state, void* payload)
+{
+    log_verbose("__server_connecting:state=%p, payload=%p", state, payload);
+
+    int r;
+    machine_server_context_t* server_context = (machine_server_context_t*) payload;
+    machine_server_context_t* client_context = malloc(sizeof(machine_server_context_t));
+    uv_tcp_t* server_handle = ((net_tcp_context_t*) server_context)->handle;
+    uv_loop_t* loop = ((net_tcp_context_t*) server_context)->loop;
+    uv_tcp_t* client_handle = malloc(sizeof(uv_tcp_t));
+
+    r = uv_tcp_init(loop, client_handle);
+    log_check_uv_r(r, "uv_tcp_init");
+    r = uv_accept((uv_stream_t*) server_handle, (uv_stream_t*) client_handle);
+
+    if (r) {
+        log_error("could not accept connection (%d)", r);
+        r = net_disconnect((net_tcp_context_t*) client_context, "disconnect");
+        log_check_uv_r(r, "net_disconnect");
+    }
+
+    ((net_tcp_context_t*) client_context)->handle = client_handle;
+    ((net_tcp_context_t*) client_context)->state = state;
+    client_context->on_request = server_context->on_request;
+    client_handle->data = client_context;
+    r = net_read((net_tcp_context_t*) client_context, "process");
+    log_check_uv_r(r, "net_read");
+}
+
+void __server_processing(state_t* state, void* payload)
+{
+    log_verbose("__server_processing:state=%p, payload=%p", state, payload);
+
+    int r;
+    machine_server_context_t* context = (machine_server_context_t*) payload;
+    request_callback on_request = context->on_request;
+    protocol_value_t* request = ((net_tcp_context_t*) context)->read_payload;
+    protocol_value_t* response;
+    char* json_buf = malloc(1024);
+
+    ((net_tcp_context_t*) context)->state = state;
+
+    if (request == NULL) {
+       r = protocol_build_response_error(&response, "ProtocolError", "Could not parse response");
+       log_check_r(r, "protocol_build_response_error");
+    }
+    else {
+        response = (*on_request)(request);
+    }
+
+    r = protocol_to_json(response, json_buf);
+    log_check_r(r, "protocol_to_json");
+
+    net_write((net_tcp_context_t*) context, json_buf, "disconnect");
+}
+
+void __server_disconnecting(state_t* state, void* payload)
+{
+    log_verbose("__server_disconnecting:state=%p, payload=%p", state, payload);
+
+    int r;
+    net_tcp_context_t* context = net_get_context(state, payload);
+
+    r = net_disconnect(context, "clean");
+    log_check_uv_r(r, "net_disconnect");
+}
+
+void __server_cleaning(state_t* state, void* payload)
+{
+    log_verbose("__server_cleaning:state=%p, payload=%p", state, payload);
+
+    net_tcp_context_t* context = net_get_context(state, payload);
+
+    protocol_free_build(context->write_payload);
+    free(context);
+}
+
+state_t* machine_tcp_server(
+        machine_server_context_t* context,
+        uv_loop_t* loop,
+        config_data_t* config,
+        request_callback on_request)
+{
+    int r;
+    state_t* server;
+    state_lookup_t lookup;
+    char* nameservice_address;
+    int nameservice_port;
+
+    const state_initializer_t si[] = {
+        { .name = "server_listening", .callback = __server_listening },
+        { .name = "server_connecting", .callback = __server_connecting },
+        { .name = "server_processing", .callback = __server_processing },
+        { .name = "server_disconnecting", .callback = __server_disconnecting },
+        { .name = "server_cleaning", .callback = __server_cleaning }
+    };
+    const edge_initializer_t ei[] = {
+        { .name = "connect", .from = "server_listening", .to = "server_connecting" },
+        { .name = "process", .from = "server_connecting", .to = "server_processing" },
+        { .name = "disconnect", .from = "server_processing", .to = "server_disconnecting" },
+        { .name = "clean", .from = "server_disconnecting", .to = "server_cleaning" }
+    };
+    const int nsi = sizeof(si) / sizeof(si[0]);
+    const int nei = sizeof(ei) / sizeof(ei[0]);
+
+    lookup_init(&lookup);
+    server = state_machine_build(si, nsi, ei, nei, &lookup);
+    lookup_clear(&lookup);
+
+    nameservice_address = (char*) config->nameservice_address;
+    nameservice_port = config->nameservice_port;
+
+    r = net_tcp_context_init((net_tcp_context_t*) context, loop, nameservice_address, nameservice_port);
+    log_check_uv_r(r, "net_tcp_context_init");
+
+    context->on_request = on_request;
+
+    return server;
 }

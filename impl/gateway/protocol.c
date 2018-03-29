@@ -269,6 +269,18 @@ int protocol_build_response_error(protocol_value_t** protocol, char* name, char*
  */
 int protocol_get_response_error(protocol_value_t* protocol, char* error_name, char* error_message)
 {
+    log_verbose(
+            "protocol_get_response_error:protocol=%p, error_name=%p, error_message=%p",
+            protocol,
+            error_name,
+            error_message);
+
+    if (protocol == NULL) {
+        strcpy(error_name, "ProtocolError");
+        strcpy(error_message, "protocol points to null");
+        return 0;
+    }
+
     if (protocol_has_key(protocol, "error")) {
         int r;
         protocol_value_t* error;
@@ -327,6 +339,8 @@ int protocol_get_response_error(protocol_value_t* protocol, char* error_name, ch
  */
 void protocol_check_response_error(protocol_value_t* protocol)
 {
+    log_verbose("protocol_check_response_error:protocol=%p", protocol);
+
     int r;
     char err_name[48];
     char err_msg[48];

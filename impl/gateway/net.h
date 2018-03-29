@@ -18,8 +18,8 @@ struct net_tcp_context_s {
     uv_loop_t* loop;
     uv_tcp_t* handle;
     struct sockaddr* addr;
-    protocol_value_t* request;
-    protocol_value_t* response;
+    protocol_value_t* read_payload;
+    protocol_value_t* write_payload;
     void* data;
 };
 
@@ -40,6 +40,8 @@ int net_tcp_context_init(
 int net_connect(net_tcp_context_t* context, char* edge_name);
 
 int net_disconnect(net_tcp_context_t* context, char* edge_name);
+
+int net_listen(net_tcp_context_t* context, char* edge_name);
 
 int net_read(net_tcp_context_t* context, char* edge_name);
 
