@@ -11,19 +11,19 @@ void __tcp_request_connecting(state_t* state, void* payload)
     int r;
     net_tcp_context_t* context = net_get_context(state, payload);
 
-    r = net_connect(context, "connect");
-    log_check_uv_r(r, "req_connect");
+    r = net_connect(context, "connect"); log_check_uv_r(r, "req_connect");
+    log_check_uv_r(r, "net_connect");
 }
 
 void __tcp_request_writing(state_t* state, void* payload)
 {
     log_debug("tcp_request_writing");
 
-    int r = 0;
+    int r;
     net_tcp_context_t* context = net_get_context(state, payload);
-    protocol_value_t* request = context->write_payload;
 
-    net_write(context, request, "done");
+    r = net_write(context, "done");
+    log_check_uv_r(r, "net_write");
 }
 
 void __tcp_request_reading(state_t* state, void* payload)
@@ -70,22 +70,26 @@ void __boot_process_verify_config(state_t* state, void* payload) {
     log_debug("boot_process_verify_config");
 
     int r;
-    //char straddr[32];
-    //char strport[32];
-    //int port;
+    char straddr[128];
+    int port;
     protocol_value_t* request;
     protocol_value_t* config_val;
+    protocol_value_t* addr_val;
+    protocol_value_t* port_val;
+    protocol_value_t* tuple_val;
     machine_boot_context_t* context = (machine_boot_context_t*) payload;
+    net_tcp_context_t* server_context = context->server_context;
 
     r = config_to_protocol_type(context->config, &config_val);
     log_check_r(r, "config_to_protocol_type");
 
-    /*
-    net_hostname((net_tcp_context_t*) context, (char*) &straddr, &port);
-    sprintf(strport, "%d", port);
-    */
+    // build tuple with gateway server address
+    net_hostname(server_context, (char*) &straddr, &port);
+    protocol_build_string(&addr_val, straddr);
+    protocol_build_int(&port_val, port);
+    protocol_build_array(&tuple_val, 2, addr_val, port_val);
 
-    r = protocol_build_request(&request, "verify_gateway", 1, config_val); //, &straddr, &strport);
+    r = protocol_build_request(&request, "verify_gateway", 2, config_val, tuple_val);
     log_check_r(r, "protocol_build_request");
 
     ((net_tcp_context_t*) context)->write_payload = request;
@@ -169,10 +173,15 @@ void __boot_process_tcp_done(state_t* state, void* payload) {
     }
 }
 
+/**
+ * Create a boot state machine that initiates the gateway with its surrounding
+ * test systems.
+ */
 state_t* machine_boot_process(
         machine_boot_context_t* context,
         uv_loop_t* loop,
-        config_data_t* config)
+        config_data_t* config,
+        net_tcp_context_t* server_context)
 {
     int r;
     state_t* boot_process;
@@ -208,6 +217,7 @@ state_t* machine_boot_process(
     log_check_uv_r(r, "net_tcp_context_init");
 
     context->config = config;
+    context->server_context = server_context;
 
     return boot_process;
 }
@@ -272,7 +282,8 @@ void __server_processing(state_t* state, void* payload)
         response = (*on_request)(request);
     }
 
-    net_write((net_tcp_context_t*) context, response, "disconnect");
+    ((net_tcp_context_t*) context)->write_payload = response;
+    net_write((net_tcp_context_t*) context, "disconnect");
 }
 
 void __server_disconnecting(state_t* state, void* payload)
@@ -296,6 +307,10 @@ void __server_cleaning(state_t* state, void* payload)
     free(context);
 }
 
+/**
+ * Creates a tcp server state machine that listens for tcp connections, reads
+ * their data and responds according to on_request.
+ */
 state_t* machine_tcp_server(
         machine_server_context_t* context,
         uv_loop_t* loop,
@@ -325,7 +340,7 @@ state_t* machine_tcp_server(
     server = state_machine_build(si, nsi, ei, nei, &lookup);
     lookup_clear(&lookup);
 
-    r = net_tcp_context_init((net_tcp_context_t*) context, loop, "0.0.0.0", 0);
+    r = net_tcp_context_init((net_tcp_context_t*) context, loop, "0.0.0.0", SERVER_PORT);
     log_check_uv_r(r, "net_tcp_context_init");
 
     context->on_request = on_request;

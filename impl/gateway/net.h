@@ -8,6 +8,7 @@
 #include "protocol.h"
 
 #define MAX_REQUEST_ARGS 8
+#define SERVER_PORT 5010
 
 typedef struct net_tcp_context_s net_tcp_context_t;
 typedef struct net_request_s net_request_t;
@@ -40,7 +41,7 @@ int net_listen(net_tcp_context_t* context, char* edge_name);
 
 int net_read(net_tcp_context_t* context, char* edge_name);
 
-int net_write(net_tcp_context_t* context, protocol_value_t* protocol, char* edge_name);
+int net_write(net_tcp_context_t* context, char* edge_name);
 
 int net_hostname(net_tcp_context_t* context, char* addr, int* port);
 

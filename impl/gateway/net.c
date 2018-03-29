@@ -253,19 +253,20 @@ void __net_on_write(uv_write_t* req, int status)
 }
 
 /**
- * Writes protocol to the tcp handle specified in context. Proceeds to the
- * state associated with edge_name when writing is finished.
+ * Writes context->write_payload to context->handle. Proceeds to the state associated
+ * with edge_name when writing is finished.
  */
-int net_write(net_tcp_context_t* context, protocol_value_t* protocol, char* edge_name)
+int net_write(net_tcp_context_t* context, char* edge_name)
 {
-    log_verbose("net_write:context=%p, protocol=%p, edge_name=\"%s\"", context, protocol, edge_name);
+    log_verbose("net_write:context=%p, edge_name=\"%s\"", context, edge_name);
 
+    protocol_value_t* protocol = context->write_payload;
     uv_write_t* write_req = malloc(sizeof(write_req));
     char pre[1024];
     char* buf = malloc(1024);
 
     protocol_to_json(protocol, (char*) &pre);
-    sprintf(buf, "%s\n", &pre);
+    sprintf(buf, "%s\n", (char*) &pre);
 
     uv_buf_t bufs[] = {
         { .base = buf, .len = strlen(buf) }
@@ -275,15 +276,21 @@ int net_write(net_tcp_context_t* context, protocol_value_t* protocol, char* edge
     context->buf = buf;
     write_req->data = context;
 
+    log_debug("net:<<<< \"%s\"", buf);
+
     return uv_write(write_req, (uv_stream_t*) context->handle, bufs, 1, __net_on_write);
 }
 
 /**
  * Retrieves the address and port of context->handle and copies the values to
- * addr and port.
+ * addr and port. Todo: make it work with getsockname.
  */
 int net_hostname(net_tcp_context_t* context, char* addr, int* port)
 {
+    strcpy(addr, "0.0.0.0");
+    *port = SERVER_PORT;
+
+    /*
     int r;
     struct sockaddr s;
     struct sockaddr_in* sin;
@@ -298,6 +305,7 @@ int net_hostname(net_tcp_context_t* context, char* addr, int* port)
     sin = (struct sockaddr_in*) &s;
     strcpy(addr, inet_ntoa(sin->sin_addr));
     *port = (int) htons(sin->sin_port);
+    */
 
     return 0;
 }
