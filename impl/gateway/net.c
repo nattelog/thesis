@@ -53,6 +53,10 @@ void __net_on_connection(uv_connect_t* req, int status)
     state_run_next(context->state, edge_name, context);
 }
 
+/**
+ * Connects to a tcp host with address found in context->addr. Runs the state
+ * associated with edge_name when done.
+ */
 int net_connect(net_tcp_context_t* context, char* edge_name)
 {
     log_debug("net_connect");
@@ -104,6 +108,9 @@ void __net_on_shutdown(uv_shutdown_t* req, int status)
     uv_close((uv_handle_t*) handle, __net_on_close);
 }
 
+/**
+ * Disconnects context->handle and runs the state associated to edge_name.
+ */
 int net_disconnect(net_tcp_context_t* context, char* edge_name)
 {
     log_verbose("net_disconnect:context=%p, edge_name=\"%s\"", context, edge_name);
@@ -271,6 +278,10 @@ int net_write(net_tcp_context_t* context, protocol_value_t* protocol, char* edge
     return uv_write(write_req, (uv_stream_t*) context->handle, bufs, 1, __net_on_write);
 }
 
+/**
+ * Retrieves the address and port of context->handle and copies the values to
+ * addr and port.
+ */
 int net_hostname(net_tcp_context_t* context, char* addr, int* port)
 {
     int r;
