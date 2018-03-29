@@ -23,10 +23,10 @@ void usage()
         "            The CPU intensity each event induce. Value between 0 and 1.\n\n"
         "        -i <value>\n"
         "            The I/O intensity each event induce. Value between 0 and 1.\n\n"
-        "        -l <address>:<port>\n"
-        "            The address and port of the log server.\n\n"
         "        -n <address>:<port>\n"
         "            The address and port of the nameservice.\n\n"
+        "        -l <address>:<port>\n"
+        "            The address and port of the log server.\n\n"
         "";
 
     printf("%s\n", usage_str);
