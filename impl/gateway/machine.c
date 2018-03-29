@@ -307,14 +307,11 @@ void __server_cleaning(state_t* state, void* payload)
 state_t* machine_tcp_server(
         machine_server_context_t* context,
         uv_loop_t* loop,
-        config_data_t* config,
         request_callback on_request)
 {
     int r;
     state_t* server;
     state_lookup_t lookup;
-    char* nameservice_address;
-    int nameservice_port;
 
     const state_initializer_t si[] = {
         { .name = "server_listening", .callback = __server_listening },
@@ -336,10 +333,7 @@ state_t* machine_tcp_server(
     server = state_machine_build(si, nsi, ei, nei, &lookup);
     lookup_clear(&lookup);
 
-    nameservice_address = (char*) config->nameservice_address;
-    nameservice_port = config->nameservice_port;
-
-    r = net_tcp_context_init((net_tcp_context_t*) context, loop, nameservice_address, nameservice_port);
+    r = net_tcp_context_init((net_tcp_context_t*) context, loop, "0.0.0.0", 0);
     log_check_uv_r(r, "net_tcp_context_init");
 
     context->on_request = on_request;

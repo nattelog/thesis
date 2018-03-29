@@ -104,9 +104,9 @@ int main(int argc, char** argv)
     log_check_uv_r(r, "log_init");
 
     boot_process = machine_boot_process(&boot_context, loop, &config);
-    server = machine_tcp_server(&server_context, loop, &config, on_request);
+    server = machine_tcp_server(&server_context, loop, on_request);
 
-    //state_machine_run(boot_process, &boot_context);
+    state_machine_run(boot_process, &boot_context);
     state_machine_run(server, &server_context);
     uv_run(loop, UV_RUN_DEFAULT);
 

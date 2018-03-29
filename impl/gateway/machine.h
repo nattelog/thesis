@@ -32,7 +32,6 @@ state_t* machine_boot_process(
 state_t* machine_tcp_server(
         machine_server_context_t* context,
         uv_loop_t* loop,
-        config_data_t* config,
         request_callback on_request);
 
 #endif
