@@ -6,5 +6,6 @@
 
 extern Suite* protocol_suite();
 extern Suite* conf_suite();
+extern Suite* state_suite();
 
 #endif

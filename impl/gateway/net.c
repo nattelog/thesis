@@ -1,3 +1,4 @@
+#include <stdlib.h>
 #include <stdarg.h>
 #include <string.h>
 #include "net.h"
@@ -14,8 +15,15 @@ int net_tcp_context_init(
         char* address,
         int port)
 {
+    log_verbose(
+            "net_tcp_context_init:context=%p, loop=%p, address=\"%s\", port=%d",
+            context,
+            loop,
+            address,
+            port);
+
     int r;
-    struct sockaddr* addr = malloc(sizeof(struct sockaddr));
+    struct sockaddr* addr = calloc(1, sizeof(struct sockaddr));
 
     r = uv_ip4_addr(address, port, (struct sockaddr_in*) addr);
 
@@ -44,7 +52,8 @@ net_tcp_context_t* net_get_context(state_t* state, void* payload)
  */
 void __net_on_connection(uv_connect_t* req, int status)
 {
-    log_check_uv_r(status, "on_connection_cb");
+    log_verbose("__net_on_connection:req=%p, status=%d", req, status);
+    log_check_uv_r(status, "__net_on_connection");
 
     net_tcp_context_t* context = (net_tcp_context_t*) req->data;
     char* edge_name = context->data;
@@ -59,12 +68,12 @@ void __net_on_connection(uv_connect_t* req, int status)
  */
 int net_connect(net_tcp_context_t* context, char* edge_name)
 {
-    log_debug("net_connect");
+    log_verbose("net_connect:context=%p, edge_name=\"%s\"", context, edge_name);
 
     int r;
-    uv_tcp_t* handle = malloc(sizeof(uv_tcp_t));
+    uv_tcp_t* handle = calloc(1, sizeof(uv_tcp_t));
     uv_loop_t* loop = context->loop;
-    uv_connect_t* connect_req = malloc(sizeof(uv_connect_t));
+    uv_connect_t* connect_req = calloc(1, sizeof(uv_connect_t));
 
     r = uv_tcp_init(loop, handle);
 
@@ -85,7 +94,7 @@ int net_connect(net_tcp_context_t* context, char* edge_name)
  */
 void __net_on_close(uv_handle_t* handle)
 {
-    log_verbose("net_on_close:handle=%p", handle);
+    log_verbose("__net_on_close:handle=%p", handle);
 
     net_tcp_context_t* context = (net_tcp_context_t*) handle->data;
     state_t* state = context->state;
@@ -97,8 +106,8 @@ void __net_on_close(uv_handle_t* handle)
 
 void __net_on_shutdown(uv_shutdown_t* req, int status)
 {
-    log_verbose("net_on_shutdown:req=%p, status=%d", req, status);
-    log_check_uv_r(status, "net_on_disconnect");
+    log_verbose("__net_on_shutdown:req=%p, status=%d", req, status);
+    log_check_uv_r(status, "__net_on_shutdown");
 
     net_tcp_context_t* context = (net_tcp_context_t*) req->data;
     uv_tcp_t* handle = context->handle;
@@ -115,7 +124,7 @@ int net_disconnect(net_tcp_context_t* context, char* edge_name)
 {
     log_verbose("net_disconnect:context=%p, edge_name=\"%s\"", context, edge_name);
 
-    uv_shutdown_t* shutdown_req = malloc(sizeof(uv_shutdown_t));
+    uv_shutdown_t* shutdown_req = calloc(1, sizeof(uv_shutdown_t));
 
     context->data = edge_name;
     shutdown_req->data = context;
@@ -147,7 +156,7 @@ int net_listen(net_tcp_context_t* context, char* edge_name)
     log_verbose("net_listen:context=%p, edge_name=\"%s\"", context, edge_name);
 
     int r;
-    uv_tcp_t* handle = malloc(sizeof(uv_tcp_t));
+    uv_tcp_t* handle = calloc(1, sizeof(uv_tcp_t));
     uv_loop_t* loop = context->loop;
     struct sockaddr* addr = context->addr;
 
@@ -165,7 +174,7 @@ int net_listen(net_tcp_context_t* context, char* edge_name)
     context->data = edge_name;
     context->handle = handle;
     handle->data = context;
-    r = uv_listen((uv_stream_t*) handle, 10, __net_on_incoming_connection);
+    r = uv_listen((uv_stream_t*) handle, 1, __net_on_incoming_connection);
 
     return r;
 }
@@ -176,10 +185,10 @@ int net_listen(net_tcp_context_t* context, char* edge_name)
  */
 void __net_on_alloc(uv_handle_t* handle, size_t size, uv_buf_t* buf)
 {
-    log_verbose("net_on_alloc:handle=%p, size=%d, buf=%p", handle, size, buf);
+    log_verbose("__net_on_alloc:handle=%p, size=%d, buf=%p", handle, size, buf);
 
-    buf->base = malloc(size);
-    buf->len = size;
+    buf->base = calloc(1, NET_MAX_SIZE);
+    buf->len = NET_MAX_SIZE;
 
     if (buf->base == NULL) {
         log_error("reading buffer was not allocated properly");
@@ -192,28 +201,36 @@ void __net_on_alloc(uv_handle_t* handle, size_t size, uv_buf_t* buf)
  */
 void __net_on_read(uv_stream_t* handle, ssize_t nread, const uv_buf_t* buf)
 {
-    log_verbose("net_on_read:handle=%p, nread=%d, buf=%p", handle, nread, buf);
+    log_verbose("__net_on_read:handle=%p, nread=%d, buf=%p", handle, nread, buf);
 
     int r;
     net_tcp_context_t* context = (net_tcp_context_t*) handle->data;
-    char* edge_name = context->data;
+    // char* edge_name = context->data;
+    state_t* state = context->state;
+    char* read_chunk_edge = context->read_chunk_edge;
+    char* read_eof_edge = context->read_eof_edge;
 
     if (nread < 0) {
         if (nread != UV_EOF) {
             log_check_uv_r(nread, "tcp_on_reading");
         }
 
-        free(buf->base);
+        if (read_eof_edge != NULL) {
+            state_run_next(state, read_eof_edge, context);
+        }
+
+        log_debug("__net_on_read:releasing buf->base (%p)", buf->base);
+
+        if (buf->base != NULL) {
+            free(buf->base);
+        }
     }
     else if (nread > 0) {
-        log_debug("net:>>>> \"%s\"", buf->base);
+        log_debug("net:>>>> \"%s\" (%d)", buf->base, nread);
 
         protocol_value_t* read_payload;
 
-        r = uv_read_stop(handle);
-        log_check_uv_r(r, "uv_read_stop");
-
-        r = protocol_parse(&read_payload, buf->base);
+        r = protocol_parse(&read_payload, buf->base, nread);
 
         if (r) {
             log_error("could not parse read data (%d)", r);
@@ -223,32 +240,56 @@ void __net_on_read(uv_stream_t* handle, ssize_t nread, const uv_buf_t* buf)
             context->read_payload = read_payload;
         }
 
-        free(buf->base);
-        state_run_next(context->state, edge_name, context);
+        state_run_next(state, read_chunk_edge, context);
+    }
+    else if (nread == 0) {
+        return;
     }
 }
 
-/**
- * Read incoming data on the stream handle set in context. Go to the state
+/*
  * associated with edge_name when read is finished.
  */
-int net_read(net_tcp_context_t* context, char* edge_name)
+int net_read(net_tcp_context_t* context, char* chunk_edge, char* eof_edge)
 {
-    log_verbose("net_read: context=%p, edge_name=\"%s\"", context, edge_name);
+    log_verbose("net_read: context=%p, chunk_edge=\"%s\", eof_edge=\"%s\"", context, chunk_edge, eof_edge);
 
-    context->data = edge_name;
+    char* read_chunk_edge = malloc(strlen(chunk_edge) + 1);
+    char* read_eof_edge;
+
+    if (eof_edge == NULL) {
+        read_eof_edge = NULL;
+    }
+    else {
+        read_eof_edge = malloc(strlen(read_eof_edge) + 1);
+    }
+
+    strcpy(read_chunk_edge, chunk_edge);
+    strcat(read_chunk_edge, "\0");
+
+    if (eof_edge != NULL) {
+        strcpy(read_eof_edge, eof_edge);
+        strcat(read_eof_edge, "\0");
+    }
+
+    context->read_chunk_edge = read_chunk_edge;
+    context->read_eof_edge = read_eof_edge;
 
     return uv_read_start((uv_stream_t*) context->handle, __net_on_alloc, __net_on_read);
 }
 
 void __net_on_write(uv_write_t* req, int status)
 {
-    log_check_uv_r(status, "net_on_write");
+    log_verbose("__net_on_write:req=%p, status=%d", req, status);
+    log_check_uv_r(status, "__net_on_write");
 
     net_tcp_context_t* context = (net_tcp_context_t*) req->data;
     char* edge_name = context->data;
 
-    free(context->buf);
+    log_debug("__net_on_write:releasing write_req");
+    free(req);
+    log_debug("__net_on_write:released write_req");
+
     state_run_next(context->state, edge_name, context);
 }
 
@@ -260,20 +301,29 @@ int net_write(net_tcp_context_t* context, char* edge_name)
 {
     log_verbose("net_write:context=%p, edge_name=\"%s\"", context, edge_name);
 
-    protocol_value_t* protocol = context->write_payload;
-    uv_write_t* write_req = malloc(sizeof(write_req));
-    char pre[1024];
-    char* buf = malloc(1024);
+    protocol_value_t* write_payload = context->write_payload;
+    char* buf = context->buf;
 
-    protocol_to_json(protocol, (char*) &pre);
-    sprintf(buf, "%s\n", (char*) &pre);
+    uv_write_t* write_req = calloc(1, sizeof(uv_write_t));
+    log_debug("net_write:calloc(write_req) = %p", write_req);
+
+    if (protocol_size(write_payload) > NET_MAX_SIZE) {
+        log_error("net_write:protocol is too large!");
+        exit(0);
+    }
+
+    memset(buf, 0, NET_MAX_SIZE);
+    log_debug("memset done");
+    protocol_to_json(write_payload, buf);
+    strcat(buf, "\n\0");
 
     uv_buf_t bufs[] = {
         { .base = buf, .len = strlen(buf) }
     };
 
+    protocol_free_build(write_payload);
+    context->write_payload = NULL;
     context->data = edge_name;
-    context->buf = buf;
     write_req->data = context;
 
     log_debug("net:<<<< \"%s\"", buf);

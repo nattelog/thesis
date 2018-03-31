@@ -7,6 +7,7 @@
 #include "assert.h"
 #include "log.h"
 #include "state.h"
+#include "err.h"
 
 /**
  * Initializes the lookup table with NULL pointers.
@@ -82,7 +83,7 @@ void lookup_insert(state_lookup_t* lookup, state_t* state)
     }
 
     const unsigned long key = __hash(state->name) % LOOKUP_SIZE;
-    state_lookup_slot_t* new_slot = malloc(sizeof(state_lookup_slot_t));
+    state_lookup_slot_t* new_slot = calloc(1, sizeof(state_lookup_slot_t));
     state_lookup_slot_t* next_slot = lookup->table[key];
 
     new_slot->state = state;
@@ -150,7 +151,7 @@ void lookup_print(state_lookup_t* lookup)
 void state_add_edge(const char* name, state_t* from_state, state_t* to_state) {
     log_verbose("state_add_edge::name=\"%s\", from_state=%p, to_state=%p", name, from_state, to_state);
 
-    edge_t* new_edge = malloc(sizeof(edge_t));
+    edge_t* new_edge = calloc(1, sizeof(edge_t));
 
     new_edge->name = name;
     new_edge->next_state = to_state;
@@ -165,7 +166,7 @@ state_t* state_create(const char* name, state_callback callback)
 {
     log_verbose("state_create::name=\"%s\", callback=%p", name, callback);
 
-    state_t* new_state = malloc(sizeof(state_t));
+    state_t* new_state = calloc(1, sizeof(state_t));
 
     new_state->name = name;
     new_state->edges = NULL;
@@ -224,23 +225,40 @@ void state_machine_run(state_t* start_state, void* payload) {
 }
 
 /**
+ * Set next to be the state pointed to by edge_name from origin. Returns an
+ * error code if the edge was not found.
+ */
+int state_next(state_t* origin, state_t** next, const char* edge_name)
+{
+    log_verbose("state_next::origin=%p, next=%p, edge_name=\"%s\"", origin, *next, edge_name);
+
+    edge_t* current_edge = origin->edges;
+
+    while (current_edge != NULL && strcmp(current_edge->name, edge_name) != 0) {
+        current_edge = current_edge->next_edge;
+    }
+
+    if (current_edge != NULL && strcmp(current_edge->name, edge_name) == 0) {
+        *next = current_edge->next_state;
+        return 0;
+    }
+
+    return ENFND;
+}
+
+/**
  * Runs the callback associated with the next state of the given state, determined by edge_name.
  */
 void state_run_next(state_t* state, const char* edge_name, void* payload) {
     log_verbose("state_run_next::state=%p, edge_name=\"%s\", payload=%p", state, edge_name, payload);
 
-    edge_t* current_edge = state->edges;
+    int r;
+    state_t* next_state;
 
-    while (current_edge != NULL && current_edge->name != edge_name) {
-        current_edge = current_edge->next_edge;
-    }
+    r = state_next(state, &next_state, edge_name);
+    log_check_r(r, "state_next");
 
-    if (current_edge != NULL && current_edge->name == edge_name) {
-        state_t* next_state = current_edge->next_state;
-        (*next_state->callback)(next_state, payload);
-    } else {
-        log_error("state %s has no edge %s", state->name, edge_name);
-    }
+    (*next_state->callback)(next_state, payload);
 }
 
 void state_print_tree(state_lookup_t* lookup, state_t* parent, int indent)

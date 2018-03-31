@@ -6,7 +6,7 @@
 
 typedef json_value protocol_value_t;
 
-int protocol_parse(protocol_value_t** protocol, char* buf);
+int protocol_parse(protocol_value_t** protocol, char* buf, int len);
 
 int protocol_is_object(protocol_value_t* protocol);
 

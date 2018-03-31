@@ -34,14 +34,47 @@ void usage()
 
 protocol_value_t* on_request(protocol_value_t* request)
 {
-    log_info("got request %p", request);
+    log_verbose("on_request:request=%p", request);
 
     int r;
-    protocol_value_t* response;
+    protocol_value_t* response = NULL;
 
-    r = protocol_build_response_error(&response, "Error", "API not implemented");
-    log_check_r(r, "protocol_build_response_error");
+    if (protocol_has_key(request, "method") && protocol_has_key(request, "args")) {
+        protocol_value_t* method;
+        protocol_value_t* result;
+        char method_str[1024] = { 0 };
 
+        r = protocol_get_key(request, &method, "method");
+        log_check_r(r, "protocol_get_key");
+
+        r = protocol_get_string(method, (char*) &method_str);
+        log_check_r(r, "protocol_get_string");
+
+        if (strcmp(method_str, "get_timestamp") == 0) {
+            r = protocol_build_int(&result, get_timestamp());
+            log_check_r(r, "protocol_build_int");
+
+            r = protocol_build_response_success(&response, result);
+            log_check_r(r, "protocol_build_response_success");
+        }
+        else if (strcmp(method_str, "start_test") == 0) {
+            r = protocol_build_int(&result, 0);
+            log_check_r(r, "protocol_build_int");
+
+            r = protocol_build_response_success(&response, result);
+            log_check_r(r, "protocol_build_response_success");
+        }
+        else {
+            r = protocol_build_response_error(&response, "Error", "Unknown method");
+            log_check_r(r, "protocol_build_response_error");
+        }
+    }
+    else {
+        r = protocol_build_response_error(&response, "Error", "Bad request protocol");
+        log_check_r(r, "protocol_build_response_error");
+    }
+
+    log_debug("on_request:returning response %p", response);
     return response;
 }
 

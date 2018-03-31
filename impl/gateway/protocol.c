@@ -1,19 +1,36 @@
+#include <stdlib.h>
 #include "log.h"
 #include "err.h"
 #include "protocol.h"
 
+static void* protocol_alloc(size_t size, int zero, void* user_data)
+{
+    log_verbose("protocol_alloc:size=%d, zero=%d, user_data=%p", size, zero, user_data);
+
+    return zero ? calloc(1, size) : malloc(size);
+}
+
+static void protocol_free(void* p, void* user_data)
+{
+    log_verbose("protocol_free:p=%p, user_data=%p", p, user_data);
+
+    free(p);
+}
+
 /**
  * Parses the json string in buf and builds up a json structure in protocol.
  */
-int protocol_parse(protocol_value_t** protocol, char* buf)
+int protocol_parse(protocol_value_t** protocol, char* buf, int len)
 {
-    log_verbose("protocol_parse:protocol=%p, buf=\"%s\"", protocol, buf);
+    log_verbose("protocol_parse:protocol=%p, buf=\"%s\", len=%d", protocol, buf, len);
 
     json_settings settings = {};
-    char strerr[128];
+    char strerr[1024] = { 0 };
 
     settings.value_extra = json_builder_extra;
-    *protocol = json_parse_ex(&settings, buf, strlen(buf), strerr);
+    settings.mem_alloc = protocol_alloc;
+    settings.mem_free = protocol_free;
+    *protocol = json_parse_ex(&settings, buf, len, (char*) &strerr);
 
     if (*protocol == NULL) {
         log_error("json error:%s", &strerr);
@@ -237,6 +254,7 @@ int protocol_build_response_success(protocol_value_t** protocol, protocol_value_
 
     *protocol = json_object_new(1);
     json_object_push(*protocol, "result", result);
+    log_debug("protocol_build_response_success:protocol built %p", *protocol);
     return 0;
 }
 
@@ -351,6 +369,13 @@ void protocol_check_response_error(protocol_value_t* protocol)
         log_error("%s:%s", err_name, err_msg);
         exit(1);
     }
+}
+
+size_t protocol_size(protocol_value_t* protocol)
+{
+    log_verbose("protocol_size:protocol=%p", protocol);
+
+    return json_measure(protocol);
 }
 
 int protocol_to_json(protocol_value_t* protocol, char* buf)

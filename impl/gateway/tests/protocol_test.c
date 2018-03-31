@@ -7,7 +7,7 @@ START_TEST(protocol_parse_success_test)
 {
     protocol_value_t* value;
     char* buf = "{}";
-    int r = protocol_parse(&value, buf);
+    int r = protocol_parse(&value, buf, 2);
 
     ck_assert_int_eq(r, 0);
     protocol_free_parse(value);
@@ -18,7 +18,7 @@ START_TEST(protocol_parse_fail_test)
 {
     protocol_value_t* value;
     char* buf = "{";
-    int r = protocol_parse(&value, buf);
+    int r = protocol_parse(&value, buf, 1);
 
     ck_assert_int_eq(r, EJSON);
     protocol_free_parse(value);
@@ -31,7 +31,7 @@ START_TEST(protocol_has_key_test)
     protocol_value_t* value;
     char* buf = "{\"foo\":\"bar\"}";
 
-    r = protocol_parse(&value, buf);
+    r = protocol_parse(&value, buf, strlen(buf));
     ck_assert_int_eq(r, 0);
 
     r = protocol_has_key(value, "foo");
@@ -54,155 +54,155 @@ START_TEST(protocol_type_test)
     char* strint = "10";
 
     // is object
-    r = protocol_parse(&value, strobj);
+    r = protocol_parse(&value, strobj, strlen(strobj));
     ck_assert_int_eq(r, 0);
     r = protocol_is_object(value);
     ck_assert_int_eq(r, 1);
     protocol_free_parse(value);
 
-    r = protocol_parse(&value, strstr);
+    r = protocol_parse(&value, strstr, strlen(strstr));
     ck_assert_int_eq(r, 0);
     r = protocol_is_object(value);
     ck_assert_int_eq(r, 0);
     protocol_free_parse(value);
 
-    r = protocol_parse(&value, strarr);
+    r = protocol_parse(&value, strarr, strlen(strarr));
     ck_assert_int_eq(r, 0);
     r = protocol_is_object(value);
     ck_assert_int_eq(r, 0);
     protocol_free_parse(value);
 
-    r = protocol_parse(&value, strbol);
+    r = protocol_parse(&value, strbol, strlen(strbol));
     ck_assert_int_eq(r, 0);
     r = protocol_is_object(value);
     ck_assert_int_eq(r, 0);
     protocol_free_parse(value);
 
-    r = protocol_parse(&value, strint);
+    r = protocol_parse(&value, strint, strlen(strint));
     ck_assert_int_eq(r, 0);
     r = protocol_is_object(value);
     ck_assert_int_eq(r, 0);
     protocol_free_parse(value);
 
     // is array
-    r = protocol_parse(&value, strobj);
+    r = protocol_parse(&value, strobj, strlen(strobj));
     ck_assert_int_eq(r, 0);
     r = protocol_is_array(value);
     ck_assert_int_eq(r, 0);
     protocol_free_parse(value);
 
-    r = protocol_parse(&value, strstr);
+    r = protocol_parse(&value, strstr, strlen(strstr));
     ck_assert_int_eq(r, 0);
     r = protocol_is_array(value);
     ck_assert_int_eq(r, 0);
     protocol_free_parse(value);
 
-    r = protocol_parse(&value, strarr);
+    r = protocol_parse(&value, strarr, strlen(strarr));
     ck_assert_int_eq(r, 0);
     r = protocol_is_array(value);
     ck_assert_int_eq(r, 1);
     protocol_free_parse(value);
 
-    r = protocol_parse(&value, strbol);
+    r = protocol_parse(&value, strbol, strlen(strbol));
     ck_assert_int_eq(r, 0);
     r = protocol_is_array(value);
     ck_assert_int_eq(r, 0);
     protocol_free_parse(value);
 
-    r = protocol_parse(&value, strint);
+    r = protocol_parse(&value, strint, strlen(strint));
     ck_assert_int_eq(r, 0);
     r = protocol_is_array(value);
     ck_assert_int_eq(r, 0);
     protocol_free_parse(value);
 
     // is string
-    r = protocol_parse(&value, strobj);
+    r = protocol_parse(&value, strobj, strlen(strobj));
     ck_assert_int_eq(r, 0);
     r = protocol_is_string(value);
     ck_assert_int_eq(r, 0);
     protocol_free_parse(value);
 
-    r = protocol_parse(&value, strstr);
+    r = protocol_parse(&value, strstr, strlen(strstr));
     ck_assert_int_eq(r, 0);
     r = protocol_is_string(value);
     ck_assert_int_eq(r, 1);
     protocol_free_parse(value);
 
-    r = protocol_parse(&value, strarr);
+    r = protocol_parse(&value, strarr, strlen(strarr));
     ck_assert_int_eq(r, 0);
     r = protocol_is_string(value);
     ck_assert_int_eq(r, 0);
     protocol_free_parse(value);
 
-    r = protocol_parse(&value, strbol);
+    r = protocol_parse(&value, strbol, strlen(strbol));
     ck_assert_int_eq(r, 0);
     r = protocol_is_string(value);
     ck_assert_int_eq(r, 0);
     protocol_free_parse(value);
 
-    r = protocol_parse(&value, strint);
+    r = protocol_parse(&value, strint, strlen(strint));
     ck_assert_int_eq(r, 0);
     r = protocol_is_string(value);
     ck_assert_int_eq(r, 0);
     protocol_free_parse(value);
 
     // is bool
-    r = protocol_parse(&value, strobj);
+    r = protocol_parse(&value, strobj, strlen(strobj));
     ck_assert_int_eq(r, 0);
     r = protocol_is_bool(value);
     ck_assert_int_eq(r, 0);
     protocol_free_parse(value);
 
-    r = protocol_parse(&value, strstr);
+    r = protocol_parse(&value, strstr, strlen(strstr));
     ck_assert_int_eq(r, 0);
     r = protocol_is_bool(value);
     ck_assert_int_eq(r, 0);
     protocol_free_parse(value);
 
-    r = protocol_parse(&value, strarr);
+    r = protocol_parse(&value, strarr, strlen(strarr));
     ck_assert_int_eq(r, 0);
     r = protocol_is_bool(value);
     ck_assert_int_eq(r, 0);
     protocol_free_parse(value);
 
-    r = protocol_parse(&value, strbol);
+    r = protocol_parse(&value, strbol, strlen(strbol));
     ck_assert_int_eq(r, 0);
     r = protocol_is_bool(value);
     ck_assert_int_eq(r, 1);
     protocol_free_parse(value);
 
-    r = protocol_parse(&value, strint);
+    r = protocol_parse(&value, strint, strlen(strint));
     ck_assert_int_eq(r, 0);
     r = protocol_is_bool(value);
     ck_assert_int_eq(r, 0);
     protocol_free_parse(value);
 
     // is int
-    r = protocol_parse(&value, strobj);
+    r = protocol_parse(&value, strobj, strlen(strobj));
     ck_assert_int_eq(r, 0);
     r = protocol_is_int(value);
     ck_assert_int_eq(r, 0);
     protocol_free_parse(value);
 
-    r = protocol_parse(&value, strstr);
+    r = protocol_parse(&value, strstr, strlen(strstr));
     ck_assert_int_eq(r, 0);
     r = protocol_is_int(value);
     ck_assert_int_eq(r, 0);
     protocol_free_parse(value);
 
-    r = protocol_parse(&value, strarr);
+    r = protocol_parse(&value, strarr, strlen(strarr));
     ck_assert_int_eq(r, 0);
     r = protocol_is_int(value);
     ck_assert_int_eq(r, 0);
     protocol_free_parse(value);
 
-    r = protocol_parse(&value, strbol);
+    r = protocol_parse(&value, strbol, strlen(strbol));
     ck_assert_int_eq(r, 0);
     r = protocol_is_int(value);
     ck_assert_int_eq(r, 0);
     protocol_free_parse(value);
 
-    r = protocol_parse(&value, strint);
+    r = protocol_parse(&value, strint, strlen(strint));
     ck_assert_int_eq(r, 0);
     r = protocol_is_int(value);
     ck_assert_int_eq(r, 1);
@@ -219,25 +219,25 @@ START_TEST(protocol_get_length_test)
     char* strstr = "\"foo\"";
     char* strbol = "true";
 
-    r = protocol_parse(&value, strobj);
+    r = protocol_parse(&value, strobj, strlen(strobj));
     ck_assert_int_eq(r, 0);
     r = protocol_get_length(value);
     ck_assert_int_eq(r, 3);
     protocol_free_parse(value);
 
-    r = protocol_parse(&value, strarr);
+    r = protocol_parse(&value, strarr, strlen(strarr));
     ck_assert_int_eq(r, 0);
     r = protocol_get_length(value);
     ck_assert_int_eq(r, 3);
     protocol_free_parse(value);
 
-    r = protocol_parse(&value, strstr);
+    r = protocol_parse(&value, strstr, strlen(strstr));
     ck_assert_int_eq(r, 0);
     r = protocol_get_length(value);
     ck_assert_int_eq(r, 3);
     protocol_free_parse(value);
 
-    r = protocol_parse(&value, strbol);
+    r = protocol_parse(&value, strbol, strlen(strbol));
     ck_assert_int_eq(r, 0);
     r = protocol_get_length(value);
     ck_assert_int_eq(r, EPTCL);
@@ -252,7 +252,7 @@ START_TEST(protocol_get_at_test)
     protocol_value_t* dest;
     char* strarr = "[\"a\", \"b\", \"c\"]";
 
-    r = protocol_parse(&value, strarr);
+    r = protocol_parse(&value, strarr, strlen(strarr));
     ck_assert_int_eq(r, 0);
     r = protocol_get_at(value, &dest, 0);
     ck_assert_int_eq(r, 0);
@@ -274,7 +274,7 @@ START_TEST(protocol_get_string_test)
     char buf[3];
     char* strobj = "{\"foo\":\"bar\"}";
 
-    r = protocol_parse(&value, strobj);
+    r = protocol_parse(&value, strobj, strlen(strobj));
     ck_assert_int_eq(r, 0);
     r = protocol_get_key(value, &key, "foo");
     ck_assert_int_eq(r, 0);
@@ -296,7 +296,7 @@ START_TEST(protocol_get_bool_test)
     protocol_value_t* key = &key_store;
     char* strobj = "{\"foo\":true}";
 
-    r = protocol_parse(&value, strobj);
+    r = protocol_parse(&value, strobj, strlen(strobj));
     ck_assert_int_eq(r, 0);
     r = protocol_get_key(value, &key, "foo");
     ck_assert_int_eq(r, 0);
@@ -314,7 +314,7 @@ START_TEST(protocol_get_int_test)
     protocol_value_t* key = &key_store;
     char* strobj = "{\"foo\":10}";
 
-    r = protocol_parse(&value, strobj);
+    r = protocol_parse(&value, strobj, strlen(strobj));
     ck_assert_int_eq(r, 0);
     r = protocol_get_key(value, &key, "foo");
     ck_assert_int_eq(r, 0);
@@ -475,7 +475,7 @@ START_TEST(protocol_to_json_test)
     char* strobj = "{\"foo\":\"bar\"}";
     char buf[128];
 
-    r = protocol_parse(&value, strobj);
+    r = protocol_parse(&value, strobj, strlen(strobj));
     ck_assert_int_eq(r, 0);
     r = protocol_to_json(value, (char*) &buf);
     ck_assert_int_eq(r, 0);

@@ -9,6 +9,7 @@
 
 #define MAX_REQUEST_ARGS 8
 #define SERVER_PORT 5010
+#define NET_MAX_SIZE 1024
 
 typedef struct net_tcp_context_s net_tcp_context_t;
 typedef struct net_request_s net_request_t;
@@ -23,6 +24,9 @@ struct net_tcp_context_s {
     protocol_value_t* write_payload;
     void* data;
     char* buf;
+    size_t buf_len;
+    char* read_chunk_edge;
+    char* read_eof_edge;
 };
 
 int net_tcp_context_init(
@@ -39,7 +43,7 @@ int net_disconnect(net_tcp_context_t* context, char* edge_name);
 
 int net_listen(net_tcp_context_t* context, char* edge_name);
 
-int net_read(net_tcp_context_t* context, char* edge_name);
+int net_read(net_tcp_context_t* context, char* chunk_edge, char* eof_edge);
 
 int net_write(net_tcp_context_t* context, char* edge_name);
 

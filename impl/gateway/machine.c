@@ -31,7 +31,7 @@ void __tcp_request_reading(state_t* state, void* payload)
     log_debug("tcp_request_reading");
 
     net_tcp_context_t* context = net_get_context(state, payload);
-    net_read(context, "done");
+    net_read(context, "done", NULL);
 }
 
 void __tcp_request_closing(state_t* state, void* payload)
@@ -218,6 +218,7 @@ state_t* machine_boot_process(
 
     context->config = config;
     context->server_context = server_context;
+    ((net_tcp_context_t*) context)->buf = malloc(NET_MAX_SIZE);
 
     return boot_process;
 }
@@ -239,10 +240,10 @@ void __server_connecting(state_t* state, void* payload)
 
     int r;
     machine_server_context_t* server_context = (machine_server_context_t*) payload;
-    machine_server_context_t* client_context = malloc(sizeof(machine_server_context_t));
+    machine_server_context_t* client_context = calloc(1, sizeof(machine_server_context_t));
     uv_tcp_t* server_handle = ((net_tcp_context_t*) server_context)->handle;
     uv_loop_t* loop = ((net_tcp_context_t*) server_context)->loop;
-    uv_tcp_t* client_handle = malloc(sizeof(uv_tcp_t));
+    uv_tcp_t* client_handle = calloc(1, sizeof(uv_tcp_t));
 
     r = uv_tcp_init(loop, client_handle);
     log_check_uv_r(r, "uv_tcp_init");
@@ -256,9 +257,12 @@ void __server_connecting(state_t* state, void* payload)
 
     ((net_tcp_context_t*) client_context)->handle = client_handle;
     ((net_tcp_context_t*) client_context)->state = state;
+    ((net_tcp_context_t*) client_context)->buf_len = NET_MAX_SIZE;
+    ((net_tcp_context_t*) client_context)->buf = calloc(1, NET_MAX_SIZE);
+
     client_context->on_request = server_context->on_request;
     client_handle->data = client_context;
-    r = net_read((net_tcp_context_t*) client_context, "process");
+    r = net_read((net_tcp_context_t*) client_context, "process", "disconnect");
     log_check_uv_r(r, "net_read");
 }
 
@@ -282,8 +286,30 @@ void __server_processing(state_t* state, void* payload)
         response = (*on_request)(request);
     }
 
+    protocol_free_parse(request);
     ((net_tcp_context_t*) context)->write_payload = response;
-    net_write((net_tcp_context_t*) context, "disconnect");
+    net_write((net_tcp_context_t*) context, "done");
+}
+
+void __server_write_done(state_t* state, void* payload)
+{
+    log_verbose("__server_write_done:state=%p, payload=%p", state, payload);
+
+    int r;
+    net_tcp_context_t* context = net_get_context(state, payload);
+    state_t* connecting_state = NULL;
+
+    if (context->write_payload != NULL) {
+        protocol_free_build(context->write_payload);
+    }
+
+    r = state_next(context->state, &connecting_state, "read");
+    log_check_r(r, "state_next");
+
+    // reset state without running the callback
+    context->state = connecting_state;
+
+    log_debug("__server_write_done:return");
 }
 
 void __server_disconnecting(state_t* state, void* payload)
@@ -303,7 +329,7 @@ void __server_cleaning(state_t* state, void* payload)
 
     net_tcp_context_t* context = net_get_context(state, payload);
 
-    protocol_free_build(context->write_payload);
+    // protocol_free_build(context->write_payload);
     free(context);
 }
 
@@ -324,13 +350,16 @@ state_t* machine_tcp_server(
         { .name = "server_listening", .callback = __server_listening },
         { .name = "server_connecting", .callback = __server_connecting },
         { .name = "server_processing", .callback = __server_processing },
+        { .name = "server_write_done", .callback = __server_write_done },
         { .name = "server_disconnecting", .callback = __server_disconnecting },
-        { .name = "server_cleaning", .callback = __server_cleaning }
+        { .name = "server_cleaning", .callback = __server_cleaning },
     };
     const edge_initializer_t ei[] = {
         { .name = "connect", .from = "server_listening", .to = "server_connecting" },
         { .name = "process", .from = "server_connecting", .to = "server_processing" },
-        { .name = "disconnect", .from = "server_processing", .to = "server_disconnecting" },
+        { .name = "disconnect", .from = "server_connecting", .to = "server_disconnecting" },
+        { .name = "done", .from = "server_processing", .to = "server_write_done" },
+        { .name = "read", .from = "server_write_done", .to = "server_connecting" },
         { .name = "clean", .from = "server_disconnecting", .to = "server_cleaning" }
     };
     const int nsi = sizeof(si) / sizeof(si[0]);

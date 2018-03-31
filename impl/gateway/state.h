@@ -73,6 +73,8 @@ state_t* state_machine_build(
 
 void state_machine_run(state_t* start_state, void* payload);
 
+int state_next(state_t* origin, state_t** next, const char* edge_name);
+
 void state_run_next(state_t* state, const char* edge_name, void* payload);
 
 void state_print(state_t* state);
