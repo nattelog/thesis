@@ -3,20 +3,6 @@
 #include "err.h"
 #include "protocol.h"
 
-static void* protocol_alloc(size_t size, int zero, void* user_data)
-{
-    log_verbose("protocol_alloc:size=%d, zero=%d, user_data=%p", size, zero, user_data);
-
-    return zero ? calloc(1, size) : malloc(size);
-}
-
-static void protocol_free(void* p, void* user_data)
-{
-    log_verbose("protocol_free:p=%p, user_data=%p", p, user_data);
-
-    free(p);
-}
-
 /**
  * Parses the json string in buf and builds up a json structure in protocol.
  */
@@ -28,8 +14,6 @@ int protocol_parse(protocol_value_t** protocol, char* buf, int len)
     char strerr[1024] = { 0 };
 
     settings.value_extra = json_builder_extra;
-    settings.mem_alloc = protocol_alloc;
-    settings.mem_free = protocol_free;
     *protocol = json_parse_ex(&settings, buf, len, (char*) &strerr);
 
     if (*protocol == NULL) {

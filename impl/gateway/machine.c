@@ -329,7 +329,6 @@ void __server_cleaning(state_t* state, void* payload)
 
     net_tcp_context_t* context = net_get_context(state, payload);
 
-    // protocol_free_build(context->write_payload);
     free(context);
 }
 

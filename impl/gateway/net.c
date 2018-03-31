@@ -205,7 +205,6 @@ void __net_on_read(uv_stream_t* handle, ssize_t nread, const uv_buf_t* buf)
 
     int r;
     net_tcp_context_t* context = (net_tcp_context_t*) handle->data;
-    // char* edge_name = context->data;
     state_t* state = context->state;
     char* read_chunk_edge = context->read_chunk_edge;
     char* read_eof_edge = context->read_eof_edge;
@@ -217,12 +216,6 @@ void __net_on_read(uv_stream_t* handle, ssize_t nread, const uv_buf_t* buf)
 
         if (read_eof_edge != NULL) {
             state_run_next(state, read_eof_edge, context);
-        }
-
-        log_debug("__net_on_read:releasing buf->base (%p)", buf->base);
-
-        if (buf->base != NULL) {
-            free(buf->base);
         }
     }
     else if (nread > 0) {
@@ -245,10 +238,15 @@ void __net_on_read(uv_stream_t* handle, ssize_t nread, const uv_buf_t* buf)
     else if (nread == 0) {
         return;
     }
+
+    if (buf->base != NULL) {
+        free(buf->base);
+    }
 }
 
 /*
- * associated with edge_name when read is finished.
+ * Start read from context->handle. Goes to state associated with chunk_edge on
+ * each chunk. Goes to state associated with eof_edge when eof has been read.
  */
 int net_read(net_tcp_context_t* context, char* chunk_edge, char* eof_edge)
 {
@@ -286,10 +284,7 @@ void __net_on_write(uv_write_t* req, int status)
     net_tcp_context_t* context = (net_tcp_context_t*) req->data;
     char* edge_name = context->data;
 
-    log_debug("__net_on_write:releasing write_req");
     free(req);
-    log_debug("__net_on_write:released write_req");
-
     state_run_next(context->state, edge_name, context);
 }
 
@@ -304,8 +299,7 @@ int net_write(net_tcp_context_t* context, char* edge_name)
     protocol_value_t* write_payload = context->write_payload;
     char* buf = context->buf;
 
-    uv_write_t* write_req = calloc(1, sizeof(uv_write_t));
-    log_debug("net_write:calloc(write_req) = %p", write_req);
+    uv_write_t* write_req = malloc(sizeof(uv_write_t));
 
     if (protocol_size(write_payload) > NET_MAX_SIZE) {
         log_error("net_write:protocol is too large!");
@@ -313,7 +307,6 @@ int net_write(net_tcp_context_t* context, char* edge_name)
     }
 
     memset(buf, 0, NET_MAX_SIZE);
-    log_debug("memset done");
     protocol_to_json(write_payload, buf);
     strcat(buf, "\n\0");
 
