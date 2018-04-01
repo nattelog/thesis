@@ -2,6 +2,7 @@
 #include "log.h"
 #include "err.h"
 #include "protocol.h"
+#include "machine.h"
 
 /**
  * Parses the json string in buf and builds up a json structure in protocol.
@@ -238,7 +239,6 @@ int protocol_build_response_success(protocol_value_t** protocol, protocol_value_
 
     *protocol = json_object_new(1);
     json_object_push(*protocol, "result", result);
-    log_debug("protocol_build_response_success:protocol built %p", *protocol);
     return 0;
 }
 
@@ -353,6 +353,92 @@ void protocol_check_response_error(protocol_value_t* protocol)
         log_error("%s:%s", err_name, err_msg);
         exit(1);
     }
+}
+
+/**
+ * Fills devices_list with devices described as tuples <addr, port> in
+ * protocol. Returns an error code if something goes wrong.
+ */
+int protocol_get_devices(protocol_value_t* protocol, struct sockaddr_storage** devices_list, size_t* devices_len)
+{
+    log_verbose("protocol_get_devices:protocol=%p, devices=%p", protocol, devices_list);
+
+    int r;
+    int len;
+    protocol_value_t* devices;
+
+    if (!protocol_has_key(protocol, "result")) {
+        return EPTCL;
+    }
+
+    r = protocol_get_key(protocol, &devices, "result");
+
+    if (r) {
+        return r;
+    }
+
+    len = protocol_get_length(devices);
+
+    if (len < 0) {
+        return len;
+    }
+
+    if (len > MACHINE_MAX_DEVICES) {
+        log_error("protocol_get_devices:too many devices!");
+        return EBNDS;
+    }
+
+    for (int i = 0; i < len; ++i) {
+        protocol_value_t* device;
+        protocol_value_t* addr;
+        protocol_value_t* port;
+        char addrstr[128];
+        int portint;
+        struct sockaddr_storage* saddr;
+
+        r = protocol_get_at(devices, &device, i);
+
+        if (r) {
+            return r;
+        }
+
+        r = protocol_get_at(device, &addr, 0);
+
+        if (r) {
+            return r;
+        }
+
+        r = protocol_get_at(device, &port, 1);
+
+        if (r) {
+            return r;
+        }
+
+        r = protocol_get_string(addr, (char*) &addrstr);
+
+        if (r) {
+            return r;
+        }
+
+        portint = protocol_get_int(port);
+
+        if (portint < 0) {
+            return portint;
+        }
+
+        saddr = calloc(1, sizeof(struct sockaddr_storage));
+        r = uv_ip4_addr((char*) &addrstr, portint, (struct sockaddr_in*) saddr);
+
+        if (r) {
+            return r;
+        }
+
+        devices_list[i] = saddr;
+    }
+
+    *devices_len = len;
+
+    return 0;
 }
 
 size_t protocol_size(protocol_value_t* protocol)

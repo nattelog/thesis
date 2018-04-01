@@ -48,6 +48,10 @@ int protocol_get_response_error(protocol_value_t* protocol, char* error_name, ch
 
 void protocol_check_response_error(protocol_value_t* protocol);
 
+int protocol_get_devices(protocol_value_t* protocol, struct sockaddr_storage** devices_list, size_t* devices_len);
+
+size_t protocol_size(protocol_value_t* protocol);
+
 int protocol_to_json(protocol_value_t* protocol, char* buf);
 
 void protocol_free_parse(protocol_value_t* protocol);

@@ -1,3 +1,4 @@
+#include "uv.h"
 #include "log.h"
 #include "test.h"
 #include "err.h"
@@ -468,6 +469,22 @@ START_TEST(protocol_get_response_error_test)
 }
 END_TEST
 
+START_TEST(protocol_get_devices_test)
+{
+    int r;
+    protocol_value_t* protocol;
+    char* json = "{\"result\":[[\"0.0.0.0\", 5000], [\"0.0.0.0\", 5001]]}";
+    struct sockaddr_storage* devices[2];
+    size_t devices_len;
+
+    r = protocol_parse(&protocol, json, strlen(json));
+    ck_assert_int_eq(r, 0);
+    r = protocol_get_devices(protocol, (struct sockaddr_storage**) &devices, &devices_len);
+    ck_assert_int_eq(r, 0);
+    ck_assert_int_eq(devices_len, 2);
+}
+END_TEST
+
 START_TEST(protocol_to_json_test)
 {
     int r;
@@ -486,27 +503,32 @@ END_TEST
 Suite* protocol_suite()
 {
     Suite* s = suite_create("protocol");
-    TCase* tc = tcase_create("parse");
+    TCase* parse_case = tcase_create("parse");
+    TCase* build_case = tcase_create("build");
+    TCase* serialize_case = tcase_create("serialize");
 
-    tcase_add_test(tc, protocol_parse_success_test);
-    tcase_add_test(tc, protocol_parse_fail_test);
-    tcase_add_test(tc, protocol_has_key_test);
-    tcase_add_test(tc, protocol_type_test);
-    tcase_add_test(tc, protocol_get_length_test);
-    tcase_add_test(tc, protocol_get_at_test);
-    tcase_add_test(tc, protocol_get_string_test);
-    tcase_add_test(tc, protocol_get_bool_test);
-    tcase_add_test(tc, protocol_get_int_test);
-    tcase_add_test(tc, protocol_build_string_test);
-    tcase_add_test(tc, protocol_build_int_test);
-    tcase_add_test(tc, protocol_build_array_test);
-    tcase_add_test(tc, protocol_build_request_test);
-    tcase_add_test(tc, protocol_build_response_success_test);
-    tcase_add_test(tc, protocol_build_response_error_test);
-    tcase_add_test(tc, protocol_get_response_error_test);
-    tcase_add_test(tc, protocol_to_json_test);
+    tcase_add_test(parse_case, protocol_parse_success_test);
+    tcase_add_test(parse_case, protocol_parse_fail_test);
+    tcase_add_test(parse_case, protocol_has_key_test);
+    tcase_add_test(parse_case, protocol_type_test);
+    tcase_add_test(parse_case, protocol_get_length_test);
+    tcase_add_test(parse_case, protocol_get_at_test);
+    tcase_add_test(parse_case, protocol_get_string_test);
+    tcase_add_test(parse_case, protocol_get_bool_test);
+    tcase_add_test(parse_case, protocol_get_int_test);
+    tcase_add_test(build_case, protocol_build_string_test);
+    tcase_add_test(build_case, protocol_build_int_test);
+    tcase_add_test(build_case, protocol_build_array_test);
+    tcase_add_test(build_case, protocol_build_request_test);
+    tcase_add_test(build_case, protocol_build_response_success_test);
+    tcase_add_test(build_case, protocol_build_response_error_test);
+    tcase_add_test(build_case, protocol_get_response_error_test);
+    tcase_add_test(build_case, protocol_get_devices_test);
+    tcase_add_test(serialize_case, protocol_to_json_test);
 
-    suite_add_tcase(s, tc);
+    suite_add_tcase(s, parse_case);
+    suite_add_tcase(s, build_case);
+    suite_add_tcase(s, serialize_case);
 
     return s;
 }

@@ -6,6 +6,8 @@
 #include "conf.h"
 #include "machine.h"
 
+static machine_boot_context_t boot_context;
+
 void usage()
 {
     char* usage_str = "    usage: ./gateway [<options>...]\n\n"
@@ -32,6 +34,12 @@ void usage()
     printf("%s\n", usage_str);
 }
 
+void start_test()
+{
+    log_info("starting test");
+    log_info("found %d devices", boot_context.devices_len);
+}
+
 protocol_value_t* on_request(protocol_value_t* request)
 {
     log_verbose("on_request:request=%p", request);
@@ -42,7 +50,7 @@ protocol_value_t* on_request(protocol_value_t* request)
     if (protocol_has_key(request, "method") && protocol_has_key(request, "args")) {
         protocol_value_t* method;
         protocol_value_t* result;
-        char method_str[1024] = { 0 };
+        char method_str[NET_MAX_SIZE] = { 0 };
 
         r = protocol_get_key(request, &method, "method");
         log_check_r(r, "protocol_get_key");
@@ -60,6 +68,8 @@ protocol_value_t* on_request(protocol_value_t* request)
         else if (strcmp(method_str, "start_test") == 0) {
             r = protocol_build_int(&result, 0);
             log_check_r(r, "protocol_build_int");
+
+            start_test();
 
             r = protocol_build_response_success(&response, result);
             log_check_r(r, "protocol_build_response_success");
@@ -84,7 +94,6 @@ int main(int argc, char** argv)
     config_data_t config;
     int input_flag;
     uv_loop_t* loop = uv_default_loop();
-    machine_boot_context_t boot_context;
     machine_server_context_t server_context;
     state_t* boot_process;
     state_t* server;

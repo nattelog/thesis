@@ -11,8 +11,7 @@ int main()
     srunner_add_suite(sr, conf_suite());
     srunner_add_suite(sr, state_suite());
 
-    // srunner_run_all(sr, CK_VERBOSE);
-    srunner_run(sr, "state", "machine build", CK_VERBOSE);
+    srunner_run_all(sr, CK_NORMAL);
 
     n_failed = srunner_ntests_failed(sr);
     srunner_free(sr);

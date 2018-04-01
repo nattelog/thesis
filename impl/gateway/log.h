@@ -5,7 +5,7 @@
 #include "uv.h"
 
 #ifndef LOGLEVEL
-#define LOGLEVEL 4
+#define LOGLEVEL 3
 #endif
 
 static uv_udp_t udp_handle;

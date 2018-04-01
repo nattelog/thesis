@@ -103,9 +103,7 @@ void __boot_process_check_verification(state_t* state, void* payload) {
     net_tcp_context_t* context = (net_tcp_context_t*) payload;
     protocol_value_t* response = context->read_payload;
 
-    // this free function complains that the write_payload struct has not been
-    // properly allocated, this causes a memory leak
-    // protocol_free_build(context->write_payload);
+    protocol_free_build(context->write_payload);
     protocol_check_response_error(response);
 
     if (protocol_has_key(response, "result")) {
@@ -153,11 +151,16 @@ void __boot_process_get_devices(state_t* state, void* payload) {
 void __boot_process_done(state_t* state, void* payload) {
     log_debug("boot_process_done");
 
-    net_tcp_context_t* context = (net_tcp_context_t*) payload;
-    protocol_value_t* response = context->read_payload;
+    int r;
+    machine_boot_context_t* context = (machine_boot_context_t*) payload;
+    protocol_value_t* response = ((net_tcp_context_t*) context)->read_payload;
+    protocol_value_t* request = ((net_tcp_context_t*) context)->write_payload;
 
     protocol_check_response_error(response);
-    protocol_free_build(context->write_payload);
+    r = protocol_get_devices(response, context->devices, &context->devices_len);
+    log_check_r(r, "protocol_get_devices");
+
+    protocol_free_build(request);
 }
 
 void __boot_process_tcp_done(state_t* state, void* payload) {
