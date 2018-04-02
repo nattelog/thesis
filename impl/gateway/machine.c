@@ -6,7 +6,7 @@
 
 void __tcp_request_connecting(state_t* state, void* payload)
 {
-    log_debug("tcp_request_connecting");
+    log_verbose("__tcp_request_connecting:state=%p, payload=%p", state, payload);
 
     int r;
     net_tcp_context_t* context = net_get_context(state, payload);
@@ -17,7 +17,7 @@ void __tcp_request_connecting(state_t* state, void* payload)
 
 void __tcp_request_writing(state_t* state, void* payload)
 {
-    log_debug("tcp_request_writing");
+    log_verbose("__tcp_request_writing:state=%p, payload=%p", state, payload);
 
     int r;
     net_tcp_context_t* context = net_get_context(state, payload);
@@ -28,7 +28,7 @@ void __tcp_request_writing(state_t* state, void* payload)
 
 void __tcp_request_reading(state_t* state, void* payload)
 {
-    log_debug("tcp_request_reading");
+    log_verbose("__tcp_request_reading:state=%p, payload=%p", state, payload);
 
     net_tcp_context_t* context = net_get_context(state, payload);
     net_read(context, "done", NULL);
@@ -36,7 +36,7 @@ void __tcp_request_reading(state_t* state, void* payload)
 
 void __tcp_request_closing(state_t* state, void* payload)
 {
-    log_debug("tcp_request_closing");
+    log_verbose("__tcp_request_closing:state=%p, payload=%p", state, payload);
 
     int r = 0;
     net_tcp_context_t* context = net_get_context(state, payload);
@@ -47,6 +47,8 @@ void __tcp_request_closing(state_t* state, void* payload)
 
 state_t* machine_tcp_request(state_lookup_t* lookup, state_callback done)
 {
+    log_verbose("__machine_tcp_request:lookup=%p, done=%p", lookup, done);
+
     const state_initializer_t si[] = {
         { .name = "tcp_request_connecting", .callback = __tcp_request_connecting },
         { .name = "tcp_request_writing", .callback = __tcp_request_writing },
@@ -67,7 +69,7 @@ state_t* machine_tcp_request(state_lookup_t* lookup, state_callback done)
 }
 
 void __boot_process_verify_config(state_t* state, void* payload) {
-    log_debug("boot_process_verify_config");
+    log_verbose("__boot_process_verify_config:state=%p, payload=%p", state, payload);
 
     int r;
     char straddr[128];
@@ -97,7 +99,7 @@ void __boot_process_verify_config(state_t* state, void* payload) {
 }
 
 void __boot_process_check_verification(state_t* state, void* payload) {
-    log_verbose("boot_process_check_verification:state=%p, payload=%p", state, payload);
+    log_verbose("__boot_process_check_verification:state=%p, payload=%p", state, payload);
 
     int r;
     net_tcp_context_t* context = (net_tcp_context_t*) payload;
@@ -135,7 +137,7 @@ void __boot_process_check_verification(state_t* state, void* payload) {
 }
 
 void __boot_process_get_devices(state_t* state, void* payload) {
-    log_debug("boot_process_get_devices");
+    log_verbose("__boot_process_get_devices:state=%p, payload=%p", state, payload);
 
     int r;
     net_tcp_context_t* context = (net_tcp_context_t*) payload;
@@ -149,7 +151,7 @@ void __boot_process_get_devices(state_t* state, void* payload) {
 }
 
 void __boot_process_done(state_t* state, void* payload) {
-    log_debug("boot_process_done");
+    log_verbose("__boot_process_done:state=%p, payload=%p", state, payload);
 
     int r;
     machine_boot_context_t* context = (machine_boot_context_t*) payload;
@@ -164,7 +166,7 @@ void __boot_process_done(state_t* state, void* payload) {
 }
 
 void __boot_process_tcp_done(state_t* state, void* payload) {
-    log_debug("boot_process_tcp_done");
+    log_verbose("__boot_process_tcp_done:state=%p, payload=%p", state, payload);
 
     machine_boot_context_t* context = (machine_boot_context_t*) payload;
     static int count = 0;
@@ -186,6 +188,13 @@ state_t* machine_boot_process(
         config_data_t* config,
         net_tcp_context_t* server_context)
 {
+    log_verbose(
+            "machine_boot_process:context=%p, loop=%p, config=%p, server_context=%p",
+            context,
+            loop,
+            config,
+            server_context);
+
     int r;
     state_t* boot_process;
     state_lookup_t lookup;
@@ -311,8 +320,6 @@ void __server_write_done(state_t* state, void* payload)
 
     // reset state without running the callback
     context->state = connecting_state;
-
-    log_debug("__server_write_done:return");
 }
 
 void __server_disconnecting(state_t* state, void* payload)
@@ -344,6 +351,8 @@ state_t* machine_tcp_server(
         uv_loop_t* loop,
         request_callback on_request)
 {
+    log_verbose("machine_tcp_server:context=%p, loop=%p, on_request=%p", context, loop, on_request);
+
     int r;
     state_t* server;
     state_lookup_t lookup;
