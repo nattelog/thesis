@@ -187,7 +187,7 @@ int protocol_build_string(protocol_value_t** protocol, char* value)
     return 0;
 }
 
-int protocol_build_int(protocol_value_t** protocol, int value)
+int protocol_build_int(protocol_value_t** protocol, long value)
 {
     *protocol = json_integer_new(value);
     return 0;

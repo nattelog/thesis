@@ -2,6 +2,7 @@
 #include <stdarg.h>
 #include <stdio.h>
 #include <time.h>
+#include <math.h>
 #include "log.h"
 #include "uv.h"
 #include "err.h"
@@ -64,11 +65,15 @@ int log_init(uv_loop_t* loop, const char* address, const int port)
 /**
  * Returns the current timestamp in ms.
  */
-int get_timestamp()
+long get_timestamp()
 {
-    struct timeval tval;
-    gettimeofday(&tval, NULL);
-    return ((int) tval.tv_sec * 1000) + ((int) tval.tv_usec / 1000);
+    long ms;
+    struct timespec spec;
+
+    clock_gettime(CLOCK_REALTIME, &spec);
+    ms = (spec.tv_sec * 1000) + round(spec.tv_nsec / 1.0e6);
+
+    return ms;
 }
 
 /**
@@ -79,7 +84,7 @@ void log_format(char* buf, const char* level, const char* format, va_list args)
 {
     char pre[1024];
 
-    sprintf(pre, "%s:%d:%s", level, get_timestamp(), format);
+    sprintf(pre, "%s:%ld:%s", level, get_timestamp(), format);
     vsprintf(buf, pre, args);
 }
 

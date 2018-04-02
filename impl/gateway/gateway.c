@@ -84,7 +84,6 @@ protocol_value_t* on_request(protocol_value_t* request)
         log_check_r(r, "protocol_build_response_error");
     }
 
-    log_debug("on_request:returning response %p", response);
     return response;
 }
 

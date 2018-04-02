@@ -17,7 +17,7 @@ void log_check_r(int r, char* msg);
 
 int log_init(uv_loop_t* loop, const char* address, const int port);
 
-int get_timestamp();
+long get_timestamp();
 
 void log_format(char* buf, const char* level, const char* format, va_list args);
 
