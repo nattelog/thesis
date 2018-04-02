@@ -34,10 +34,15 @@ void usage()
     printf("%s\n", usage_str);
 }
 
-void start_test()
+void start_test(uv_idle_t* handle)
 {
+    int r;
+
     log_info("starting test");
     log_info("found %d devices", boot_context.devices_len);
+
+    r = uv_idle_stop(handle);
+    log_check_uv_r(r, "uv_idle_stop");
 }
 
 protocol_value_t* on_request(protocol_value_t* request)
@@ -66,10 +71,17 @@ protocol_value_t* on_request(protocol_value_t* request)
             log_check_r(r, "protocol_build_response_success");
         }
         else if (strcmp(method_str, "start_test") == 0) {
+            uv_idle_t* handle = malloc(sizeof(uv_idle_t));
+            uv_loop_t* loop = uv_default_loop();
+
             r = protocol_build_int(&result, 0);
             log_check_r(r, "protocol_build_int");
 
-            start_test();
+            r = uv_idle_init(loop, handle);
+            log_check_uv_r(r, "uv_idle_init");
+
+            r = uv_idle_start(handle, start_test);
+            log_check_uv_r(r, "uv_idle_start");
 
             r = protocol_build_response_success(&response, result);
             log_check_r(r, "protocol_build_response_success");
