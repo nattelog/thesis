@@ -3,6 +3,8 @@
 #include <stdio.h>
 #include <time.h>
 #include <math.h>
+#include <sys/socket.h>
+#include <unistd.h>
 #include "log.h"
 #include "uv.h"
 #include "err.h"
@@ -40,11 +42,13 @@ int log_init(uv_loop_t* loop, const char* address, const int port)
         return r;
     }
 
+    /*
     r = uv_udp_init(loop, &udp_handle);
 
     if (r) {
         return r;
     }
+    */
 
     struct sockaddr_in local_addr;
     r = uv_ip4_addr("0.0.0.0", 0, &local_addr); // the local host
@@ -53,10 +57,18 @@ int log_init(uv_loop_t* loop, const char* address, const int port)
         return r;
     }
 
+    /*
     r = uv_udp_bind(&udp_handle, (struct sockaddr*) &local_addr, 0);
 
     if (r) {
         return r;
+    }
+    */
+
+    udp_sock = socket(AF_INET, SOCK_DGRAM, 0);
+
+    if (udp_sock < 0) {
+        return udp_sock;
     }
 
     return 0;
@@ -105,6 +117,8 @@ void on_send_cb(uv_udp_send_t* req, int status)
 void log_send(char* message)
 {
     int r = 0;
+
+    /*
     uv_udp_send_t* send_req = malloc(sizeof(uv_udp_send_t));
     uv_buf_t bufs[] = {
         { .base = message, .len = strlen(message) }
@@ -113,6 +127,14 @@ void log_send(char* message)
 
     r = uv_udp_send(send_req, &udp_handle, bufs, 1, (struct sockaddr*) &remote_addr, on_send_cb);
     log_check_uv_r(r, "uv_udp_send");
+    */
+
+    r = sendto(udp_sock, message, strlen(message), 0, (struct sockaddr*) &remote_addr, sizeof(remote_addr));
+
+    if (r == -1) {
+        printf("ERROR:log_send:sendto:-1");
+        exit(1);
+    }
 }
 
 /**
@@ -130,7 +152,22 @@ void log_write(const char* level, const char* format, ...)
     va_end(args);
     printf("%s\n", buf); // todo: add guard so this is not run in test
 
-    if (uv_is_writable((uv_stream_t*) &udp_handle)) { // todo: will this be a bottleneck?
+    if (udp_sock > 0) {
         log_send(buf);
     }
+}
+
+void log_event_retrieved(char* event_id)
+{
+    log_info("gateway:EVENT_LIFECYCLE_RETRIEVED:%s", event_id);
+}
+
+void log_event_dispatched(char* event_id)
+{
+    log_info("gateway:EVENT_LIFECYCLE_DISPATCHED:%s", event_id);
+}
+
+void log_event_done(char* event_id)
+{
+    log_info("gateway:EVENT_LIFECYCLE_DONE:%s", event_id);
 }

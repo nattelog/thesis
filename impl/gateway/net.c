@@ -1,6 +1,8 @@
 #include <stdlib.h>
 #include <stdarg.h>
 #include <string.h>
+#include <sys/socket.h>
+#include <unistd.h>
 #include "net.h"
 #include "log.h"
 #include "err.h"
@@ -33,6 +35,21 @@ int net_tcp_context_init(
 
     context->addr = addr;
     context->loop = loop;
+
+    return 0;
+}
+
+int net_tcp_context_sync_init(
+        net_tcp_context_sync_t* context,
+        struct sockaddr_storage* addr)
+{
+    log_verbose(
+            "net_tcp_context_sync_init:context=%p, addr=%p",
+            context,
+            addr);
+
+    context->buf = calloc(1, NET_MAX_SIZE);
+    context->addr = addr;
 
     return 0;
 }
@@ -87,6 +104,26 @@ int net_connect(net_tcp_context_t* context, char* edge_name)
     context->data = edge_name;
 
     return uv_tcp_connect(connect_req, handle, context->addr, __net_on_connection);
+}
+
+/**
+ * Creates a socket for context->sock and connects to context->addr.
+ */
+int net_connect_sync(net_tcp_context_sync_t* context)
+{
+    log_verbose("net_connect_sync:context=%p", context);
+
+    int r;
+    struct sockaddr* addr = (struct sockaddr*) context->addr;
+
+    r = socket(AF_INET, SOCK_STREAM, 0);
+
+    if (r < 0) {
+        return r;
+    }
+
+    context->sock = r;
+    return connect(context->sock, addr, sizeof(struct sockaddr_in));
 }
 
 /**
@@ -219,7 +256,7 @@ void __net_on_read(uv_stream_t* handle, ssize_t nread, const uv_buf_t* buf)
         }
     }
     else if (nread > 0) {
-        log_debug("net:>>>> \"%s\" (%d)", buf->base, nread);
+        log_debug("__net_on_read:>>>> \"%s\" (%d)", buf->base, nread);
 
         protocol_value_t* read_payload;
 
@@ -276,6 +313,50 @@ int net_read(net_tcp_context_t* context, char* chunk_edge, char* eof_edge)
     return uv_read_start((uv_stream_t*) context->handle, __net_on_alloc, __net_on_read);
 }
 
+/**
+ * Reads context->sock until no more data is available. The result is parsed
+ * and set in context->read_payload.
+ */
+int net_read_sync(net_tcp_context_sync_t* context)
+{
+    log_verbose("net_read_sync:context=%p", context);
+
+    int sock = context->sock;
+    char* buf = context->buf;
+    int nread = 0;
+    int r;
+    protocol_value_t* read_payload;
+
+    memset(buf, 0, NET_MAX_SIZE);
+
+    while (nread < NET_MAX_SIZE) {
+        int n;
+
+        n = read(sock, buf + nread, NET_MAX_SIZE - nread);
+
+        if (n == 0) {
+            break;
+        }
+
+        if (n < 1) {
+            return n;
+        }
+
+        nread += n;
+    }
+
+    log_debug("net_read_sync:<<<< \"%s\" (%d)", buf, nread);
+    r = protocol_parse(&read_payload, buf, nread);
+
+    if (r) {
+        return r;
+    }
+
+    context->read_payload = read_payload;
+
+    return 0;
+}
+
 void __net_on_write(uv_write_t* req, int status)
 {
     log_verbose("__net_on_write:req=%p, status=%d", req, status);
@@ -303,7 +384,7 @@ int net_write(net_tcp_context_t* context, char* edge_name)
 
     if (protocol_size(write_payload) > NET_MAX_SIZE) {
         log_error("net_write:protocol is too large!");
-        exit(0);
+        exit(1);
     }
 
     memset(buf, 0, NET_MAX_SIZE);
@@ -319,9 +400,73 @@ int net_write(net_tcp_context_t* context, char* edge_name)
     context->data = edge_name;
     write_req->data = context;
 
-    log_debug("net:<<<< \"%s\"", buf);
+    log_debug("net_write:<<<< \"%s\"", buf);
 
     return uv_write(write_req, (uv_stream_t*) context->handle, bufs, 1, __net_on_write);
+}
+
+/**
+ * Serializes context->write_payload and writes the buffer over tcp. Assumes
+ * context->sock is defined.
+ */
+int net_write_sync(net_tcp_context_sync_t* context)
+{
+    log_verbose("net_write_sync:context=%p", context);
+
+    int r;
+    int sock = context->sock;
+    protocol_value_t* write_payload = context->write_payload;
+    char* buf = context->buf;
+    int buf_len;
+
+    if (protocol_size(write_payload) > NET_MAX_SIZE) {
+        log_error("net_write_sync:protocol is too large!");
+        exit(1);
+    }
+
+    memset(buf, 0, NET_MAX_SIZE);
+    protocol_to_json(write_payload, buf);
+    strcat(buf, "\n\0");
+    buf_len = strlen(buf);
+
+    log_debug("net_write_sync:<<<< \"%s\"", buf);
+
+    r = send(sock, buf, buf_len, 0);
+
+    if (r < 0) {
+        return r;
+    }
+
+    if (r != buf_len) {
+        return EBNDS;
+    }
+
+    return 0;
+}
+
+/**
+ * Connects to context->addr, writes context->write_payload and loads the
+ * result in context->read_payload.
+ */
+int net_call_sync(net_tcp_context_sync_t* context)
+{
+    log_verbose("net_call_sync:context=%p", context);
+
+    int r;
+
+    r = net_connect_sync(context);
+
+    if (r) {
+        return r;
+    }
+
+    r = net_write_sync(context);
+
+    if (r) {
+        return r;
+    }
+
+    return net_read_sync(context);
 }
 
 /**

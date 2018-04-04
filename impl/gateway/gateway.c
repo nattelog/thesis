@@ -6,6 +6,7 @@
 #include "conf.h"
 #include "machine.h"
 
+static machine_server_context_t server_context;
 static machine_boot_context_t boot_context;
 
 void usage()
@@ -34,13 +35,19 @@ void usage()
     printf("%s\n", usage_str);
 }
 
-void start_test(uv_idle_t* handle)
+void on_handle_close(uv_handle_t* handle)
 {
+    log_verbose("on_handle_close:handle=%p", handle);
+}
+
+void close_boot_process(uv_idle_t* handle)
+{
+    log_verbose("close_boot_process:handle=%p", handle);
+
     int r;
+    uv_tcp_t* server_handle = server_context.tcp.handle;
 
-    log_info("starting test");
-    log_info("found %d devices", boot_context.devices_len);
-
+    uv_close((uv_handle_t*) server_handle, on_handle_close);
     r = uv_idle_stop(handle);
     log_check_uv_r(r, "uv_idle_stop");
 }
@@ -80,7 +87,7 @@ protocol_value_t* on_request(protocol_value_t* request)
             r = uv_idle_init(loop, handle);
             log_check_uv_r(r, "uv_idle_init");
 
-            r = uv_idle_start(handle, start_test);
+            r = uv_idle_start(handle, close_boot_process);
             log_check_uv_r(r, "uv_idle_start");
 
             r = protocol_build_response_success(&response, result);
@@ -99,15 +106,117 @@ protocol_value_t* on_request(protocol_value_t* request)
     return response;
 }
 
+void prepare_test(config_data_t* config, net_tcp_context_sync_t** devices, size_t* devices_len)
+{
+    log_verbose(
+            "prepare_test:config=%p, devices=%p, devices_len=%p",
+            config,
+            devices,
+            devices_len);
+
+    int r;
+    uv_loop_t* loop = uv_default_loop();
+    state_t* boot_process;
+    state_t* server;
+
+    r = log_init(loop, config->logserver_address, config->logserver_port);
+    log_check_uv_r(r, "log_init");
+
+    boot_process = machine_boot_process(&boot_context, loop, config, (net_tcp_context_t*) &server_context);
+    server = machine_tcp_server(&server_context, loop, on_request);
+
+    state_machine_run(server, &server_context);
+    state_machine_run(boot_process, &boot_context);
+    uv_run(loop, UV_RUN_DEFAULT);
+
+    // delete states
+
+    *devices_len = boot_context.devices_len;
+
+    for (int i = 0; i < *devices_len; ++i) {
+        net_tcp_context_sync_t* context = malloc(sizeof(net_tcp_context_sync_t));
+        struct sockaddr_storage* addr = boot_context.devices[i];
+
+        r = net_tcp_context_sync_init(context, addr);
+        log_check_r(r, "net_tcp_context_sync_init");
+        devices[i] = context;
+    }
+}
+
+void dispatcher_serial(net_tcp_context_sync_t** devices, size_t devices_len)
+{
+    log_verbose("dispatcher_serial:devices=%p, devices_len=%d", devices, devices_len);
+
+    int i = 0;
+    int r;
+    protocol_value_t* status_request;
+    protocol_value_t* get_event_request;
+
+    r = protocol_build_request(&status_request, "status", 0);
+    log_check_r(r, "protocol_build_request");
+
+    r = protocol_build_request(&get_event_request, "next_event", 0);
+    log_check_r(r, "protocol_build_request");
+
+    while (1) {
+        net_tcp_context_sync_t* device = devices[i];
+        protocol_value_t* response;
+        protocol_value_t* result;
+        int status_ok;
+
+        device->write_payload = status_request;
+        r = net_call_sync(device);
+        log_check_uv_r(r, "net_call_sync");
+
+        response = device->read_payload;
+        protocol_check_response_error(response);
+        r = protocol_get_key(response, &result, "result");
+        log_check_r(r, "protocol_get_key");
+
+        status_ok = protocol_get_int(result);
+        protocol_free_parse(device->read_payload);
+
+        if (status_ok) {
+            char* event_id[128];
+
+            device->write_payload = get_event_request;
+            r = net_call_sync(device);
+            log_check_uv_r(r, "net_call_sync");
+
+            response = device->read_payload;
+            protocol_check_response_error(response);
+            r = protocol_get_key(response, &result, "result");
+            log_check_r(r, "protocol_get_key");
+
+            r = protocol_get_string(result, (char*) &event_id);
+            log_check_r(r, "protocol_get_string");
+
+            log_event_retrieved((char*) event_id);
+            log_event_dispatched((char*) event_id);
+            log_event_done((char*) event_id);
+        }
+
+        i = (i + 1) % devices_len;
+    }
+
+    protocol_free_build(status_request);
+    protocol_free_build(get_event_request);
+}
+
+void start_test(config_data_t* config, net_tcp_context_sync_t** devices, size_t devices_len)
+{
+    log_verbose("start_test:devices=%p, devices_len=%d", devices, devices_len);
+
+    dispatcher_serial(devices, devices_len);
+}
+
 int main(int argc, char** argv)
 {
     int r = 0;
     config_data_t config;
     int input_flag;
-    uv_loop_t* loop = uv_default_loop();
-    machine_server_context_t server_context;
-    state_t* boot_process;
-    state_t* server;
+    net_tcp_context_sync_t* devices[NET_MAX_SIZE];
+    size_t devices_len = 0;
 
     opterr = 0;
     config_init(&config);
@@ -153,15 +262,8 @@ int main(int argc, char** argv)
         }
     }
 
-    r = log_init(loop, config.logserver_address, config.logserver_port);
-    log_check_uv_r(r, "log_init");
-
-    boot_process = machine_boot_process(&boot_context, loop, &config, (net_tcp_context_t*) &server_context);
-    server = machine_tcp_server(&server_context, loop, on_request);
-
-    state_machine_run(server, &server_context);
-    state_machine_run(boot_process, &boot_context);
-    uv_run(loop, UV_RUN_DEFAULT);
+    prepare_test(&config, devices, &devices_len);
+    start_test(&config, devices, devices_len);
 
     return 0;
 }

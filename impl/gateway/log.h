@@ -5,10 +5,11 @@
 #include "uv.h"
 
 #ifndef LOGLEVEL
-#define LOGLEVEL 3
+#define LOGLEVEL 2
 #endif
 
 static uv_udp_t udp_handle;
+static int udp_sock = -1;
 static struct sockaddr_in remote_addr;
 
 void log_check_uv_r(int r, char* msg);
@@ -22,6 +23,12 @@ long get_timestamp();
 void log_format(char* buf, const char* level, const char* format, va_list args);
 
 void log_write(const char* level, const char* format, ...);
+
+void log_event_retrieved(char* event_id);
+
+void log_event_dispatched(char* event_id);
+
+void log_event_done(char* event_id);
 
 #define log_error(M, ...) log_write("ERROR", M, ##__VA_ARGS__)
 #define log_info(M, ...) log_write("INFO", M, ##__VA_ARGS__)

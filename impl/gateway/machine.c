@@ -162,6 +162,7 @@ void __boot_process_done(state_t* state, void* payload) {
     r = protocol_get_devices(response, context->devices, &context->devices_len);
     log_check_r(r, "protocol_get_devices");
 
+    protocol_free_build(response);
     protocol_free_build(request);
 }
 
