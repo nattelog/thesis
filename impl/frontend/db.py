@@ -67,6 +67,15 @@ class Scenario(Database):
             );
             """
 
+    def get_scenario(self, sid):
+        return self._execute(
+            """
+            select * from scenario where sid=?
+            """,
+            (sid,),
+            True
+        )
+
     def get_scenarios(self):
         return self._execute(
             """
@@ -205,6 +214,26 @@ class EventLifecycle(Database):
             """,
             (time, eid, sid)
         )
+
+    def count_processed_events(self, sid):
+        return self._execute(
+            """
+            select count(eid) from eventlifecycle
+            where done_time not null and sid=?
+            """,
+            (sid, ),
+            True
+        )[0]
+
+    def avg_d0(self, sid):
+        return self._execute(
+            """
+            select avg(done_time - created_time) from eventlifecycle
+            where done_time not null and sid=?
+            """,
+            (sid, ),
+            True
+        )[0]
 
 class Configuration(Database):
     """ Contains configuration keys and values for a test.

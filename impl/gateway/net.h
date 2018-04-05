@@ -9,7 +9,7 @@
 
 #define MAX_REQUEST_ARGS 8
 #define SERVER_PORT 5010
-#define NET_MAX_SIZE 1024
+#define NET_MAX_SIZE 65536
 
 typedef struct net_tcp_context_s net_tcp_context_t;
 typedef struct net_tcp_context_sync_s net_tcp_context_sync_t;

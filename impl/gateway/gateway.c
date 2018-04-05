@@ -136,8 +136,14 @@ void start_test(config_data_t* config, protocol_value_t* devices)
 {
     log_verbose("start_test:config=%p, devices=%p", config, devices);
 
-    // dispatcher_serial(devices);
-    dispatcher_cooperative(devices);
+    char* dispatcher_type = config->dispatcher;
+
+    if (strcmp(dispatcher_type, "serial") == 0) {
+        dispatcher_serial(devices);
+    }
+    else if (strcmp(dispatcher_type, "cooperative") == 0) {
+        dispatcher_cooperative(devices);
+    }
 }
 
 int main(int argc, char** argv)
