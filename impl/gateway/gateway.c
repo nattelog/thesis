@@ -139,10 +139,10 @@ void start_test(config_data_t* config, protocol_value_t* devices)
     char* dispatcher_type = config->dispatcher;
 
     if (strcmp(dispatcher_type, "serial") == 0) {
-        dispatcher_serial(devices);
+        dispatcher_serial(config, devices);
     }
     else if (strcmp(dispatcher_type, "cooperative") == 0) {
-        dispatcher_cooperative(devices);
+        dispatcher_cooperative(config, devices);
     }
 }
 

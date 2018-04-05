@@ -1,8 +1,10 @@
 #include "uv.h"
 #include "machine.h"
 #include "net.h"
+#include "fs.h"
 #include "log.h"
 #include "err.h"
+#include "event_handler.h"
 
 void __tcp_request_connecting(state_t* state, void* payload)
 {
@@ -414,30 +416,97 @@ void __coop_dispatch_next_event(state_t* state, void* payload)
     state_run_next(state, "next_event", context);
 }
 
+/**
+ * Processes the event. If the eventhandler is set to serial, this state will
+ * block the entire event loop. If cooperative, the event loop will continue.
+ */
 void __coop_dispatch_process(state_t* state, void* payload)
 {
     log_verbose("__coop_dispatch_process:state=%p, payload=%p", state, payload);
 
     int r;
-    net_tcp_context_t* context = net_get_context(state, payload);
-    protocol_value_t* response = context->read_payload;
+    machine_coop_context_t* context = (machine_coop_context_t*) payload;
+    protocol_value_t* response = ((net_tcp_context_t*) context)->read_payload;
     protocol_value_t* result;
-    char event_id[128];
+    config_data_t* config = context->config;
+
+    ((net_tcp_context_t*) context)->state = state;
 
     r = protocol_get_key(response, &result, "result");
     log_check_r(r, "__coop_dispatch_process:protocol_get_key");
 
-    r = protocol_get_string(result, (char*) &event_id);
+    r = protocol_get_string(result, (char*) &context->event);
     log_check_r(r, "__coop_dispatch_process:protocol_get_string");
 
-    log_event_retrieved((char*) event_id);
-    log_event_dispatched((char*) event_id);
-    log_event_done((char*) event_id);
+    log_event_retrieved((char*) context->event);
+
+    if (strcmp(config->eventhandler, "serial") == 0) {
+        log_event_dispatched((char*) context->event);
+        event_handler_serial(config->cpu, config->io);
+        log_event_done((char*) context->event);
+        state_run_next(state, "done", context);
+    }
+    else if (strcmp(config->eventhandler, "cooperative") == 0) {
+        log_event_dispatched((char*) context->event);
+        event_handler_do_cpu(config->cpu); // the cpu will block here
+
+        context->io_count = 0;
+        context->io_rounds = event_handler_calc_io_rounds(config->io);
+        context->fs.state = state;
+        context->fs.loop = context->tcp.loop;
+        strcpy(context->fs.path, EVENT_HANDLER_IO_FILE);
+        strcpy(context->fs.content, EVENT_HANDLER_IO_CONTENT);
+        context->fs.data = context; // point back up again
+
+        log_debug("doing io");
+        r = fs_append(&context->fs, "handle_io");
+        log_check_uv_r(r, "__coop_dispatch_process:fs_append");
+    }
+    else if (strcmp(config->eventhandler, "preemptive") == 0) {
+        log_error("Cannot handle a preemptive event handler with a cooperative dispatcher.");
+        exit(1);
+    }
+    else {
+        log_error("Unknown event handler \"%s\"", config->eventhandler);
+        exit(1);
+    }
 
     protocol_free_build(response);
-    state_run_next(state, "done", context);
 }
 
+/**
+ * This state writes a line to a file io_rounds times.
+ */
+void __coop_dispatch_handle_io(state_t* state, void* payload)
+{
+    log_verbose("__coop_dispatch_handle_io:state=%p, payload=%p", state, payload);
+
+    fs_context_t* fs_context = (fs_context_t*) payload;
+    machine_coop_context_t* coop_context = fs_context->data;
+    long io_count = coop_context->io_count;
+    long io_rounds = coop_context->io_rounds;
+
+    if (io_count < io_rounds) {
+        int r;
+
+        coop_context->io_count++;
+        fs_context->state = state;
+
+        r = fs_append(fs_context, "handle_io");
+        log_check_uv_r(r, "__coop_dispatch_handle_io:fs_append");
+    }
+    else {
+        log_event_done((char*) coop_context->event);
+        coop_context->io_count = 0;
+        state_run_next(state, "done", coop_context);
+    }
+}
+
+/**
+ * Run whenever a tcp response has been received. If context->req_count is 0,
+ * this is the status response. If the response is 0, go back to the status
+ * state. Otherwise continue.
+ */
 void __coop_dispatch_tcp_done(state_t* state, void* payload)
 {
     log_verbose("__coop_dispatch_tcp_done:state=%p, payload=%p", state, payload);
@@ -476,6 +545,12 @@ void __coop_dispatch_tcp_done(state_t* state, void* payload)
     }
 }
 
+/**
+ * The cooperative dispatcher is a state machine that steps through the
+ * dispatch asynchronously. If the event handler is serial, the machine will
+ * block in that step. If the event handler is cooperative it will step through
+ * the handle_io state.
+ */
 state_t* machine_cooperative_dispatch()
 {
     log_verbose("machine_cooperative_dispatch");
@@ -486,7 +561,8 @@ state_t* machine_cooperative_dispatch()
     const state_initializer_t si[] = {
         { .name = "coop_dispatch_status", .callback = __coop_dispatch_status },
         { .name = "coop_dispatch_next_event", .callback = __coop_dispatch_next_event },
-        { .name = "coop_dispatch_process", .callback = __coop_dispatch_process }
+        { .name = "coop_dispatch_process", .callback = __coop_dispatch_process },
+        { .name = "coop_dispatch_handle_io", .callback = __coop_dispatch_handle_io }
     };
     const edge_initializer_t ei[] = {
         { .name = "status", .from = "coop_dispatch_status", .to = "tcp_request_connecting" },
@@ -494,6 +570,9 @@ state_t* machine_cooperative_dispatch()
         { .name = "status_not_ok", .from = "tcp_request_done", .to = "coop_dispatch_status" },
         { .name = "next_event", .from = "coop_dispatch_next_event", .to = "tcp_request_connecting" },
         { .name = "process", .from = "tcp_request_done", .to = "coop_dispatch_process" },
+        { .name = "handle_io", .from = "coop_dispatch_process", .to = "coop_dispatch_handle_io" },
+        { .name = "handle_io", .from = "coop_dispatch_handle_io", .to = "coop_dispatch_handle_io" },
+        { .name = "done", .from = "coop_dispatch_handle_io", .to = "coop_dispatch_status" },
         { .name = "done", .from = "coop_dispatch_process", .to = "coop_dispatch_status" }
     };
     const int nsi = sizeof(si) / sizeof(si[0]);

@@ -5,6 +5,7 @@
 #include "net.h"
 #include "conf.h"
 #include "protocol.h"
+#include "fs.h"
 
 #define MACHINE_MAX_DEVICES 500
 
@@ -29,8 +30,12 @@ struct machine_server_context_s {
 
 struct machine_coop_context_s {
     net_tcp_context_t tcp;
+    fs_context_t fs;
+    config_data_t* config;
     int req_count;
-    char* event;
+    long io_count;
+    long io_rounds;
+    char event[128];
 };
 
 state_t* machine_tcp_request(state_lookup_t* lookup, state_callback done);

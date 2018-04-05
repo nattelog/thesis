@@ -3,9 +3,10 @@
 
 #include "net.h"
 #include "protocol.h"
+#include "conf.h"
 
-void dispatcher_serial(protocol_value_t* devices);
+void dispatcher_serial(config_data_t* config, protocol_value_t* devices);
 
-void dispatcher_cooperative(protocol_value_t* devices);
+void dispatcher_cooperative(config_data_t* config, protocol_value_t* devices);
 
 #endif

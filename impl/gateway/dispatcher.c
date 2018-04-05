@@ -3,11 +3,12 @@
 #include "dispatcher.h"
 #include "machine.h"
 #include "state.h"
+#include "event_handler.h"
 
 /**
  * The serial dispatcher only process one device and one event at a time.
  */
-void dispatcher_serial(protocol_value_t* devices)
+void dispatcher_serial(config_data_t* config, protocol_value_t* devices)
 {
     log_verbose("dispatcher_serial:devices=%p", devices);
 
@@ -70,6 +71,8 @@ void dispatcher_serial(protocol_value_t* devices)
             r = protocol_get_string(result, (char*) &event_id);
             log_check_r(r, "protocol_get_string");
 
+            event_handler_serial(config->cpu, config->io);
+
             log_event_retrieved((char*) event_id);
             log_event_dispatched((char*) event_id);
             log_event_done((char*) event_id);
@@ -86,7 +89,7 @@ void dispatcher_serial(protocol_value_t* devices)
  * The cooperative dispatcher utilizes the I/O-wait-time that occurs when a tcp
  * package is being transfered to process other devices and events.
  */
-void dispatcher_cooperative(protocol_value_t* devices)
+void dispatcher_cooperative(config_data_t* config, protocol_value_t* devices)
 {
     log_verbose("dispatcher_cooperative:devices=%p", devices);
 
@@ -111,6 +114,7 @@ void dispatcher_cooperative(protocol_value_t* devices)
         log_check_uv_r(r, "net_tcp_context_init");
 
         context->req_count = 0;
+        context->config = config;
 
         state_machine_run(coop_dispatch, context);
     }
