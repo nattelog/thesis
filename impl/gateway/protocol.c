@@ -356,28 +356,77 @@ void protocol_check_response_error(protocol_value_t* protocol)
 }
 
 /**
- * Fills devices_list with devices described as tuples <addr, port> in
- * protocol. Returns an error code if something goes wrong.
+ * Assuming devices is a list of <addr, port> tuples; retrieves the device at
+ * index and fills addr and port with its value.
  */
-int protocol_get_devices(protocol_value_t* protocol, struct sockaddr_storage** devices_list, size_t* devices_len)
+int protocol_get_device(protocol_value_t* devices, unsigned int index, char* addr, int* port)
 {
-    log_verbose("protocol_get_devices:protocol=%p, devices=%p", protocol, devices_list);
+    log_verbose("protocol_get_device:devices=%p, index=%d, addr=%s, port=%p", devices, index, addr, port);
 
     int r;
-    int len;
-    protocol_value_t* devices;
+    int len = protocol_get_length(devices);
+    protocol_value_t* device;
+    protocol_value_t* addr_val;
+    protocol_value_t* port_val;
 
-    if (!protocol_has_key(protocol, "result")) {
-        return EPTCL;
+    if (len < 0) {
+        return len;
     }
 
-    r = protocol_get_key(protocol, &devices, "result");
+    if (len > MACHINE_MAX_DEVICES) {
+        log_error("protocol_get_device:too many devices!");
+        return EBNDS;
+    }
+
+    if (index >= len) {
+        return EBNDS;
+    }
+
+    r = protocol_get_at(devices, &device, index);
 
     if (r) {
         return r;
     }
 
-    len = protocol_get_length(devices);
+    r = protocol_get_at(device, &addr_val, 0);
+
+    if (r) {
+        return r;
+    }
+
+    r = protocol_get_at(device, &port_val, 1);
+
+    if (r) {
+        return r;
+    }
+
+    r = protocol_get_string(addr_val, addr);
+
+    if (r) {
+        return r;
+    }
+
+    r = protocol_get_int(port_val);
+
+    if (r < 0) {
+        return r;
+    }
+
+    *port = r;
+
+    return 0;
+}
+
+/**
+ * Fills devices_list with devices described as tuples <addr, port> in
+ * protocol. Returns an error code if something goes wrong.
+ */
+int protocol_get_devices(protocol_value_t* devices, struct sockaddr_storage** devices_list, size_t* devices_len)
+{
+    log_verbose("protocol_get_devices:devices=%p, devices_list=%p", devices, devices_list);
+
+    int r;
+    int len = protocol_get_length(devices);
 
     if (len < 0) {
         return len;
@@ -389,41 +438,14 @@ int protocol_get_devices(protocol_value_t* protocol, struct sockaddr_storage** d
     }
 
     for (int i = 0; i < len; ++i) {
-        protocol_value_t* device;
-        protocol_value_t* addr;
-        protocol_value_t* port;
         char addrstr[128];
         int portint;
         struct sockaddr_storage* saddr;
 
-        r = protocol_get_at(devices, &device, i);
+        r = protocol_get_device(devices, i, (char*) &addrstr, &portint);
 
         if (r) {
             return r;
-        }
-
-        r = protocol_get_at(device, &addr, 0);
-
-        if (r) {
-            return r;
-        }
-
-        r = protocol_get_at(device, &port, 1);
-
-        if (r) {
-            return r;
-        }
-
-        r = protocol_get_string(addr, (char*) &addrstr);
-
-        if (r) {
-            return r;
-        }
-
-        portint = protocol_get_int(port);
-
-        if (portint < 0) {
-            return portint;
         }
 
         saddr = calloc(1, sizeof(struct sockaddr_storage));

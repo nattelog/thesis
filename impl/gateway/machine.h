@@ -6,12 +6,13 @@
 #include "conf.h"
 #include "protocol.h"
 
-#define MACHINE_MAX_DEVICES 10
+#define MACHINE_MAX_DEVICES 500
 
 typedef protocol_value_t* (*request_callback)(protocol_value_t* request);
 
 typedef struct machine_boot_context_s machine_boot_context_t;
 typedef struct machine_server_context_s machine_server_context_t;
+typedef struct machine_coop_context_s machine_coop_context_t;
 
 struct machine_boot_context_s {
     net_tcp_context_t tcp;
@@ -26,6 +27,12 @@ struct machine_server_context_s {
     request_callback on_request;
 };
 
+struct machine_coop_context_s {
+    net_tcp_context_t tcp;
+    int req_count;
+    char* event;
+};
+
 state_t* machine_tcp_request(state_lookup_t* lookup, state_callback done);
 
 state_t* machine_boot_process(
@@ -38,5 +45,7 @@ state_t* machine_tcp_server(
         machine_server_context_t* context,
         uv_loop_t* loop,
         request_callback on_request);
+
+state_t* machine_cooperative_dispatch();
 
 #endif

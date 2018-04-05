@@ -11,8 +11,8 @@ void __tcp_request_connecting(state_t* state, void* payload)
     int r;
     net_tcp_context_t* context = net_get_context(state, payload);
 
-    r = net_connect(context, "connect"); log_check_uv_r(r, "req_connect");
-    log_check_uv_r(r, "net_connect");
+    r = net_connect(context, "connect");
+    log_check_uv_r(r, "req_connect");
 }
 
 void __tcp_request_writing(state_t* state, void* payload)
@@ -153,16 +153,11 @@ void __boot_process_get_devices(state_t* state, void* payload) {
 void __boot_process_done(state_t* state, void* payload) {
     log_verbose("__boot_process_done:state=%p, payload=%p", state, payload);
 
-    int r;
     machine_boot_context_t* context = (machine_boot_context_t*) payload;
     protocol_value_t* response = ((net_tcp_context_t*) context)->read_payload;
     protocol_value_t* request = ((net_tcp_context_t*) context)->write_payload;
 
     protocol_check_response_error(response);
-    r = protocol_get_devices(response, context->devices, &context->devices_len);
-    log_check_r(r, "protocol_get_devices");
-
-    protocol_free_build(response);
     protocol_free_build(request);
 }
 
@@ -231,7 +226,6 @@ state_t* machine_boot_process(
 
     context->config = config;
     context->server_context = server_context;
-    ((net_tcp_context_t*) context)->buf = malloc(NET_MAX_SIZE);
 
     return boot_process;
 }
@@ -340,6 +334,7 @@ void __server_cleaning(state_t* state, void* payload)
 
     net_tcp_context_t* context = net_get_context(state, payload);
 
+    free(context->buf);
     free(context);
 }
 
@@ -387,4 +382,127 @@ state_t* machine_tcp_server(
     context->on_request = on_request;
 
     return server;
+}
+
+void __coop_dispatch_status(state_t* state, void* payload)
+{
+    log_verbose("__coop_dispatch_status:state=%p, payload=%p", state, payload);
+
+    int r;
+    net_tcp_context_t* context = net_get_context(state, payload);
+    protocol_value_t* request;
+
+    r = protocol_build_request(&request, "status", 0);
+    log_check_r(r, "__coop_dispatch_status:protocol_build_request");
+
+    context->write_payload = request;
+    state_run_next(state, "status", context);
+}
+
+void __coop_dispatch_next_event(state_t* state, void* payload)
+{
+    log_verbose("__coop_dispatch_next_event:state=%p, payload=%p", state, payload);
+
+    int r;
+    net_tcp_context_t* context = net_get_context(state, payload);
+    protocol_value_t* request;
+
+    r = protocol_build_request(&request, "next_event", 0);
+    log_check_r(r, "__coop_dispatch_next_event:protocol_build_request");
+
+    context->write_payload = request;
+    state_run_next(state, "next_event", context);
+}
+
+void __coop_dispatch_process(state_t* state, void* payload)
+{
+    log_verbose("__coop_dispatch_process:state=%p, payload=%p", state, payload);
+
+    int r;
+    net_tcp_context_t* context = net_get_context(state, payload);
+    protocol_value_t* response = context->read_payload;
+    protocol_value_t* result;
+    char event_id[128];
+
+    r = protocol_get_key(response, &result, "result");
+    log_check_r(r, "__coop_dispatch_process:protocol_get_key");
+
+    r = protocol_get_string(result, (char*) &event_id);
+    log_check_r(r, "__coop_dispatch_process:protocol_get_string");
+
+    log_event_retrieved((char*) event_id);
+    log_event_dispatched((char*) event_id);
+    log_event_done((char*) event_id);
+
+    protocol_free_build(response);
+    state_run_next(state, "done", context);
+}
+
+void __coop_dispatch_tcp_done(state_t* state, void* payload)
+{
+    log_verbose("__coop_dispatch_tcp_done:state=%p, payload=%p", state, payload);
+
+    machine_coop_context_t* context = (machine_coop_context_t*) payload;
+
+    protocol_free_build(((net_tcp_context_t*) context)->write_payload);
+
+    if (context->req_count == 0) {
+        int r;
+        protocol_value_t* response = ((net_tcp_context_t*) context)->read_payload;
+        protocol_value_t* result;
+        int status_ok;
+
+        r = protocol_get_key(response, &result, "result");
+        log_check_r(r, "__coop_dispatch_tcp_done:protocol_get_key");
+
+        status_ok = protocol_get_int(result);
+        protocol_free_parse(response);
+
+        if (status_ok < 0) {
+            log_check_r(status_ok, "__coop_dispatch_tcp_done:protocol_get_int");
+        }
+
+        if (status_ok) {
+            (context->req_count)++;
+            state_run_next(state, "status_ok", payload);
+        }
+        else {
+            state_run_next(state, "status_not_ok", payload);
+        }
+    }
+    else {
+        context->req_count = 0;
+        state_run_next(state, "process", payload);
+    }
+}
+
+state_t* machine_cooperative_dispatch()
+{
+    log_verbose("machine_cooperative_dispatch");
+
+    state_t* coop_dispatch;
+    state_lookup_t lookup;
+
+    const state_initializer_t si[] = {
+        { .name = "coop_dispatch_status", .callback = __coop_dispatch_status },
+        { .name = "coop_dispatch_next_event", .callback = __coop_dispatch_next_event },
+        { .name = "coop_dispatch_process", .callback = __coop_dispatch_process }
+    };
+    const edge_initializer_t ei[] = {
+        { .name = "status", .from = "coop_dispatch_status", .to = "tcp_request_connecting" },
+        { .name = "status_ok", .from = "tcp_request_done", .to = "coop_dispatch_next_event" },
+        { .name = "status_not_ok", .from = "tcp_request_done", .to = "coop_dispatch_status" },
+        { .name = "next_event", .from = "coop_dispatch_next_event", .to = "tcp_request_connecting" },
+        { .name = "process", .from = "tcp_request_done", .to = "coop_dispatch_process" },
+        { .name = "done", .from = "coop_dispatch_process", .to = "coop_dispatch_status" }
+    };
+    const int nsi = sizeof(si) / sizeof(si[0]);
+    const int nei = sizeof(ei) / sizeof(ei[0]);
+
+    lookup_init(&lookup);
+    machine_tcp_request(&lookup, __coop_dispatch_tcp_done);
+    coop_dispatch = state_machine_build(si, nsi, ei, nei, &lookup);
+    lookup_clear(&lookup);
+
+    return coop_dispatch;
 }

@@ -35,6 +35,7 @@ int net_tcp_context_init(
 
     context->addr = addr;
     context->loop = loop;
+    context->buf = malloc(NET_MAX_SIZE);
 
     return 0;
 }

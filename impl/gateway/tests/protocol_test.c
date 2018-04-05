@@ -473,7 +473,7 @@ START_TEST(protocol_get_devices_test)
 {
     int r;
     protocol_value_t* protocol;
-    char* json = "{\"result\":[[\"0.0.0.0\", 5000], [\"0.0.0.0\", 5001]]}";
+    char* json = "[[\"0.0.0.0\", 5000], [\"0.0.0.0\", 5001]]";
     struct sockaddr_storage* devices[2];
     size_t devices_len;
 
