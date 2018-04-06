@@ -144,7 +144,7 @@ void log_send(char* message)
  */
 void log_write(const char* level, const char* format, ...)
 {
-    char* buf = malloc(1024);
+    char* buf = malloc(16384);
     va_list args;
 
     va_start(args, format);
