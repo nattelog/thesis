@@ -215,6 +215,46 @@ class EventLifecycle(Database):
             (time, eid, sid)
         )
 
+    def count_created_events(self, sid):
+        return self._execute(
+            """
+            select count(eid) from eventlifecycle
+            where sid=?
+            """,
+            (sid, ),
+            True
+        )[0]
+
+    def count_fetched_events(self, sid):
+        return self._execute(
+            """
+            select count(eid) from eventlifecycle
+            where fetched_time not null and sid=?
+            """,
+            (sid, ),
+            True
+        )[0]
+
+    def count_retrieved_events(self, sid):
+        return self._execute(
+            """
+            select count(eid) from eventlifecycle
+            where retrieved_time not null and sid=?
+            """,
+            (sid, ),
+            True
+        )[0]
+
+    def count_dispatched_events(self, sid):
+        return self._execute(
+            """
+            select count(eid) from eventlifecycle
+            where dispatched_time not null and sid=?
+            """,
+            (sid, ),
+            True
+        )[0]
+
     def count_processed_events(self, sid):
         return self._execute(
             """

@@ -45,13 +45,28 @@ class Report:
         print('  {}{} s'.format('DURATION'.ljust(tpad), duration_time))
         self.print_configuration(sid)
 
-        count = self.lifecycle_table.count_processed_events(sid)
+        count_created = self.lifecycle_table.count_created_events(sid)
+        count_fetched = self.lifecycle_table.count_fetched_events(sid)
+        count_retrieved = self.lifecycle_table.count_retrieved_events(sid)
+        count_dispatched = self.lifecycle_table.count_dispatched_events(sid)
+        count_processed = self.lifecycle_table.count_processed_events(sid)
+
+        processed_ratio = float(count_processed) / float(count_created) \
+                if count_created != 0 else 0
+
         throughput = 0 if duration_time == 0 else \
-                float(count) / float(duration_time)
+                float(count_processed) / float(duration_time)
         d0 = self.lifecycle_table.avg_d0(sid)
         d0 = int(d0) if d0 is not None else 0
 
-        print('  {}{} processed events'.format('COUNT'.ljust(tpad), count))
+        print('  {}{} created events'.format(
+            'COUNT'.ljust(tpad),
+            count_created))
+        print('  {}{} fetched events'.format(''.ljust(tpad), count_fetched))
+        print('  {}{} retrieved events'.format(''.ljust(tpad), count_retrieved))
+        print('  {}{} dispatched events'.format(''.ljust(tpad), count_dispatched))
+        print('  {}{} processed events'.format(''.ljust(tpad), count_processed))
+        print('  {}{} proc/created'.format('RATIO'.ljust(tpad), processed_ratio))
         print('  {}{} events/s'.format(
             'THROUGHPUT'.ljust(tpad),
             throughput))
