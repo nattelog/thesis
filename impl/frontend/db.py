@@ -76,11 +76,14 @@ class Scenario(Database):
             True
         )
 
-    def get_scenarios(self):
+    def get_scenarios(self, from_time):
         return self._execute(
             """
-            select * from scenario order by start;
-            """
+            select * from scenario
+            where start >= ?
+            order by start;
+            """,
+            (from_time, )
         )
 
     def get_last_scenario(self):
