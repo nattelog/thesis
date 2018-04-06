@@ -108,7 +108,7 @@ class TCPServer():
     requests are handled in a new Request thread.
     """
 
-    logger = Log.get_logger('TCPServer')
+    logger = Log.get_logger('TCPServer', StandardWriter)
 
     def __init__(self, address, api, delay=0):
         self.address = address
@@ -130,8 +130,8 @@ class TCPServer():
             TCPServer.logger.debug('{}: Accept', addr)
             req = Request(self.api, conn, addr, self.delay)
             req.start()
-        except socket.error:
-            TCPServer.logger.error(socket.error)
+        except socket.error as e:
+            TCPServer.logger.error('{}: {}', type(e), e)
 
     def hostname(self):
         return self.server.getsockname()
