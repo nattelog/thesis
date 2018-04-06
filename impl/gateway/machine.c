@@ -416,6 +416,30 @@ void __coop_dispatch_next_event(state_t* state, void* payload)
     state_run_next(state, "next_event", context);
 }
 
+void __start_worker(uv_work_t* req)
+{
+   log_verbose("__start_worker:req=%p", req);
+
+    machine_coop_context_t* context = (machine_coop_context_t*) req->data;
+    config_data_t* config = context->config;
+    char* event = context->event;
+
+    event_handler_serial(config->cpu, config->io);
+    log_event_done(event);
+}
+
+void __work_done(uv_work_t* req, int status)
+{
+    log_verbose("__work_done:req=%p, status=%d", req, status);
+
+    log_check_uv_r(status, "__work_done");
+    machine_coop_context_t* context = (machine_coop_context_t*) req->data;
+    state_t* state = ((net_tcp_context_t*) context)->state;
+
+    state_run_next(state, "done", context);
+    free(req);
+}
+
 /**
  * Processes the event. If the eventhandler is set to serial, this state will
  * block the entire event loop. If cooperative, the event loop will continue.
@@ -469,8 +493,13 @@ void __coop_dispatch_process(state_t* state, void* payload)
         }
     }
     else if (strcmp(config->eventhandler, "preemptive") == 0) {
-        log_error("Cannot handle a preemptive event handler with a cooperative dispatcher.");
-        exit(1);
+        uv_work_t* work_req = malloc(sizeof(uv_work_t));
+        uv_loop_t* loop = context->tcp.loop;
+
+        work_req->data = context;
+        log_event_dispatched((char*) context->event);
+        r = uv_queue_work(loop, work_req, __start_worker, __work_done);
+        log_check_uv_r(r, "__coop_dispatch_process:uv_queue_work");
     }
     else {
         log_error("Unknown event handler \"%s\"", config->eventhandler);
