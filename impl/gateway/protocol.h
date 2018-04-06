@@ -1,6 +1,7 @@
 #ifndef __PROTOCOL_h__
 #define __PROTOCOL_h__
 
+#include "uv.h"
 #include "json.h"
 #include "json-builder.h"
 

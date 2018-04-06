@@ -57,7 +57,7 @@ int config_parse_address(char* addr_string, char* target_addr, int* target_port)
     int r = 0;
     int nmatch = 3;
     regmatch_t matches[nmatch];
-    char* str = "^([0-9]+\.[0-9]+\.[0-9]+\.[0-9]+):([0-9]+)$";
+    char* str = "^([0-9]+\\.[0-9]+\\.[0-9]+\\.[0-9]+):([0-9]+)$";
 
     r = regcomp(&regex, str, REG_EXTENDED);
 
