@@ -458,9 +458,15 @@ void __coop_dispatch_process(state_t* state, void* payload)
         strcpy(context->fs.content, EVENT_HANDLER_IO_CONTENT);
         context->fs.data = context; // point back up again
 
-        log_debug("doing io");
-        r = fs_append(&context->fs, "handle_io");
-        log_check_uv_r(r, "__coop_dispatch_process:fs_append");
+        if (context->io_rounds == 0) {
+            log_event_done((char*) context->event);
+            state_run_next(state, "done", context);
+        }
+        else {
+            log_debug("doing io");
+            r = fs_append(&context->fs, "handle_io");
+            log_check_uv_r(r, "__coop_dispatch_process:fs_append");
+        }
     }
     else if (strcmp(config->eventhandler, "preemptive") == 0) {
         log_error("Cannot handle a preemptive event handler with a cooperative dispatcher.");
