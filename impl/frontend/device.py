@@ -140,9 +140,13 @@ class NameServiceAPI:
 
         E = 'EVENT_HANDLER'
         D = 'DISPATCHER'
+        C = 'CPU_INTENSITY'
+        I = 'IO_INTENSITY'
 
         if gw_configuration[E] == self.configuration[E] and \
-                gw_configuration[D] == self.configuration[D]:
+                gw_configuration[D] == self.configuration[D] and \
+                gw_configuration[C] == self.configuration[C] and \
+                gw_configuration[I] == self.configuration[I]:
             self.configuration['GATEWAY_ADDRESS'] = tuple(address)
         else:
             self.configuration['GATEWAY_ADDRESS'] = None
