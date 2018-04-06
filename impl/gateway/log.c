@@ -150,7 +150,10 @@ void log_write(const char* level, const char* format, ...)
     va_start(args, format);
     log_format(buf, level, format, args);
     va_end(args);
+
+#ifdef LOGSTD
     printf("%s\n", buf); // todo: add guard so this is not run in test
+#endif
 
     if (udp_sock > 0) {
         log_send(buf);

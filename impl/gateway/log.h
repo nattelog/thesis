@@ -5,8 +5,10 @@
 #include "uv.h"
 
 #ifndef LOGLEVEL
-#define LOGLEVEL 3
+#define LOGLEVEL 2
 #endif
+
+// #define LOGSTD
 
 static uv_udp_t udp_handle;
 static int udp_sock = -1;
