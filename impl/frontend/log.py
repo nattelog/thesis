@@ -138,5 +138,3 @@ class LogServer(threading.Thread):
 
             if extr is not None:
                 self.testmanager.register_event_message(extr)
-
-            print(message)

@@ -12,7 +12,7 @@ from log import (\
 
 class TestManager:
 
-    logger = Log.get_logger('TestManager')
+    logger = Log.get_logger('TestManager', StandardWriter)
 
     def __init__(self, nsport, configuration):
         self.configuration = configuration
