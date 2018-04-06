@@ -1,11 +1,13 @@
 #ifndef __NET_h__
 #define __NET_h__
 
+#include <pthread.h>
 #include <stdlib.h>
 #include "uv.h"
 #include "json.h"
 #include "state.h"
 #include "protocol.h"
+#include "conf.h"
 
 #define MAX_REQUEST_ARGS 8
 #define SERVER_PORT 5010
@@ -33,10 +35,14 @@ struct net_tcp_context_s {
 struct net_tcp_context_sync_s {
     int sock;
     struct sockaddr_storage* addr;
+    config_data_t* config;
     protocol_value_t* read_payload;
     protocol_value_t* write_payload;
     char* buf;
     size_t buf_len;
+    int is_processed;
+    char event[128];
+    pthread_mutex_t mutex;
 };
 
 int net_tcp_context_init(
@@ -47,7 +53,8 @@ int net_tcp_context_init(
 
 int net_tcp_context_sync_init(
         net_tcp_context_sync_t* context,
-        struct sockaddr_storage* addr);
+        struct sockaddr_storage* addr,
+        config_data_t* config);
 
 net_tcp_context_t* net_get_context(state_t* state, void* payload);
 

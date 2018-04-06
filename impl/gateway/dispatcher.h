@@ -1,6 +1,7 @@
 #ifndef __DISPATCHER_h__
 #define __DISPATCHER_h__
 
+#include <pthread.h>
 #include "net.h"
 #include "protocol.h"
 #include "conf.h"

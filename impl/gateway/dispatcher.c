@@ -10,7 +10,7 @@
  */
 void dispatcher_serial(config_data_t* config, protocol_value_t* devices)
 {
-    log_verbose("dispatcher_serial:devices=%p", devices);
+    log_verbose("dispatcher_serial:config=%p, devices=%p", config, devices);
 
     int i = 0;
     int r;
@@ -27,7 +27,7 @@ void dispatcher_serial(config_data_t* config, protocol_value_t* devices)
         net_tcp_context_sync_t* context = malloc(sizeof(net_tcp_context_sync_t));
         struct sockaddr_storage* addr = devices_addrs[j];
 
-        r = net_tcp_context_sync_init(context, addr);
+        r = net_tcp_context_sync_init(context, addr, config);
         log_check_r(r, "net_tcp_context_sync_init");
         devices_context[j] = context;
     }
@@ -39,10 +39,21 @@ void dispatcher_serial(config_data_t* config, protocol_value_t* devices)
     log_check_r(r, "protocol_build_request");
 
     while (1) {
+        log_debug("checking device %d", i);
+
         net_tcp_context_sync_t* device = devices_context[i];
         protocol_value_t* response;
         protocol_value_t* result;
         int status_ok;
+
+        i = (i + 1) % devices_len;
+
+        pthread_mutex_lock(&device->mutex);
+        if (!device->is_processed) {
+            pthread_mutex_unlock(&device->mutex);
+            continue;
+        }
+        pthread_mutex_unlock(&device->mutex);
 
         device->write_payload = status_request;
         r = net_call_sync(device);
@@ -57,8 +68,6 @@ void dispatcher_serial(config_data_t* config, protocol_value_t* devices)
         protocol_free_parse(device->read_payload);
 
         if (status_ok) {
-            char event_id[128];
-
             device->write_payload = get_event_request;
             r = net_call_sync(device);
             log_check_uv_r(r, "net_call_sync");
@@ -68,17 +77,25 @@ void dispatcher_serial(config_data_t* config, protocol_value_t* devices)
             r = protocol_get_key(response, &result, "result");
             log_check_r(r, "protocol_get_key");
 
-            r = protocol_get_string(result, (char*) &event_id);
+            r = protocol_get_string(result, (char*) &device->event);
             log_check_r(r, "protocol_get_string");
 
-            event_handler_serial(config->cpu, config->io);
+            log_event_retrieved((char*) device->event);
+            log_event_dispatched((char*) device->event);
 
-            log_event_retrieved((char*) event_id);
-            log_event_dispatched((char*) event_id);
-            log_event_done((char*) event_id);
+            if (strcmp(config->eventhandler, "serial") == 0) {
+                event_handler_serial(config->cpu, config->io);
+                log_event_done((char*) device->event);
+            }
+            else if (strcmp(config->eventhandler, "preemptive") == 0) {
+                event_handler_preemptive(device);
+            }
+            else {
+                log_error("dispatcher_serial:no support for eventhandler \"%s\"", config->eventhandler);
+                exit(1);
+            }
+
         }
-
-        i = (i + 1) % devices_len;
     }
 
     protocol_free_build(status_request);
@@ -91,7 +108,7 @@ void dispatcher_serial(config_data_t* config, protocol_value_t* devices)
  */
 void dispatcher_cooperative(config_data_t* config, protocol_value_t* devices)
 {
-    log_verbose("dispatcher_cooperative:devices=%p", devices);
+    log_verbose("dispatcher_cooperative:config=%p, devices=%p", config, devices);
 
     int r;
     uv_loop_t* loop = uv_default_loop();

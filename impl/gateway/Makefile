@@ -3,13 +3,14 @@ UVDIR = libuv
 CHECKDIR = check/build
 TESTDIR = tests
 JSONDIR = json
-CFLAGS =-Wall -I$(UVDIR)/include -I$(JSONDIR)
-LIBS = -luv -L$(UVDIR)/.libs
+TPDIR = thpool
+CFLAGS =-Wall -I$(UVDIR)/include -I$(JSONDIR) -I$(TPDIR)
+LIBS = -luv -L$(UVDIR)/.libs -lpthread
 TCFLAGS =$(CFLAGS) -I$(CHECKDIR)/src -I$(CHECKDIR) -I$(TESTDIR) -I.
 TLIBS = $(LIBS) -lcheck -L$(CHECKDIR)/src -lcompat -L$(CHECKDIR)/lib
 
 DEPS = log.h state.h net.h fs.h conf.h err.h machine.h protocol.h dispatcher.h event_handler.h
-OBJ = log.o state.o net.o fs.o conf.o err.o machine.o protocol.o dispatcher.o event_handler.o $(JSONDIR)/json.o $(JSONDIR)/json-builder.o
+OBJ = log.o state.o net.o fs.o conf.o err.o machine.o protocol.o dispatcher.o event_handler.o $(JSONDIR)/json.o $(JSONDIR)/json-builder.o $(TPDIR)/thpool.o
 TDEPS = test.h
 TOBJ = $(OBJ) test.o protocol_test.o conf_test.o state_test.o
 MOBJ = $(OBJ) gateway.o

@@ -42,7 +42,8 @@ int net_tcp_context_init(
 
 int net_tcp_context_sync_init(
         net_tcp_context_sync_t* context,
-        struct sockaddr_storage* addr)
+        struct sockaddr_storage* addr,
+        config_data_t* config)
 {
     log_verbose(
             "net_tcp_context_sync_init:context=%p, addr=%p",
@@ -51,8 +52,10 @@ int net_tcp_context_sync_init(
 
     context->buf = calloc(1, NET_MAX_SIZE);
     context->addr = addr;
+    context->config = config;
+    context->is_processed = 1;
 
-    return 0;
+    return pthread_mutex_init(&context->mutex, NULL);
 }
 
 /**

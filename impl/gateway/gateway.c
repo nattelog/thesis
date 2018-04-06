@@ -6,6 +6,7 @@
 #include "conf.h"
 #include "machine.h"
 #include "dispatcher.h"
+#include "event_handler.h"
 
 static machine_server_context_t server_context;
 static machine_boot_context_t boot_context;
@@ -198,6 +199,11 @@ int main(int argc, char** argv)
     }
 
     prepare_test(&config, &devices);
+
+    if (strcmp(config.eventhandler, "preemptive") == 0) {
+        event_handler_preemptive_init();
+    }
+
     start_test(&config, devices);
 
     return 0;
