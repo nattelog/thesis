@@ -51,7 +51,7 @@ class Request(threading.Thread):
     """ Representation of a request coming from the network.
     """
 
-    logger = Log.get_logger('Request')
+    logger = Log.get_logger('Request', StandardWriter)
 
     def __init__(self, api, conn, addr, delay=0):
         threading.Thread.__init__(self)
@@ -62,8 +62,9 @@ class Request(threading.Thread):
         self.daemon = True
 
     def process_request(self, request):
+        Request.logger.debug('{}:>>>> {}', self.addr, repr(request))
+
         try:
-            Request.logger.debug('{}:>>>> {}', self.addr, repr(request))
             data = json.loads(request)
             method = data['method']
             args = data['args']
@@ -116,7 +117,7 @@ class TCPServer():
         self.delay = delay
         self.server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.server.bind(self.address)
-        self.server.listen(5)
+        self.server.listen(100)
         TCPServer.logger.debug('{}: Start', self.hostname())
 
     def close(self):

@@ -393,8 +393,12 @@ void __coop_dispatch_status(state_t* state, void* payload)
     int r;
     net_tcp_context_t* context = net_get_context(state, payload);
     protocol_value_t* request;
+    protocol_value_t* did_value;
 
-    r = protocol_build_request(&request, "status", 0);
+    r = protocol_build_string(&did_value, (char*) context->did);
+    log_check_r(r, "__coop_dispatch_status:protocol_build_string");
+
+    r = protocol_build_request(&request, "status", 1, did_value);
     log_check_r(r, "__coop_dispatch_status:protocol_build_request");
 
     context->write_payload = request;
@@ -408,8 +412,12 @@ void __coop_dispatch_next_event(state_t* state, void* payload)
     int r;
     net_tcp_context_t* context = net_get_context(state, payload);
     protocol_value_t* request;
+    protocol_value_t* did_value;
 
-    r = protocol_build_request(&request, "next_event", 0);
+    r = protocol_build_string(&did_value, (char*) context->did);
+    log_check_r(r, "__coop_dispatch_next_event:protocol_build_string");
+
+    r = protocol_build_request(&request, "next_event", 1, did_value);
     log_check_r(r, "__coop_dispatch_next_event:protocol_build_request");
 
     context->write_payload = request;

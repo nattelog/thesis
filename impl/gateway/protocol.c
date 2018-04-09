@@ -211,7 +211,7 @@ int protocol_build_array(protocol_value_t** protocol, int argc, ...)
 
 int protocol_build_request(protocol_value_t** protocol, char* method, int argc, ...)
 {
-    log_verbose("protocol_build_request:protocol=%p, method=\"%s\", args=%d", *protocol, method, argc);
+    log_verbose("protocol_build_request:protocol=%p, method=\"%s\", argc=%d", *protocol, method, argc);
 
     va_list args;
     json_value* method_val;

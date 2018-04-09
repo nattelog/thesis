@@ -30,6 +30,7 @@ struct net_tcp_context_s {
     size_t buf_len;
     char* read_chunk_edge;
     char* read_eof_edge;
+    char did[128];
 };
 
 struct net_tcp_context_sync_s {
@@ -43,6 +44,7 @@ struct net_tcp_context_sync_s {
     int is_processed;
     char event[128];
     pthread_mutex_t mutex;
+    char did[128];
 };
 
 int net_tcp_context_init(
@@ -53,7 +55,8 @@ int net_tcp_context_init(
 
 int net_tcp_context_sync_init(
         net_tcp_context_sync_t* context,
-        struct sockaddr_storage* addr,
+        char* address,
+        int port,
         config_data_t* config);
 
 net_tcp_context_t* net_get_context(state_t* state, void* payload);

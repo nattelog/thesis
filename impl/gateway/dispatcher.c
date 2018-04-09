@@ -14,37 +14,40 @@ void dispatcher_serial(config_data_t* config, protocol_value_t* devices)
 
     int i = 0;
     int r;
-    protocol_value_t* status_request;
-    protocol_value_t* get_event_request;
-    struct sockaddr_storage* devices_addrs[MACHINE_MAX_DEVICES];
     size_t devices_len;
     net_tcp_context_sync_t* devices_context[MACHINE_MAX_DEVICES];
+    char* ns_addr = (char*) config->nameservice_address;
+    int ns_port = config->nameservice_port;
 
-    r = protocol_get_devices(devices, devices_addrs, &devices_len);
-    log_check_r(r, "protocol_get_devices");
+    devices_len = protocol_get_length(devices);
 
     for (int j = 0; j < devices_len; ++j) {
+        protocol_value_t* did_value;
         net_tcp_context_sync_t* context = malloc(sizeof(net_tcp_context_sync_t));
-        struct sockaddr_storage* addr = devices_addrs[j];
 
-        r = net_tcp_context_sync_init(context, addr, config);
+        r = net_tcp_context_sync_init(context, ns_addr, ns_port, config);
         log_check_r(r, "net_tcp_context_sync_init");
+
+        r = protocol_get_at(devices, &did_value, j);
+        log_check_r(r, "dispatcher_serial:protocol_get_at");
+
+        r = protocol_get_string(did_value, context->did);
+        log_check_r(r, "dispatcher_serial:protocol_get_string");
+
         devices_context[j] = context;
     }
 
-    r = protocol_build_request(&status_request, "status", 0);
-    log_check_r(r, "protocol_build_request");
-
-    r = protocol_build_request(&get_event_request, "next_event", 0);
-    log_check_r(r, "protocol_build_request");
-
     while (1) {
-        log_debug("checking device %d", i);
-
+        protocol_value_t* status_request;
+        protocol_value_t* status_did_value;
+        protocol_value_t* get_event_request;
+        protocol_value_t* get_event_did_value;
         net_tcp_context_sync_t* device = devices_context[i];
         protocol_value_t* response;
         protocol_value_t* result;
         int status_ok;
+
+        log_debug("checking device %d: %s", i, device->did);
 
         i = (i + 1) % devices_len;
 
@@ -55,14 +58,26 @@ void dispatcher_serial(config_data_t* config, protocol_value_t* devices)
         }
         pthread_mutex_unlock(&device->mutex);
 
+        r = protocol_build_string(&status_did_value, (char*) &device->did);
+        log_check_r(r, "dispatcher_serial:protocol_build_string");
+
+        r = protocol_build_string(&get_event_did_value, (char*) &device->did);
+        log_check_r(r, "dispatcher_serial:protocol_build_string");
+
+        r = protocol_build_request(&status_request, "status", 1, status_did_value);
+        log_check_r(r, "dispatcher_serial:protocol_build_request");
+
+        r = protocol_build_request(&get_event_request, "next_event", 1, get_event_did_value);
+        log_check_r(r, "dispatcher_serial:protocol_build_request");
+
         device->write_payload = status_request;
         r = net_call_sync(device);
-        log_check_uv_r(r, "net_call_sync");
+        log_check_uv_r(r, "dispatcher_serial:net_call_sync");
 
         response = device->read_payload;
         protocol_check_response_error(response);
         r = protocol_get_key(response, &result, "result");
-        log_check_r(r, "protocol_get_key");
+        log_check_r(r, "dispatcher_serial:protocol_get_key");
 
         status_ok = protocol_get_int(result);
         protocol_free_parse(device->read_payload);
@@ -70,15 +85,15 @@ void dispatcher_serial(config_data_t* config, protocol_value_t* devices)
         if (status_ok) {
             device->write_payload = get_event_request;
             r = net_call_sync(device);
-            log_check_uv_r(r, "net_call_sync");
+            log_check_uv_r(r, "dispatcher_serial:net_call_sync");
 
             response = device->read_payload;
             protocol_check_response_error(response);
             r = protocol_get_key(response, &result, "result");
-            log_check_r(r, "protocol_get_key");
+            log_check_r(r, "dispatcher_serial:protocol_get_key");
 
             r = protocol_get_string(result, (char*) &device->event);
-            log_check_r(r, "protocol_get_string");
+            log_check_r(r, "dispatcher_serial:protocol_get_string");
 
             log_event_retrieved((char*) device->event);
             log_event_dispatched((char*) device->event);
@@ -96,10 +111,12 @@ void dispatcher_serial(config_data_t* config, protocol_value_t* devices)
             }
 
         }
-    }
 
-    protocol_free_build(status_request);
-    protocol_free_build(get_event_request);
+        protocol_free_build(status_request);
+        protocol_free_build(get_event_request);
+        // protocol_free_build(status_did_value);
+        // protocol_free_build(get_event_did_value);
+    }
 }
 
 /**
@@ -113,6 +130,8 @@ void dispatcher_cooperative(config_data_t* config, protocol_value_t* devices)
     int r;
     uv_loop_t* loop = uv_default_loop();
     state_t* coop_dispatch = machine_cooperative_dispatch();
+    char* ns_addr = (char*) config->nameservice_address;
+    int ns_port = config->nameservice_port;
     int devices_length = protocol_get_length(devices);
 
     if (devices_length < 0) {
@@ -121,14 +140,16 @@ void dispatcher_cooperative(config_data_t* config, protocol_value_t* devices)
 
     for (int i = 0; i < devices_length; ++i) {
         machine_coop_context_t* context = malloc(sizeof(machine_coop_context_t));
-        char addr[128];
-        int port;
+        protocol_value_t* did_value;
 
-        r = protocol_get_device(devices, i, (char*) &addr, &port);
-        log_check_r(r, "protocol_get_device");
+        r = net_tcp_context_init((net_tcp_context_t*) context, loop, ns_addr, ns_port);
+        log_check_uv_r(r, "dispatcher_cooperative:net_tcp_context_init");
 
-        r = net_tcp_context_init((net_tcp_context_t*) context, loop, (char*) addr, port);
-        log_check_uv_r(r, "net_tcp_context_init");
+        r = protocol_get_at(devices, &did_value, i);
+        log_check_r(r, "dispatcher_cooperative:protocol_get_at");
+
+        r = protocol_get_string(did_value, ((net_tcp_context_t* ) context)->did);
+        log_check_r(r, "dispatcher_cooperative:protocol_get_string");
 
         context->req_count = 0;
         context->config = config;

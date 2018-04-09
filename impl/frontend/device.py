@@ -8,7 +8,7 @@ import threading
 import Queue
 import socket
 import uuid
-from log import Log
+from log import Log, StandardWriter
 from net import TCPServer, Stub
 
 class EventError(Exception):
@@ -32,6 +32,7 @@ class Device:
     logger = Log.get_logger('Device')
 
     def __init__(self):
+        self.id = str(uuid.uuid4())
         self.event_queue = Queue.Queue(10);
 
     def status(self):
@@ -66,12 +67,12 @@ class Producer(threading.Thread):
     """ Produces new events and puts them on the device event queue.
     """
 
-    logger = Log.get_logger('Producer')
+    logger = Log.get_logger('Producer', StandardWriter)
 
-    def __init__(self, device, frequency):
+    def __init__(self, devices, frequency):
         threading.Thread.__init__(self)
         self.daemon = True
-        self.device = device
+        self.devices = devices
         self.frequency = frequency
         self.stop_event = threading.Event()
 
@@ -82,43 +83,14 @@ class Producer(threading.Thread):
             return
 
         while not self.stop_event.wait(1 / self.frequency):
-            event = Event()
-            self.device.put_event(event)
-            Producer.logger.debug('{}: Put event \'{}\'', id(self), event)
+            for did, device in self.devices.iteritems():
+                event = Event()
+                device.put_event(event)
+                Producer.logger.debug('{}: Put event \'{}\'', id(self), event)
 
     def stop(self):
         self.stop_event.set()
         Producer.logger.debug('{}: Stop', id(self))
-
-class PassiveDevice(threading.Thread):
-    """ A passive device is a socket server listening for requests that call
-    methods on its event queue, and returns the result.
-    """
-
-    logger = Log.get_logger('PassiveDevice')
-
-    def __init__(self, address, frequency, delay):
-        threading.Thread.__init__(self)
-        self.daemon = True
-        self.device = Device()
-        self.server = TCPServer(address, self.device, delay)
-        self.producer = Producer(self.device, frequency)
-
-    def run(self):
-        self.producer.start()
-        PassiveDevice.logger.info('{}: Start', self.hostname())
-
-        while True:
-            self.server.accept()
-
-    def stop(self):
-        hostname = self.hostname()
-        self.producer.stop()
-        self.server.close()
-        PassiveDevice.logger.info('{}: Stop', hostname)
-
-    def hostname(self):
-        return self.server.hostname()
 
 class NameServiceAPI:
     """ API callable by the gateway.
@@ -130,7 +102,7 @@ class NameServiceAPI:
         self.configuration = configuration
 
     def hostnames(self):
-        return [device.hostname() for device in self.devices]
+        return [did for did, device in self.devices.iteritems()]
 
     def verify_gateway(self, gw_configuration, address):
         """ Called over the network by the gateway to verify it has been called
@@ -154,26 +126,40 @@ class NameServiceAPI:
         self.gateway_event.set()
         return self.configuration['GATEWAY_ADDRESS'] is not None
 
+    def status(self, did):
+        if did in self.devices:
+            return self.devices[did].status()
+
+        raise AttributeError('Device id {} not found'.format(did))
+
+    def next_event(self, did):
+        if did in self.devices:
+            return self.devices[did].next_event()
+
+        raise AttributeError('Device id {} not found'.format(did))
+
 class NameService(threading.Thread):
     """ Keeps track of all devices and the gateway in the test.
     """
 
-    logger = Log.get_logger('NameService')
+    logger = Log.get_logger('NameService', StandardWriter)
 
     def __init__(self, address, configuration):
         threading.Thread.__init__(self)
         self.daemon = True
         self.gateway_verification_event = threading.Event()
         self.configuration = configuration
+        self.devices = {}
 
-        DeviceType = configuration['DEVICE_TYPE']
         quantity = configuration['DEVICE_QUANTITY']
         frequency = configuration['DEVICE_FREQUENCY']
         delay = configuration['DEVICE_DELAY']
-        daddr = ('', 0) # devices on localhost and random port
 
-        self.devices = [DeviceType(daddr, frequency, delay)
-                for _ in range(quantity)]
+        for _ in range(quantity):
+            device = Device()
+            self.devices[device.id] = device
+
+        self.producer = Producer(self.devices, frequency)
         self.server = TCPServer(
             address,
             NameServiceAPI(
@@ -209,13 +195,10 @@ class NameService(threading.Thread):
         return self.server.hostname()
 
     def stop_devices(self):
-        for device in self.devices:
-            device.stop()
+        self.producer.stop()
 
     def start_devices(self):
-        for device in self.devices:
-            device.start()
-
+        self.producer.start()
         NameService.logger.debug('Started {} devices', len(self.devices))
 
     def close(self):

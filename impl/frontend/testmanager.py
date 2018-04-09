@@ -1,7 +1,7 @@
 import Queue
 import threading
 import time
-from device import PassiveDevice, NameService
+from device import NameService
 from db import Scenario, EventLifecycle, Configuration
 from log import (\
         now,

@@ -5,7 +5,6 @@ import getopt
 import re
 from log import now, Log, LogServer, UDPWriter, StandardWriter
 from db import Database
-from device import PassiveDevice
 from testmanager import TestManager
 
 logger = Log.get_logger(__name__, StandardWriter)
@@ -143,7 +142,6 @@ def main(argv):
             db_path = arg
 
     Database.PATH = db_path
-    configuration[DEVICE_TYPE] = PassiveDevice
 
     tm = TestManager(NAMESERVICE_PORT, configuration)
     ls = LogServer(('', LOG_SERVER_PORT), tm)

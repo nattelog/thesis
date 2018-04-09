@@ -42,13 +42,25 @@ int net_tcp_context_init(
 
 int net_tcp_context_sync_init(
         net_tcp_context_sync_t* context,
-        struct sockaddr_storage* addr,
+        char* address,
+        int port,
         config_data_t* config)
 {
     log_verbose(
-            "net_tcp_context_sync_init:context=%p, addr=%p",
+            "net_tcp_context_sync_init:context=%p, address=\"%s\", port=%d, config=%p",
             context,
-            addr);
+            address,
+            port,
+            config);
+
+    int r;
+    struct sockaddr_storage* addr = malloc(sizeof(struct sockaddr_storage));
+
+    r = uv_ip4_addr(address, port, (struct sockaddr_in*) addr);
+
+    if (r) {
+        return r;
+    }
 
     context->buf = calloc(1, NET_MAX_SIZE);
     context->addr = addr;
@@ -123,6 +135,7 @@ int net_connect_sync(net_tcp_context_sync_t* context)
     r = socket(AF_INET, SOCK_STREAM, 0);
 
     if (r < 0) {
+        log_error("net_connect_sync:could not create socket");
         return r;
     }
 
@@ -470,7 +483,13 @@ int net_call_sync(net_tcp_context_sync_t* context)
         return r;
     }
 
-    return net_read_sync(context);
+    r = net_read_sync(context);
+
+    if (r) {
+        return r;
+    }
+
+    return close(context->sock);
 }
 
 /**
