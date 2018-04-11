@@ -493,12 +493,28 @@ services or systems that do not want to block any I/O. libuv include handles
 for \textit{UDP} and \textit{TCP} sockets, file and file system, \textit{TTY},
 timers and \textit{child processes}. \cite{libuv-docs}
 
-\begin{figure}[h]
-  \includegraphics[width=7cm]{loop_iteration}
-  \centering
-  \caption[libuv event loop]{The stages each event loop iteration step through
-  in libuv \cite{github2017libuv-loop_iteration}.}
-  \label{fig:loop_iteration}
+\begin{figure}[h!]
+\centering
+    \caption[libuv event loop]{The stages each event loop iteration step
+    through in libuv.}
+    \label{fig:loop_iteration}
+    \begin{tikzpicture}[node distance=1.5cm, auto]
+        \node [block] (loop_time) {Update loop time};
+        \node [decision, below of=loop_time] (alive) {Loop alive?};
+        \node [block, left of=alive, node distance=3cm] (end) {End};
+        \node [block, below of=alive, node distance=2.5cm] (run_due) {Run due timers};
+        \node [block, below of=run_due] (pending) {Call pending callbacks};
+        \node [block, below of=pending] (idle) {Run idle callbacks};
+        \node [block, below of=idle] (prepare) {Run prepare handles};
+        \node [block, below of=prepare] (poll) {Poll for I/O};
+        \node [block, below of=poll] (check) {Run check handles};
+        \node [block, below of=check] (close) {Call close callbacks};
+
+        \path [line] (loop_time) -- (alive);
+        \path [line] (alive) -- node {No} (end);
+        \path [line] (alive) -- node {Yes} (run_due);
+        \path [line] (close.east) -- ++(1cm,0) |- (loop_time.east);
+    \end{tikzpicture}
 \end{figure}
 
 Figure \ref{fig:loop_iteration} demonstrates the stages each event loop
