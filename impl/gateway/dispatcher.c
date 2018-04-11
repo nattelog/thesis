@@ -47,8 +47,6 @@ void dispatcher_serial(config_data_t* config, protocol_value_t* devices)
         protocol_value_t* result;
         int status_ok;
 
-        log_debug("checking device %d: %s", i, device->did);
-
         i = (i + 1) % devices_len;
 
         pthread_mutex_lock(&device->mutex);
@@ -103,7 +101,13 @@ void dispatcher_serial(config_data_t* config, protocol_value_t* devices)
                 log_event_done((char*) device->event);
             }
             else if (strcmp(config->eventhandler, "preemptive") == 0) {
+                pthread_mutex_lock(&lock);
+                while (no_threads >= 1) {
+                    log_debug("dispatcher_serial:waiting for free thread");
+                    pthread_cond_wait(&cond, &lock);
+                }
                 event_handler_preemptive(device);
+                pthread_mutex_unlock(&lock);
             }
             else {
                 log_error("dispatcher_serial:no support for eventhandler \"%s\"", config->eventhandler);

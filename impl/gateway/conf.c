@@ -11,6 +11,7 @@
  */
 void config_init(config_data_t* config)
 {
+    config->tp_size = 10;
     config->dispatcher = NULL;
     config->eventhandler = NULL;
     config->cpu = 0;
@@ -37,6 +38,7 @@ int config_to_protocol_type(config_data_t* config, protocol_value_t** protocol)
     json_object_push(*protocol, "EVENT_HANDLER", json_string_new(config->eventhandler));
     json_object_push(*protocol, "CPU_INTENSITY", json_double_new(config->cpu));
     json_object_push(*protocol, "IO_INTENSITY", json_double_new(config->io));
+    json_object_push(*protocol, "POOL_SIZE", json_integer_new(config->tp_size));
 
     sprintf((char*) &pre, "%s:%d", config->nameservice_address, config->nameservice_port);
     json_object_push(*protocol, "NAMESERVICE_ADDRESS", json_string_new((char*) &pre));

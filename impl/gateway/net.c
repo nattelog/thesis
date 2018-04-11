@@ -362,7 +362,7 @@ int net_read_sync(net_tcp_context_sync_t* context)
         nread += n;
     }
 
-    log_debug("net_read_sync:<<<< \"%s\" (%d)", buf, nread);
+    log_debug("net_read_sync:>>>> \"%s\" (%d)", buf, nread);
     r = protocol_parse(&read_payload, buf, nread);
 
     if (r) {

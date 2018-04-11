@@ -6,6 +6,7 @@
 typedef struct config_data_s config_data_t;
 
 struct config_data_s {
+    int tp_size;
     char* dispatcher;
     char* eventhandler;
     double cpu;

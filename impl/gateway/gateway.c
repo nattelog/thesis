@@ -28,6 +28,8 @@ void usage()
         "            The CPU intensity each event induce. Value between 0 and 1.\n\n"
         "        -i <value>\n"
         "            The I/O intensity each event induce. Value between 0 and 1.\n\n"
+        "        -p <value>\n"
+        "            The size of the thread pool. Defaults to 10.\n\n"
         "        -n <address>:<port>\n"
         "            The address and port of the nameservice.\n\n"
         "        -l <address>:<port>\n"
@@ -139,6 +141,14 @@ void start_test(config_data_t* config, protocol_value_t* devices)
 
     char* dispatcher_type = config->dispatcher;
 
+    if (strcmp(config->eventhandler, "preemptive") == 0) {
+        char* pool_size[5];
+
+        sprintf((char*) &pool_size, "%d", config->tp_size);
+        setenv("UV_THREADPOOL_SIZE", (char*) pool_size, 1);
+        event_handler_preemptive_init(config);
+    }
+
     if (strcmp(dispatcher_type, "serial") == 0) {
         dispatcher_serial(config, devices);
     }
@@ -162,7 +172,7 @@ int main(int argc, char** argv)
         return 0;
     }
 
-    while ((input_flag = getopt(argc, argv, "hd:e:c:i:l:n:")) != -1) {
+    while ((input_flag = getopt(argc, argv, "hd:e:c:i:p:l:n:")) != -1) {
         switch (input_flag) {
             case 'h':
                 usage();
@@ -178,6 +188,9 @@ int main(int argc, char** argv)
                 break;
             case 'i':
                 config.io = atof(optarg);
+                break;
+            case 'p':
+                config.tp_size = atoi(optarg);
                 break;
             case 'l':
                 r = config_parse_address(optarg, (char*) &config.logserver_address, &config.logserver_port);
@@ -199,11 +212,6 @@ int main(int argc, char** argv)
     }
 
     prepare_test(&config, &devices);
-
-    if (strcmp(config.eventhandler, "preemptive") == 0) {
-        event_handler_preemptive_init();
-    }
-
     start_test(&config, devices);
 
     return 0;

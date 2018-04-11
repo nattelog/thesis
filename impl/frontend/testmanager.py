@@ -58,7 +58,7 @@ class TestManager:
         nsaddress = self.nameservice.hostname()
         self.nameservice.start()
         TestManager.logger.info(
-                'Start gateway with ./gateway -l {}:{} -n {}:{} -d {} -e {} -c {} -i {} -g {}',
+                'Start gateway with ./gateway -l {}:{} -n {}:{} -d {} -e {} -c {} -i {} -p {} -g {}',
                 lsaddress[0],
                 lsaddress[1],
                 nsaddress[0],
@@ -67,6 +67,7 @@ class TestManager:
                 self.configuration['EVENT_HANDLER'],
                 self.configuration['CPU_INTENSITY'],
                 self.configuration['IO_INTENSITY'],
+                self.configuration['POOL_SIZE'],
                 self.configuration['LOG_LEVEL']
                 )
 

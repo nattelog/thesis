@@ -104,16 +104,22 @@ void event_handler_serial(double cpu_intensity, double io_intensity)
     __do_io_sync(io_intensity);
 }
 
-void event_handler_preemptive_init()
+void event_handler_preemptive_init(config_data_t* config)
 {
     log_verbose("event_handler_preemptive_init");
 
-    pool = thpool_init(EVENT_HANDLER_POOL_SIZE);
+    no_threads = 0;
+    pool = thpool_init(config->tp_size);
 }
 
 void __do_preemptive_work(void* args)
 {
     log_debug("__do_preemptive_work:args=%p");
+
+    pthread_mutex_lock(&lock);
+    --no_threads;
+    pthread_cond_signal(&cond);
+    pthread_mutex_unlock(&lock);
 
     net_tcp_context_sync_t* device = (net_tcp_context_sync_t*) args;
     config_data_t* config = device->config;
@@ -135,6 +141,7 @@ void event_handler_preemptive(net_tcp_context_sync_t* device)
 {
     log_debug("event_handler_preemptive:device=%p", device);
 
+    ++no_threads;
     device->is_processed = 0;
     thpool_add_work(pool, (void*) __do_preemptive_work, (void*) device);
 }

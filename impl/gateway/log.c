@@ -34,6 +34,8 @@ void log_check_r(int r, char* msg)
  */
 int log_init(uv_loop_t* loop, const char* address, const int port)
 {
+    log_verbose("log_init:loop=%p, address=\"%s\", port=%d", loop, address, port);
+
     int r;
 
     r = uv_ip4_addr(address, port, &remote_addr); // the remote host
