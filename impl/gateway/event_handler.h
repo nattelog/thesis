@@ -8,13 +8,12 @@
 
 #define EVENT_HANDLER_IO_FILE "EVENT_HANDLER_IO_FILE"
 #define EVENT_HANDLER_IO_CONTENT "EVENT_HANDLER_IO_CONTENT"
-#define EVENT_HANDLER_POOL_SIZE 10
+#define EVENT_HANDLER_MAX_QUEUE_SIZE 0
 
-static pthread_mutex_t event_handler_io_mutex = PTHREAD_MUTEX_INITIALIZER;
-static pthread_mutex_t lock = PTHREAD_MUTEX_INITIALIZER;
-static pthread_cond_t cond = PTHREAD_COND_INITIALIZER;
-static threadpool pool;
-static int no_threads;
+static pthread_mutex_t event_handler_lock = PTHREAD_MUTEX_INITIALIZER;
+static pthread_cond_t event_handler_cond = PTHREAD_COND_INITIALIZER;
+static threadpool event_handler_pool;
+static int event_handler_queue_size;
 
 void event_handler_do_cpu(double intensity);
 

@@ -430,12 +430,11 @@ void __start_worker(uv_work_t* req)
 
     int r;
 
-    pthread_mutex_lock(&lock);
-    --no_threads;
-    log_debug("__start_worker:reducing no_threads to %d", no_threads);
-    r = pthread_cond_signal(&cond);
+    pthread_mutex_lock(&event_handler_lock);
+    --event_handler_queue_size;
+    r = pthread_cond_signal(&event_handler_cond);
     log_check_uv_r(r, "__start_worker:pthread_cond_signal");
-    pthread_mutex_unlock(&lock);
+    pthread_mutex_unlock(&event_handler_lock);
 
     machine_coop_context_t* context = (machine_coop_context_t*) req->data;
     config_data_t* config = context->config;
@@ -516,19 +515,18 @@ void __coop_dispatch_process(state_t* state, void* payload)
         work_req->data = context;
         log_event_dispatched((char*) context->event);
 
-        pthread_mutex_lock(&lock);
+        pthread_mutex_lock(&event_handler_lock);
 
-        while (no_threads >= 1) {
-            log_debug("__coop_dispatch_process:waiting for free thread (%d)", no_threads);
-            r = pthread_cond_wait(&cond, &lock);
+        while (event_handler_queue_size > EVENT_HANDLER_MAX_QUEUE_SIZE) {
+            r = pthread_cond_wait(&event_handler_cond, &event_handler_lock);
             log_check_uv_r(r, "__coop_dispatch_process:pthread_cond_wait");
         }
 
-        ++no_threads;
+        ++event_handler_queue_size;
         r = uv_queue_work(loop, work_req, __start_worker, __work_done);
         log_check_uv_r(r, "__coop_dispatch_process:uv_queue_work");
 
-        pthread_mutex_unlock(&lock);
+        pthread_mutex_unlock(&event_handler_lock);
     }
     else {
         log_error("Unknown event handler \"%s\"", config->eventhandler);
