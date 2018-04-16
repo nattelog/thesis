@@ -378,7 +378,7 @@ state_t* machine_tcp_server(
     server = state_machine_build(si, nsi, ei, nei, &lookup);
     lookup_clear(&lookup);
 
-    r = net_tcp_context_init((net_tcp_context_t*) context, loop, "0.0.0.0", SERVER_PORT);
+    r = net_tcp_context_init((net_tcp_context_t*) context, loop, LOCAL_ETH_ADDR, SERVER_PORT);
     log_check_uv_r(r, "net_tcp_context_init");
 
     context->on_request = on_request;

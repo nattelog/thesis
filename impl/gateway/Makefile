@@ -5,7 +5,7 @@ TESTDIR = tests
 JSONDIR = json
 TPDIR = thpool
 CFLAGS =-Wall -I$(UVDIR)/include -I$(JSONDIR) -I$(TPDIR)
-LIBS = -luv -L$(UVDIR)/.libs -lpthread
+LIBS = -luv -L$(UVDIR)/.libs -lpthread -lm
 TCFLAGS =$(CFLAGS) -I$(CHECKDIR)/src -I$(CHECKDIR) -I$(TESTDIR) -I.
 TLIBS = $(LIBS) -lcheck -L$(CHECKDIR)/src -lcompat -L$(CHECKDIR)/lib
 

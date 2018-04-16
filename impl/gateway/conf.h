@@ -11,9 +11,9 @@ struct config_data_s {
     char* eventhandler;
     double cpu;
     double io;
-    char logserver_address[48];
+    char logserver_address[128];
     int logserver_port;
-    char nameservice_address[48];
+    char nameservice_address[128];
     int nameservice_port;
 };
 

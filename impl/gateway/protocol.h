@@ -35,7 +35,7 @@ int protocol_get_int(protocol_value_t* protocol);
 
 int protocol_build_string(protocol_value_t** protocol, char* value);
 
-int protocol_build_int(protocol_value_t** protocol, long value);
+int protocol_build_int(protocol_value_t** protocol, long long value);
 
 int protocol_build_array(protocol_value_t** protocol, int argc, ...);
 

@@ -5,6 +5,9 @@
 #include <math.h>
 #include <sys/socket.h>
 #include <unistd.h>
+#include <string.h>
+#include <stdint.h>
+#include <inttypes.h>
 #include "log.h"
 #include "uv.h"
 #include "err.h"
@@ -44,28 +47,12 @@ int log_init(uv_loop_t* loop, const char* address, const int port)
         return r;
     }
 
-    /*
-    r = uv_udp_init(loop, &udp_handle);
-
-    if (r) {
-        return r;
-    }
-    */
-
     struct sockaddr_in local_addr;
     r = uv_ip4_addr("0.0.0.0", 0, &local_addr); // the local host
 
     if (r) {
         return r;
     }
-
-    /*
-    r = uv_udp_bind(&udp_handle, (struct sockaddr*) &local_addr, 0);
-
-    if (r) {
-        return r;
-    }
-    */
 
     udp_sock = socket(AF_INET, SOCK_DGRAM, 0);
 
@@ -79,15 +66,17 @@ int log_init(uv_loop_t* loop, const char* address, const int port)
 /**
  * Returns the current timestamp in ms.
  */
-long get_timestamp()
+unsigned long long get_timestamp()
 {
-    long ms;
+    unsigned long long s;
+    unsigned long long ns;
     struct timespec spec;
 
     clock_gettime(CLOCK_REALTIME, &spec);
-    ms = (spec.tv_sec * 1000) + round(spec.tv_nsec / 1.0e6);
+    s = (unsigned long long) (spec.tv_sec) * 1000;
+    ns = (unsigned long long) round(spec.tv_nsec / 1.0e6);
 
-    return ms;
+    return s + ns;
 }
 
 /**
@@ -98,7 +87,7 @@ void log_format(char* buf, const char* level, const char* format, va_list args)
 {
     char pre[1024];
 
-    sprintf(pre, "%s:%ld:%s", level, get_timestamp(), format);
+    sprintf(pre, "%s:%llu:%s", level, get_timestamp(), format);
     vsprintf(buf, pre, args);
 }
 

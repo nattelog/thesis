@@ -10,7 +10,7 @@ TPDIR="thpool"
 
 if [ ! -d ${UVDIR} ]; then
     echo "Installing libuv..."
-    git clone git@github.com:libuv/libuv.git ${UVDIR}
+    git clone https://github.com/libuv/libuv.git ${UVDIR}
     cd ${UVDIR}
     git checkout ${UVCOMMIT}
     ./autogen.sh
@@ -22,7 +22,7 @@ fi;
 
 if [ ! -d ${CHECKDIR} ]; then
     echo "Installing check..."
-    git clone git@github.com:libcheck/check.git ${CHECKDIR}
+    git clone https://github.com/libcheck/check.git ${CHECKDIR}
     cd ${CHECKDIR}
     git checkout ${CHECKCOMMIT}
     mkdir build

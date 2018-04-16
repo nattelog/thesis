@@ -498,10 +498,11 @@ int net_call_sync(net_tcp_context_sync_t* context)
  */
 int net_hostname(net_tcp_context_t* context, char* addr, int* port)
 {
+    /*
     strcpy(addr, "0.0.0.0");
     *port = SERVER_PORT;
+    */
 
-    /*
     int r;
     struct sockaddr s;
     struct sockaddr_in* sin;
@@ -516,7 +517,6 @@ int net_hostname(net_tcp_context_t* context, char* addr, int* port)
     sin = (struct sockaddr_in*) &s;
     strcpy(addr, inet_ntoa(sin->sin_addr));
     *port = (int) htons(sin->sin_port);
-    */
 
     return 0;
 }
