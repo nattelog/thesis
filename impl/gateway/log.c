@@ -157,8 +157,7 @@ void log_write(const char* level, const char* format, ...)
     printf("%s\n", buf); // todo: add guard so this is not run in test
 #endif
 
-    // if (strcmp(level, "INFO") == 0 && udp_sock > 0) {
-    if (udp_sock > 0) {
+    if (strcmp(level, "INFO") == 0 && udp_sock > 0) {
         log_send(buf);
     }
 }
