@@ -69,7 +69,7 @@ int protocol_has_key(protocol_value_t* protocol, char* key)
     log_verbose("protocol_has_key:protocol=%p, key=\"%s\"", protocol, key);
 
     if (protocol_is_object(protocol)) {
-        for (int i = 0; i < protocol->u.object.length; ++i) {
+        for (unsigned int i = 0; i < protocol->u.object.length; ++i) {
             json_object_entry current_key = protocol->u.object.values[i];
 
             if (strcmp(current_key.name, key) == 0) {
@@ -90,7 +90,7 @@ int protocol_get_key(protocol_value_t* protocol, protocol_value_t** dest, char* 
     log_verbose("protocol_get_key:protocol=%p, dest=%p, key=\"%s\"", protocol, dest, key);
 
     if (protocol_is_object(protocol)) {
-        for (int i = 0; i < protocol->u.object.length; ++i) {
+        for (unsigned int i = 0; i < protocol->u.object.length; ++i) {
             json_object_entry current_key = protocol->u.object.values[i];
 
             if (strcmp(current_key.name, key) == 0) {

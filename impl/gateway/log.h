@@ -10,9 +10,6 @@
 
 #define LOGSTD
 
-static int udp_sock = -1;
-static struct sockaddr_in remote_addr;
-
 void log_check_uv_r(int r, char* msg);
 
 void log_check_r(int r, char* msg);

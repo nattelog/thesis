@@ -12,6 +12,9 @@
 #include "uv.h"
 #include "err.h"
 
+int udp_sock = -1;
+struct sockaddr_in remote_addr;
+
 /**
  * Helper function for checking return values from uv functions.
  */

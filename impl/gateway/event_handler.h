@@ -17,7 +17,7 @@ static int event_handler_queue_size;
 
 void event_handler_do_cpu(double intensity);
 
-long event_handler_calc_io_rounds(double intensity);
+int event_handler_fill_io_buffer(double intensity, char** buf);
 
 void event_handler_serial(double cpu_intensity, double io_intensity);
 

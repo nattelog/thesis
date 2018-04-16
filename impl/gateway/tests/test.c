@@ -10,6 +10,7 @@ int main()
     sr = srunner_create(protocol_suite());
     srunner_add_suite(sr, conf_suite());
     srunner_add_suite(sr, state_suite());
+    srunner_add_suite(sr, event_handler_suite());
 
     srunner_run_all(sr, CK_NORMAL);
 

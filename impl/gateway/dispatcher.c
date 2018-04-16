@@ -21,7 +21,7 @@ void dispatcher_serial(config_data_t* config, protocol_value_t* devices)
 
     devices_len = protocol_get_length(devices);
 
-    for (int j = 0; j < devices_len; ++j) {
+    for (size_t j = 0; j < devices_len; ++j) {
         protocol_value_t* did_value;
         net_tcp_context_sync_t* context = malloc(sizeof(net_tcp_context_sync_t));
 

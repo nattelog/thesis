@@ -81,6 +81,7 @@ int config_parse_address(char* addr_string, char* target_addr, int* target_port)
         char* port_str[24];
 
         memcpy(target_addr, addr_string, addr_len);
+        target_addr[addr_len] = (char) 0;
         memcpy(port_str, &addr_string[port_match.rm_so], port_len);
         *target_port = atoi((char*) port_str);
 

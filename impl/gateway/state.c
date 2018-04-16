@@ -189,7 +189,7 @@ state_t* state_machine_build(
     log_verbose("state_machine_build::si=%p, nsi=%zu, ei=%p, nei=%zu, lookup=%p", si, nsi, ei, nei, lookup);
 
     if (nsi > 0) {
-        for (int i = 0; i < nsi; ++i) {
+        for (size_t i = 0; i < nsi; ++i) {
             const char* name = si[i].name;
             state_callback callback = si[i].callback;
             state_t* state = state_create(name, callback);
@@ -197,7 +197,7 @@ state_t* state_machine_build(
             lookup_insert(lookup, state);
         }
 
-        for (int i = 0; i < nei; ++i) {
+        for (size_t i = 0; i < nei; ++i) {
             const char* name = ei[i].name;
             const char* from = ei[i].from;
             const char* to = ei[i].to;

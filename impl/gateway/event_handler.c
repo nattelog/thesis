@@ -57,39 +57,43 @@ void event_handler_do_cpu(double intensity)
     log_verbose("%dth prime is %d", n, j);
 }
 
+int event_handler_fill_io_buffer(double intensity, char** buf)
+{
+    log_verbose("event_handler_fill_io_buffer:intensity=%f, buf=%p", intensity, buf);
+
+    if (intensity < 0 || intensity > 1) {
+        log_error("event_handler_fill_io_buffer:intensity must be between 0 and 1");
+        exit(1);
+    }
+
+    long n = (long) pow(2, 28) * intensity;
+
+    if (n > 0) {
+        *buf = calloc(1, n);
+
+        for (int i = 0; i < n; ++i) {
+            (*buf)[i] = 'A' + random() % 26;
+        }
+
+        (*buf)[n-1] = (char) 0;
+    }
+
+    return 0;
+}
+
 void __do_io_sync(double intensity)
 {
     log_verbose("__do_io_sync:intensity=%f", intensity);
 
-    long n;
     FILE* fd;
+    char* buf;
 
-    n = event_handler_calc_io_rounds(intensity);
-
-    for (int i = 0; i < n; ++i) {
-        fd = fopen(EVENT_HANDLER_IO_FILE, "a");
-
-        fprintf(fd, "%s", "DOING IO\n");
-        fclose(fd);
-    }
-
+    event_handler_fill_io_buffer(intensity, &buf);
+    fd = fopen(EVENT_HANDLER_IO_FILE, "a");
+    fprintf(fd, "%s", buf);
+    fclose(fd);
     unlink(EVENT_HANDLER_IO_FILE);
-}
-
-/**
- * Returns the number of rounds the file will be written to given an intensity
- * value between 0 and 1.
- */
-long event_handler_calc_io_rounds(double intensity)
-{
-    log_verbose("event_handler_calc_io_rounds:intensity=%f", intensity);
-
-    if (intensity < 0 || intensity > 1) {
-        log_error("event_handler_calc_io_rounds:intensity must be between 0 and 1");
-        exit(1);
-    }
-
-    return (long) pow(2, 14) * intensity;
+    free(buf);
 }
 
 /**

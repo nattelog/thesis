@@ -13,7 +13,7 @@ struct fs_context_s {
     uv_loop_t* loop;
     int fd;
     char path[FS_MAX_BUF];
-    char content[FS_MAX_BUF];
+    char* content;
     char* next_edge;
     void* data;
 };

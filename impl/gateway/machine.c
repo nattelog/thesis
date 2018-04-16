@@ -490,23 +490,15 @@ void __coop_dispatch_process(state_t* state, void* payload)
         log_event_dispatched((char*) context->event);
         event_handler_do_cpu(config->cpu); // the cpu will block here
 
-        context->io_count = 0;
-        context->io_rounds = event_handler_calc_io_rounds(config->io);
         context->fs.state = state;
         context->fs.loop = context->tcp.loop;
         strcpy(context->fs.path, EVENT_HANDLER_IO_FILE);
-        strcpy(context->fs.content, EVENT_HANDLER_IO_CONTENT);
+        event_handler_fill_io_buffer(config->io, (char**) &context->fs.content);
         context->fs.data = context; // point back up again
 
-        if (context->io_rounds == 0) {
-            log_event_done((char*) context->event);
-            state_run_next(state, "done", context);
-        }
-        else {
-            log_debug("doing io");
-            r = fs_append(&context->fs, "handle_io");
-            log_check_uv_r(r, "__coop_dispatch_process:fs_append");
-        }
+        log_debug("doing io");
+        r = fs_append(&context->fs, "handle_io");
+        log_check_uv_r(r, "__coop_dispatch_process:fs_append");
     }
     else if (strcmp(config->eventhandler, "preemptive") == 0) {
         uv_work_t* work_req = malloc(sizeof(uv_work_t));
@@ -545,23 +537,10 @@ void __coop_dispatch_handle_io(state_t* state, void* payload)
 
     fs_context_t* fs_context = (fs_context_t*) payload;
     machine_coop_context_t* coop_context = fs_context->data;
-    long io_count = coop_context->io_count;
-    long io_rounds = coop_context->io_rounds;
 
-    if (io_count < io_rounds) {
-        int r;
-
-        coop_context->io_count++;
-        fs_context->state = state;
-
-        r = fs_append(fs_context, "handle_io");
-        log_check_uv_r(r, "__coop_dispatch_handle_io:fs_append");
-    }
-    else {
-        log_event_done((char*) coop_context->event);
-        coop_context->io_count = 0;
-        state_run_next(state, "done", coop_context);
-    }
+    free(fs_context->content);
+    log_event_done((char*) coop_context->event);
+    state_run_next(state, "done", coop_context);
 }
 
 /**
