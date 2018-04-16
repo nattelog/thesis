@@ -167,7 +167,8 @@ class NameService(threading.Thread):
             NameServiceAPI(
                 self.devices,
                 configuration,
-                self.gateway_verification_event))
+                self.gateway_verification_event),
+            delay)
 
     def verify_gateway(self):
         """ Waits for the gateway to connect and be verified. Creates a gateway
