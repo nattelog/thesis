@@ -1,11 +1,11 @@
 \chapter{Method}
 \label{cha:method}
 
-The aim of this study is to compare libuv to current state of the art
-techniques for applications in IoT. Previous attempts have been made to prove
-how certain programming languages perform better when used in a reactive
-context. Terber \cite{terber2017function} discusses the lack of
-function-oriented software decomposition for reactive software. With an
+The aim of this study is to present the differences in performance and
+maintainability three event-driven architectures constitutes. Previous attempts
+have been made to prove how certain programming languages perform better when
+used in a reactive context. Terber \cite{terber2017function} discusses the lack
+of function-oriented software decomposition for reactive software. With an
 industrial application as context, he replaces legacy code with code written in
 the \textit{Cèu} programming language, reaching the conclusion that Cèu
 preserves fundamental software engineering principles and is at the same time
@@ -14,6 +14,485 @@ able to fullfill resource limitations in the system. Jagadeesan et al
 language: \textit{Esterel}. They reimplement a component in a telephone
 switching system and reach the conclusion that Esterel is better suited for
 analysis and verification for reactive systems.
+
+\section{The big picture}
+
+An IoT architecture can be split up into a sensing domain, a network domain and
+an application domain \cite{chen2011brief}. The IoT gateway resides in the
+network domain and is decoupled from whatever application the data from the
+sening domain is used for.
+
+\section{Two customer cases}
+
+Before presenting the architectural models used in this study, it is of
+importance to understand how they came about. Among the customers of Attentec,
+two were of interest for this study with each having implemented an IoT gateway
+suitable for its operating context. \textit{Customer A} uses their IoT gateway
+to monitor industrial batteries used in forklifts. The main idea behind the
+event propagation model is that the gateway polls each battery for events and
+process them according to its specification (which is unrelevant here).
+Referring to data propagation in reactive languages (see section
+\ref{sec:evaluation-model}), one can view the event propagation as
+\textit{pull-based}, i.e. the gateway pulls events from the batteries whenever
+it finds it necessary. The batteries are \textit{passive}, i.e. they do not
+emit any events on their own, only when asked to by the gateway. Figure
+\ref{fig:pull-based} illustrates this.
+
+\begin{figure}[h!]
+    \centering
+    \begin{tikzpicture}[auto]
+        \node [block] (device_1) {Device 1};
+        \node [block, right of=device_1, node distance=3cm] (device_2) {Device 2};
+        \node [block, right of=device_2, node distance=3cm] (device_n) {Device n};
+        \node [block, below of=device_2, node distance=2.5cm] (gateway) {Gateway};
+
+        \path [->] (device_1) edge [bend left=5] (gateway);
+        \path [->] (gateway) edge [bend left=5] (device_1);
+        \path [->] (device_2) edge [bend left=5] (gateway);
+        \path [->] (gateway) edge [bend left=5] (device_2);
+        \path [->] (device_n) edge [bend left=5] (gateway);
+        \path [->] (gateway) edge [bend left=5] (device_n);
+    \end{tikzpicture}
+    \caption[Pull-based event propagation]{Pull-based event propagation with
+    passive devices. The gateway pulls events from the devices by requesting
+    them first.}
+    \label{fig:pull-based}
+\end{figure}
+
+\textit{Customer B} on the other hand uses a \textit{push-based} approach to
+handle event propagation in their gateway. The gateway hosts a REST API to
+serve IoT devices. This means that the devices must be \textit{active}, i.e.
+they emit events whenever they find it necessary. See Figure
+\ref{fig:push-based} for an illustration. Note that not as many communication
+requests are necessary in this approach compared to the pull-based one. The
+gateway does not need to know about how many devices there are or what their
+addresses are.
+
+\begin{figure}[h!]
+    \centering
+    \begin{tikzpicture}[auto]
+        \node [block] (device_1) {Device 1};
+        \node [block, right of=device_1, node distance=3cm] (device_2) {Device 2};
+        \node [block, right of=device_2, node distance=3cm] (device_n) {Device n};
+        \node [block, below of=device_2, node distance=2.5cm] (gateway) {Gateway};
+
+        \path [line] (device_1) -- (gateway);
+        \path [line] (device_2) -- (gateway);
+        \path [line] (device_n) -- (gateway);
+    \end{tikzpicture}
+    \caption[Push-based event propagation]{Push-based event propagation with
+    active devices. Events are pushed from the devices to the gateway that
+    listens for incoming requests.}
+    \label{fig:push-based}
+\end{figure}
+
+\section{Three event propagation models}
+
+Taking inspiration from the three task management approaches presented by Adya
+et al \cite{adya2002cooperative} and described in Section
+\ref{sec:task-management}, three event propagation models are proposed:
+\textit{serial}, \textit{preemptive} and \textit{cooperative event
+propagation}. Before presenting a formal definition, an analogy might suite
+well here. Imagine a cafe that serves coffee. There are several customers in
+line and the barista takes the order from the next customer in line, brews the
+coffee and serves it. This is repeated for each customer in line with the
+constraint that no new order is accepted before the current order is served,
+see Figure \ref{fig:cafe-serial}. This can be seen as a \textit{serial order
+handling}; only one order can be handled at a time. Imagine now that the cafe
+hires more baristas and more coffee machines. There is still one line, but
+orders can be handled concurrently, so the next customer in line does not
+necessarily have to wait for the previous customer to be served before he can
+place his order, see Figure \ref{fig:cafe-preemptive}. This can be seen as
+\textit{preemptive order handling}. Now lets keep the brewers but let go all
+baristas except for one. All customers place their order to the same barista
+which in turn start one of the brewers. While the brewer is working, the next
+customer in line places his order and the barista can start a second brewer,
+see Figure \ref{fig:cafe-cooperative}.
+
+\begin{figure}[h!]
+    \centering
+    \begin{tikzpicture}[node distance=5cm, auto, >=stealth']
+        \node[] (brewer) {Brewer};
+        \node[right of=brewer] (barista) {Barista};
+        \node[right of=barista] (customers) {Customer line};
+
+        \node[below of=brewer, node distance=8cm] (brewer_ground) {};
+        \node[below of=barista, node distance=8cm] (barista_ground) {};
+        \node[below of=customers, node distance=8cm] (customers_ground) {};
+
+        \draw (brewer) -- (brewer_ground);
+        \draw (barista) -- (barista_ground);
+        \draw (customers) -- (customers_ground);
+
+        \draw[<-] ($(barista)!1cm!(barista_ground)$) --
+            node[above, scale=0.9, midway]{$Order_0$}
+            ($(customers)!1cm!(customers_ground)$);
+        \draw[<-] ($(brewer)!1.1cm!(brewer_ground)$) --
+            node[above, scale=0.9, midway]{Start brewer}
+            ($(barista)!1.1cm!(barista_ground)$);
+        \node[draw=none, fill=white, scale=0.9] at
+            ($(brewer)!1.5cm!(brewer_ground)$) {Brewing...};
+        \draw[->] ($(brewer)!1.9cm!(brewer_ground)$) --
+            node[above, scale=0.9, midway]{Coffee ready}
+            ($(barista)!1.9cm!(barista_ground)$);
+        \draw[->] ($(barista)!2cm!(barista_ground)$) --
+            node[above, scale=0.9, midway]{Return $Order_0$}
+            ($(customers)!2cm!(customers_ground)$);
+
+        \node[draw=none, fill=white, scale=0.9] at
+            ($(customers)!2.5cm!(customers_ground)$)
+            {Next customer};
+
+        \draw[<-] ($(barista)!3cm!(barista_ground)$) --
+            node[above, scale=0.9, midway]{$Order_1$}
+            ($(customers)!3cm!(customers_ground)$);
+        \draw[<-] ($(brewer)!3.1cm!(brewer_ground)$) --
+            node[above, scale=0.9, midway]{Start brewer}
+            ($(barista)!3.1cm!(barista_ground)$);
+        \node[draw=none, fill=white, scale=0.9] at
+            ($(brewer)!3.5cm!(brewer_ground)$) {Brewing...};
+        \draw[->] ($(brewer)!3.9cm!(brewer_ground)$) --
+            node[above, scale=0.9, midway]{Coffee ready}
+            ($(barista)!3.9cm!(barista_ground)$);
+        \draw[->] ($(barista)!4cm!(barista_ground)$) --
+            node[above, scale=0.9, midway]{Return $Order_1$}
+            ($(customers)!4cm!(customers_ground)$);
+
+        \node[draw=none, fill=white, scale=0.9] at
+            ($(customers)!4.5cm!(customers_ground)$)
+            {Next customer};
+
+        \node[draw=none, fill=white, scale=0.9] at ($(brewer)!5cm!(brewer_ground)$)
+            {...};
+        \node[draw=none, fill=white, scale=0.9] at ($(barista)!5cm!(barista_ground)$)
+            {...};
+        \node[draw=none, fill=white, scale=0.9] at ($(customers)!5cm!(customers_ground)$)
+            {...};
+
+        \draw[<-] ($(barista)!6cm!(barista_ground)$) --
+            node[above, scale=0.9, midway]{$Order_{m-1}$}
+            ($(customers)!6cm!(customers_ground)$);
+        \draw[<-] ($(brewer)!6.1cm!(brewer_ground)$) --
+            node[above, scale=0.9, midway]{Start brewer}
+            ($(barista)!6.1cm!(barista_ground)$);
+        \node[draw=none, fill=white, scale=0.9] at
+            ($(brewer)!6.5cm!(brewer_ground)$) {Brewing...};
+        \draw[->] ($(brewer)!6.9cm!(brewer_ground)$) --
+            node[above, scale=0.9, midway]{Coffee ready}
+            ($(barista)!6.9cm!(barista_ground)$);
+        \draw[->] ($(barista)!7cm!(barista_ground)$) --
+            node[above, scale=0.9, midway]{Return $Order_{m-1}$}
+            ($(customers)!7cm!(customers_ground)$);
+    \end{tikzpicture}
+    \caption{A sequence diagram of a serial cafe order line. Each customer is
+    served one at a time and no customer is served before the previous customer
+    receives its order.}
+    \label{fig:cafe-serial}
+\end{figure}
+
+\begin{figure}[h!]
+    \centering
+    \begin{tikzpicture}[node distance=3cm, auto, >=stealth']
+        \node[] (brewern) {$Brewer_{n-1}$};
+        \node[right of=brewern] (baristan) {$Barista_{n-1}$};
+        \node[right of=baristan, node distance=1.5cm] (dots) {...};
+        \node[right of=dots, node distance=1.5cm] (brewer0) {$Brewer_0$};
+        \node[right of=brewer0] (barista0) {$Barista_0$};
+        \node[right of=barista0] (customers) {Customer line};
+
+        \node[below of=brewern, node distance=8cm] (brewern_ground) {};
+        \node[below of=baristan, node distance=8cm] (baristan_ground) {};
+        \node[below of=dots, node distance=8cm] (dots_ground) {};
+        \node[below of=brewer0, node distance=8cm] (brewer0_ground) {};
+        \node[below of=barista0, node distance=8cm] (barista0_ground) {};
+        \node[below of=customers, node distance=8cm] (customers_ground) {};
+
+        \draw (brewern) -- (brewern_ground);
+        \draw (baristan) -- (baristan_ground);
+        \draw (brewer0) -- (brewer0_ground);
+        \draw (barista0) -- (barista0_ground);
+        \draw (customers) -- (customers_ground);
+
+        \draw[<-] ($(barista0)!1cm!(barista0_ground)$) --
+            node[above, scale=0.9, midway]{$Order_0$}
+            ($(customers)!1cm!(customers_ground)$);
+        \draw[<-] ($(brewer0)!1.1cm!(brewer0_ground)$) --
+            node[above, scale=0.9, midway]{Start brewer}
+            ($(barista0)!1.1cm!(barista0_ground)$);
+        \node[draw=none, fill=white, scale=0.9] at
+            ($(brewer0)!1.5cm!(brewer0_ground)$) {Brewing...};
+        \draw[->] ($(brewer0)!2.9cm!(brewer0_ground)$) --
+            node[above, scale=0.9, midway]{Coffee ready}
+            ($(barista0)!2.9cm!(barista0_ground)$);
+        \draw[->] ($(barista0)!3cm!(barista0_ground)$) --
+            node[above, scale=0.9, midway]{Return $Order_0$}
+            ($(customers)!3cm!(customers_ground)$);
+
+        \node[draw=none, fill=white, scale=0.9] at
+            ($(customers)!1.5cm!(customers_ground)$)
+            {Next customer};
+
+        \draw[<-, dashed] ($(dots)!2cm!(dots_ground)$) --
+            node[above, scale=0.9, pos=0.4]{$Order_1$}
+            ($(customers)!2cm!(customers_ground)$);
+
+        \node[draw=none, fill=white, scale=0.9] at
+            ($(customers)!3.5cm!(customers_ground)$)
+            {Next customer};
+
+        \node[draw=none, fill=white, scale=0.9] at ($(brewern)!4cm!(brewern_ground)$)
+            {...};
+        \node[draw=none, fill=white, scale=0.9] at ($(baristan)!4cm!(baristan_ground)$)
+            {...};
+        \node[draw=none, fill=white, scale=0.9] at ($(brewer0)!4cm!(brewer0_ground)$)
+            {...};
+        \node[draw=none, fill=white, scale=0.9] at ($(barista0)!4cm!(barista0_ground)$)
+            {...};
+        \node[draw=none, fill=white, scale=0.9] at ($(customers)!4cm!(customers_ground)$)
+            {...};
+
+        \draw[<-] ($(baristan)!4.5cm!(baristan_ground)$) --
+            node[above, scale=0.9, midway]{$Order_{m-1}$}
+            ($(customers)!4.5cm!(customers_ground)$);
+        \draw[<-] ($(brewern)!4.6cm!(brewern_ground)$) --
+            node[above, scale=0.9, midway]{Start brewer}
+            ($(baristan)!4.6cm!(baristan_ground)$);
+        \node[draw=none, fill=white, scale=0.9] at
+            ($(brewern)!5.5cm!(brewern_ground)$) {Brewing...};
+        \draw[->] ($(brewern)!6.4cm!(brewern_ground)$) --
+            node[above, scale=0.9, midway]{Coffee ready}
+            ($(baristan)!6.4cm!(baristan_ground)$);
+        \draw[->] ($(baristan)!6.5cm!(baristan_ground)$) --
+            node[above, scale=0.9, midway]{Return $Order_{m-1}$}
+            ($(customers)!6.5cm!(customers_ground)$);
+
+        \draw[->, dashed] ($(dots)!5.5cm!(dots_ground)$) --
+            node[above, scale=0.9, pos=0.41]{Return $Order_{m-2}$}
+            ($(customers)!5.5cm!(customers_ground)$);
+    \end{tikzpicture}
+    \caption{A sequence diagram of a preemptive cafe order line. There are
+    $n$ baristas and brewers that can handle orders concurrently and
+    customers does not necessarily have to wait for previous orders to be
+    returned before they can place their own.}
+    \label{fig:cafe-preemptive}
+\end{figure}
+
+\begin{figure}[h!]
+    \centering
+    \begin{tikzpicture}[node distance=3cm, auto, >=stealth']
+        \node[] (brewern) {$Brewer_{n-1}$};
+        \node[right of=brewern, node distance=1.5cm] (dots) {...};
+        \node[right of=dots, node distance=1.5cm] (brewer0) {$Brewer_0$};
+        \node[right of=brewer0] (barista) {Barista};
+        \node[right of=barista] (customers) {Customer line};
+
+        \node[below of=brewern, node distance=8cm] (brewern_ground) {};
+        \node[below of=dots, node distance=8cm] (dots_ground) {};
+        \node[below of=brewer0, node distance=8cm] (brewer0_ground) {};
+        \node[below of=barista, node distance=8cm] (barista_ground) {};
+        \node[below of=customers, node distance=8cm] (customers_ground) {};
+
+        \draw (brewern) -- (brewern_ground);
+        \draw (brewer0) -- (brewer0_ground);
+        \draw (barista) -- (barista_ground);
+        \draw (customers) -- (customers_ground);
+
+        \draw[<-] ($(barista)!1cm!(barista_ground)$) --
+            node[above, scale=0.9, midway]{$Order_0$}
+            ($(customers)!1cm!(customers_ground)$);
+        \draw[<-] ($(brewer0)!1.1cm!(brewer0_ground)$) --
+            node[above, scale=0.9, midway]{Start brewer}
+            ($(barista)!1.1cm!(barista_ground)$);
+        \node[draw=none, fill=white, scale=0.9] at
+            ($(brewer0)!1.5cm!(brewer0_ground)$) {Brewing...};
+        \draw[->] ($(brewer0)!2.9cm!(brewer0_ground)$) --
+            node[above, scale=0.9, midway]{Coffee ready}
+            ($(barista)!2.9cm!(barista_ground)$);
+        \draw[->] ($(barista)!3cm!(barista_ground)$) --
+            node[above, scale=0.9, midway]{Return $Order_0$}
+            ($(customers)!3cm!(customers_ground)$);
+
+        \node[draw=none, fill=white, scale=0.9] at
+            ($(customers)!1.5cm!(customers_ground)$)
+            {Next customer};
+
+        \draw[<-] ($(barista)!2cm!(barista_ground)$) --
+            node[above, scale=0.9, pos=0.4]{$Order_1$}
+            ($(customers)!2cm!(customers_ground)$);
+        \draw[<-, dashed] ($(dots)!2.1cm!(dots_ground)$) --
+            node[above, scale=0.9, pos=0.65]{Start brewer}
+            ($(barista)!2.1cm!(barista_ground)$);
+
+        \node[draw=none, fill=white, scale=0.9] at
+            ($(customers)!3.5cm!(customers_ground)$)
+            {Next customer};
+
+        \node[draw=none, fill=white, scale=0.9] at ($(brewern)!4cm!(brewern_ground)$)
+            {...};
+        \node[draw=none, fill=white, scale=0.9] at ($(brewer0)!4cm!(brewer0_ground)$)
+            {...};
+        \node[draw=none, fill=white, scale=0.9] at ($(barista)!4cm!(barista_ground)$)
+            {...};
+        \node[draw=none, fill=white, scale=0.9] at ($(customers)!4cm!(customers_ground)$)
+            {...};
+
+        \draw[<-] ($(barista)!4.5cm!(barista_ground)$) --
+            node[above, scale=0.9, midway]{$Order_{m-1}$}
+            ($(customers)!4.5cm!(customers_ground)$);
+        \draw[<-] ($(brewern)!4.6cm!(brewern_ground)$) --
+            node[above, scale=0.9, pos=0.75]{Start brewer}
+            ($(barista)!4.6cm!(barista_ground)$);
+        \node[draw=none, fill=white, scale=0.9] at
+            ($(brewern)!5.5cm!(brewern_ground)$) {Brewing...};
+        \draw[->] ($(brewern)!6.4cm!(brewern_ground)$) --
+            node[above, scale=0.9, pos=0.75]{Coffee ready}
+            ($(barista)!6.4cm!(barista_ground)$);
+        \draw[->] ($(barista)!6.5cm!(barista_ground)$) --
+            node[above, scale=0.9, midway]{Return $Order_{m-1}$}
+            ($(customers)!6.5cm!(customers_ground)$);
+
+        \draw[->, dashed] ($(dots)!5.5cm!(dots_ground)$) --
+            node[above, scale=0.9, pos=0.41]{Return $Order_{m-2}$}
+            ($(customers)!5.5cm!(customers_ground)$);
+        \fi
+    \end{tikzpicture}
+    \caption{A sequence diagram of a cooperative cafe order line. There is only
+    one barista but $n$ brewers. As soon as a brewer is working, the next order
+    can be handled.}
+    \label{fig:cafe-cooperative}
+\end{figure}
+
+\section{An abstract gateway}
+
+A model of an abstract gateway is proposed as such: a gateway $\Gamma$ is a
+five-tuple describing its internal properties and its environment.
+
+\begin{equation}
+\Gamma = \big \langle \Omega, \phi, \delta, K, \Lambda \big \rangle
+\end{equation}
+
+Let $\Omega$, $\phi$ and $\delta$ describe the properties of the environment of
+$\Gamma$. $\Omega$ describes the devices communicating with $\Gamma$ and can be
+expressed as a set $\Omega = \{ \omega_0, \omega_1, ..., \omega_{q-1} \}$ where
+$\omega_i$ represents a device and $q$ is the total number of devices. Let
+$\phi$ be the number of events $\omega_i$ generates each second and let
+$\delta$ be the time it takes for a network request to travel from $\omega_i$
+to $\Gamma$, or vice versa. $K$ and $\Lambda$ describes the internal properties
+of $\Gamma$. Let $K$ describe the event propagation model of $\Gamma$. It is
+expressed as $K = \{ \kappa_0, \kappa_1 \}$ where $\kappa_0$ and $\kappa_1$
+represents the event propagation model of the dispatcher and the event handler
+respectively and $\kappa_i \in \{ \textit{serial}, \textit{preemptive},
+\textit{cooperative} \}$. Let $\Lambda$ describe the resource demand in
+$\Gamma$ from each event. It is expressed as $\Lambda = \{ \lambda_0, \lambda_1
+\}$ where $\lambda_0$ and $\lambda_1$ represents the CPU intensity and the I/O
+intensity induced by each event, where $0 \leq \lambda_i \leq 1$.
+
+In addition to the rather static expression of an abstract gateway $\Gamma$,
+the function $E$ is provided:
+
+\begin{equation}
+E(\Gamma, t_{start}, t_{end}) \to M = \big[ \epsilon_0, \epsilon_1, ...,
+\epsilon_{m-1} \big]^T
+\end{equation}
+
+By providing $E$ with $\Gamma$ and two points in time $t_{start}$ and $t_{end}$
+where $t_{start} \leq t_{end}$, a vector $M$ of ordered events $\epsilon_j$ is
+returned, where $\epsilon_j = [ t_0^j, t_1^j, t_2^j, t_3^j, t_4^j ]$. Note that
+$M$ is ordered by $t_0^j$ and $m$ is the total number of events. Each
+$\epsilon_j$ include five timestamps $t_k^j$ that represents parts of the event
+lifecycle:
+
+\begin{description}
+\item[$t_0^j$] represents the point in time when $\epsilon_j$ was created in
+    $\omega_i$.
+\item[$t_1^j$] represents the point in time when $\epsilon_j$ left $\omega_i$.
+\item[$t_2^j$] represents the point in time when $\epsilon_j$ arrived at
+    $\Gamma$.
+\item[$t_3^j$] represents the point in time when $\epsilon_j$ was dispatched to
+    the event handler in $\Gamma$.
+\item[$t_4^j$] represents the point in time when $\Gamma$ finished processing
+    $\epsilon_j$.
+\end{description}
+
+These timestamps holds a set of basic constraints:
+
+\begin{equation}
+t_{start} \leq t_k^j
+\end{equation}
+
+\begin{equation}
+t_0^j \leq t_{end}
+\end{equation}
+
+\begin{equation}
+t_0^j \leq t_1^j \leq t_2^j \leq t_3^j \leq t_4^j
+\end{equation}
+
+By taking $\delta$ into account, we
+
+\todo{A sequence diagram visualizing the event lifecycle?}
+
+\subsection{Analysing the performance}
+
+With $M$ and $\epsilon_j$ it is possible to derive some performance metrics.
+Throughput $T$ can be calculated as:
+
+$$
+T = \frac{\sum_{\epsilon_j \in M}{\pi(\epsilon_j)}}{t_{end} - t_{start}}
+\text{ [events / s]}
+$$
+
+It is also possible to analyze the life length of an event, how long time it
+spent in $\omega_i$ and how long time it spent in $\Gamma$. Let:
+
+\begin{description}
+    \item[$d_0^j = t_4^j - t_0^j$] be the life length of $\epsilon_j$, i.e. the
+        total time between that the event was created until it was processed.
+    \item[$d_1^j = t_1^j - t_0^j$] be the time $\epsilon_j$ spent in
+        $\omega_i$.
+    \item[$d_2^j = t_4^j - t_2^j$] be the time $\epsilon_j$ spent in
+        $\Gamma$.
+\end{description}
+
+\subsection{Analysing the load}
+
+A system is said to be \textit{at load} when the system is working at full
+capacity and is not able to perform any better \todo{Reference?}. Due to the
+strict time limitation provided by $t_{end}$ there might be cases where some
+events $\epsilon_j$ has $t_k^j \geq t_{end}$. These are events that haven't
+been entirely processed by $\Gamma$. Let $\pi$ be a function such that:
+
+\[
+    \pi(\epsilon_j) =
+\begin{cases}
+    1, & \text{if } t_4^j \leq t_{end} \\
+    0, & \text{otherwise}
+\end{cases}
+\]
+
+With $\pi$, the load on $\Gamma$ can be analysed. The ratio between created
+events and processed events can give hint on how many events $\Gamma$ can
+handle. Let $P$ denote the ratio between created and processed events:
+
+$$
+P = \frac{m}{P_\pi} = \frac{m}{\sum_{\epsilon_j \in M}{\pi(\epsilon_j)}}
+$$
+
+$P$ will always be in the interval $0 \leq P \leq 1$. In cases where $P \simeq
+1$, $\Gamma$ is able to process most of the events and it might even be so that
+$\Gamma$ is waiting for new events to be created. In that case, we can not be
+sure whether $\Gamma$ is at a proper load or not. However, in cases where $P
+\ll 1$ we know for sure $\Gamma$ is not able to process all events and is not
+waiting for new events to be created. A proper load is therefore one where
+$P_\pi \ll m$. $m$ can be calculated as:
+
+$$
+m = q \times \phi \times (t_{end} - t_{start})
+$$
+
+The variable affecting $P_\pi$ is basically just the condition $t_4^j \leq
+t_{end}$. Increasing $t_{end}$ is not a solution since that will also increase
+$m$. We know that $t_4^j \geq t_$
 
 \section{Development methodology}
 

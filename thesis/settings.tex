@@ -97,7 +97,7 @@
 %% Tikz lib
 
 \usepackage{tikz}
-\usetikzlibrary{shapes, arrows}
+\usetikzlibrary{shapes, arrows, calc, positioning}
 
 \tikzstyle{block} = [rectangle,
     draw,
@@ -114,3 +114,9 @@
     inner sep=0.1cm,
     outer sep=0.1cm]
 \tikzstyle{line} = [draw, -latex']
+
+%% enumitem
+
+\usepackage{enumitem}
+
+\setlist[description]{leftmargin=\parindent,labelindent=\parindent}
