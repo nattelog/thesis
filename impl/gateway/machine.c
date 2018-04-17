@@ -1,3 +1,4 @@
+#include <unistd.h>
 #include "uv.h"
 #include "machine.h"
 #include "net.h"
@@ -487,18 +488,26 @@ void __coop_dispatch_process(state_t* state, void* payload)
         state_run_next(state, "done", context);
     }
     else if (strcmp(config->eventhandler, "cooperative") == 0) {
+	double io = config->io;
+
         log_event_dispatched((char*) context->event);
         event_handler_do_cpu(config->cpu); // the cpu will block here
 
-        context->fs.state = state;
-        context->fs.loop = context->tcp.loop;
-        strcpy(context->fs.path, EVENT_HANDLER_IO_FILE);
-        event_handler_fill_io_buffer(config->io, (char**) &context->fs.content);
-        context->fs.data = context; // point back up again
+	if (io > 0) {
+            context->fs.state = state;
+            context->fs.loop = context->tcp.loop;
+            strcpy(context->fs.path, EVENT_HANDLER_IO_FILE);
+            event_handler_fill_io_buffer(config->io, (char**) &context->fs.content);
+            context->fs.data = context; // point back up again
 
-        log_debug("doing io");
-        r = fs_append(&context->fs, "handle_io");
-        log_check_uv_r(r, "__coop_dispatch_process:fs_append");
+            log_debug("doing io");
+            r = fs_append(&context->fs, "handle_io");
+            log_check_uv_r(r, "__coop_dispatch_process:fs_append");
+	}
+        else {
+            log_event_done((char*) context->event);
+            state_run_next(state, "done", context);
+        }
     }
     else if (strcmp(config->eventhandler, "preemptive") == 0) {
         uv_work_t* work_req = malloc(sizeof(uv_work_t));
@@ -539,6 +548,7 @@ void __coop_dispatch_handle_io(state_t* state, void* payload)
     machine_coop_context_t* coop_context = fs_context->data;
 
     free(fs_context->content);
+    unlink(EVENT_HANDLER_IO_FILE);
     log_event_done((char*) coop_context->event);
     state_run_next(state, "done", coop_context);
 }

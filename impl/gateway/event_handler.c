@@ -88,12 +88,14 @@ void __do_io_sync(double intensity)
     FILE* fd;
     char* buf;
 
-    event_handler_fill_io_buffer(intensity, &buf);
-    fd = fopen(EVENT_HANDLER_IO_FILE, "a");
-    fprintf(fd, "%s", buf);
-    fclose(fd);
-    unlink(EVENT_HANDLER_IO_FILE);
-    free(buf);
+    if (intensity > 0) {
+        event_handler_fill_io_buffer(intensity, &buf);
+        fd = fopen(EVENT_HANDLER_IO_FILE, "a");
+        fprintf(fd, "%s", buf);
+        fclose(fd);
+        unlink(EVENT_HANDLER_IO_FILE);
+        free(buf);
+    }
 }
 
 /**
