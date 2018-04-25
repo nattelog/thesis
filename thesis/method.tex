@@ -95,19 +95,20 @@ et al \cite{adya2002cooperative} and described in Section
 propagation}. Before presenting a formal definition, an analogy might suite
 well here. Imagine a cafe that serves coffee. There are several customers in
 line and the barista takes the order from the next customer in line, brews the
-coffee and serves it. This is repeated for each customer in line with the
-constraint that no new order is accepted before the current order is served,
-see Figure \ref{fig:cafe-serial}. This can be seen as a \textit{serial order
-handling}; only one order can be handled at a time. Imagine now that the cafe
-hires more baristas and more coffee machines. There is still one line, but
-orders can be handled concurrently, so the next customer in line does not
-necessarily have to wait for the previous customer to be served before he can
-place his order, see Figure \ref{fig:cafe-preemptive}. This can be seen as
-\textit{preemptive order handling}. Now lets keep the brewers but let go all
-baristas except for one. All customers place their order to the same barista
-which in turn start one of the brewers. While the brewer is working, the next
-customer in line places his order and the barista can start a second brewer,
-see Figure \ref{fig:cafe-cooperative}.
+coffee and serves it. The coffee brewer can only brew one cup of coffee at a
+time. This is repeated for each customer in line with the constraint that no
+new order is accepted before the current order is served, see Figure
+\ref{fig:cafe-serial}. This can be seen as a \textit{serial order handling};
+only one order can be handled at a time. Imagine now that the cafe hires more
+baristas and more coffee machines. There is still one line, but orders can be
+handled concurrently, so the next customer in line does not necessarily have to
+wait for the previous customer to be served before he can place his order, see
+Figure \ref{fig:cafe-preemptive}. This can be seen as \textit{preemptive order
+handling}. Now lets keep the brewers but let go all baristas except for one.
+All customers place their order to the same barista which in turn start one of
+the brewers. While the brewer is working, the next customer in line places his
+order and the barista can start a second brewer, see Figure
+\ref{fig:cafe-cooperative}. This is called \textit{cooperative order handling}.
 
 \begin{figure}[h!]
     \centering
@@ -116,16 +117,16 @@ see Figure \ref{fig:cafe-cooperative}.
         \node[right of=brewer] (barista) {Barista};
         \node[right of=barista] (customers) {Customer line};
 
-        \node[below of=brewer, node distance=8cm] (brewer_ground) {};
-        \node[below of=barista, node distance=8cm] (barista_ground) {};
-        \node[below of=customers, node distance=8cm] (customers_ground) {};
+        \node[below of=brewer, node distance=7.5cm] (brewer_ground) {};
+        \node[below of=barista, node distance=7.5cm] (barista_ground) {};
+        \node[below of=customers, node distance=7.5cm] (customers_ground) {};
 
         \draw (brewer) -- (brewer_ground);
         \draw (barista) -- (barista_ground);
         \draw (customers) -- (customers_ground);
 
         \draw[<-] ($(barista)!1cm!(barista_ground)$) --
-            node[above, scale=0.9, midway]{$Order_0$}
+            node[above, scale=0.9, midway]{Place $Order_0$}
             ($(customers)!1cm!(customers_ground)$);
         \draw[<-] ($(brewer)!1.1cm!(brewer_ground)$) --
             node[above, scale=0.9, midway]{Start brewer}
@@ -136,7 +137,7 @@ see Figure \ref{fig:cafe-cooperative}.
             node[above, scale=0.9, midway]{Coffee ready}
             ($(barista)!1.9cm!(barista_ground)$);
         \draw[->] ($(barista)!2cm!(barista_ground)$) --
-            node[above, scale=0.9, midway]{Return $Order_0$}
+            node[above, scale=0.9, midway]{Serve $Order_0$}
             ($(customers)!2cm!(customers_ground)$);
 
         \node[draw=none, fill=white, scale=0.9] at
@@ -144,7 +145,7 @@ see Figure \ref{fig:cafe-cooperative}.
             {Next customer};
 
         \draw[<-] ($(barista)!3cm!(barista_ground)$) --
-            node[above, scale=0.9, midway]{$Order_1$}
+            node[above, scale=0.9, midway]{Place $Order_1$}
             ($(customers)!3cm!(customers_ground)$);
         \draw[<-] ($(brewer)!3.1cm!(brewer_ground)$) --
             node[above, scale=0.9, midway]{Start brewer}
@@ -155,7 +156,7 @@ see Figure \ref{fig:cafe-cooperative}.
             node[above, scale=0.9, midway]{Coffee ready}
             ($(barista)!3.9cm!(barista_ground)$);
         \draw[->] ($(barista)!4cm!(barista_ground)$) --
-            node[above, scale=0.9, midway]{Return $Order_1$}
+            node[above, scale=0.9, midway]{Serve $Order_1$}
             ($(customers)!4cm!(customers_ground)$);
 
         \node[draw=none, fill=white, scale=0.9] at
@@ -170,7 +171,7 @@ see Figure \ref{fig:cafe-cooperative}.
             {...};
 
         \draw[<-] ($(barista)!6cm!(barista_ground)$) --
-            node[above, scale=0.9, midway]{$Order_{m-1}$}
+            node[above, scale=0.9, midway]{Place $Order_j$}
             ($(customers)!6cm!(customers_ground)$);
         \draw[<-] ($(brewer)!6.1cm!(brewer_ground)$) --
             node[above, scale=0.9, midway]{Start brewer}
@@ -181,8 +182,15 @@ see Figure \ref{fig:cafe-cooperative}.
             node[above, scale=0.9, midway]{Coffee ready}
             ($(barista)!6.9cm!(barista_ground)$);
         \draw[->] ($(barista)!7cm!(barista_ground)$) --
-            node[above, scale=0.9, midway]{Return $Order_{m-1}$}
+            node[above, scale=0.9, midway]{Serve $Order_j$}
             ($(customers)!7cm!(customers_ground)$);
+
+        \node[draw=none, fill=white, scale=0.9] at ($(brewer)!7.5cm!(brewer_ground)$)
+            {...};
+        \node[draw=none, fill=white, scale=0.9] at ($(barista)!7.5cm!(barista_ground)$)
+            {...};
+        \node[draw=none, fill=white, scale=0.9] at ($(customers)!7.5cm!(customers_ground)$)
+            {...};
     \end{tikzpicture}
     \caption{A sequence diagram of a serial cafe order line. Each customer is
     served one at a time and no customer is served before the previous customer
@@ -200,12 +208,12 @@ see Figure \ref{fig:cafe-cooperative}.
         \node[right of=brewer0] (barista0) {$Barista_0$};
         \node[right of=barista0] (customers) {Customer line};
 
-        \node[below of=brewern, node distance=8cm] (brewern_ground) {};
-        \node[below of=baristan, node distance=8cm] (baristan_ground) {};
-        \node[below of=dots, node distance=8cm] (dots_ground) {};
-        \node[below of=brewer0, node distance=8cm] (brewer0_ground) {};
-        \node[below of=barista0, node distance=8cm] (barista0_ground) {};
-        \node[below of=customers, node distance=8cm] (customers_ground) {};
+        \node[below of=brewern, node distance=7cm] (brewern_ground) {};
+        \node[below of=baristan, node distance=7cm] (baristan_ground) {};
+        \node[below of=dots, node distance=7cm] (dots_ground) {};
+        \node[below of=brewer0, node distance=7cm] (brewer0_ground) {};
+        \node[below of=barista0, node distance=7cm] (barista0_ground) {};
+        \node[below of=customers, node distance=7cm] (customers_ground) {};
 
         \draw (brewern) -- (brewern_ground);
         \draw (baristan) -- (baristan_ground);
@@ -214,7 +222,7 @@ see Figure \ref{fig:cafe-cooperative}.
         \draw (customers) -- (customers_ground);
 
         \draw[<-] ($(barista0)!1cm!(barista0_ground)$) --
-            node[above, scale=0.9, midway]{$Order_0$}
+            node[above, scale=0.9, midway]{Place $Order_0$}
             ($(customers)!1cm!(customers_ground)$);
         \draw[<-] ($(brewer0)!1.1cm!(brewer0_ground)$) --
             node[above, scale=0.9, midway]{Start brewer}
@@ -225,7 +233,7 @@ see Figure \ref{fig:cafe-cooperative}.
             node[above, scale=0.9, midway]{Coffee ready}
             ($(barista0)!2.9cm!(barista0_ground)$);
         \draw[->] ($(barista0)!3cm!(barista0_ground)$) --
-            node[above, scale=0.9, midway]{Return $Order_0$}
+            node[above, scale=0.9, midway]{Serve $Order_0$}
             ($(customers)!3cm!(customers_ground)$);
 
         \node[draw=none, fill=white, scale=0.9] at
@@ -233,7 +241,7 @@ see Figure \ref{fig:cafe-cooperative}.
             {Next customer};
 
         \draw[<-, dashed] ($(dots)!2cm!(dots_ground)$) --
-            node[above, scale=0.9, pos=0.4]{$Order_1$}
+            node[above, scale=0.9, pos=0.4]{Place $Order_1$}
             ($(customers)!2cm!(customers_ground)$);
 
         \node[draw=none, fill=white, scale=0.9] at
@@ -252,7 +260,7 @@ see Figure \ref{fig:cafe-cooperative}.
             {...};
 
         \draw[<-] ($(baristan)!4.5cm!(baristan_ground)$) --
-            node[above, scale=0.9, midway]{$Order_{m-1}$}
+            node[above, scale=0.9, midway]{Place $Order_j$}
             ($(customers)!4.5cm!(customers_ground)$);
         \draw[<-] ($(brewern)!4.6cm!(brewern_ground)$) --
             node[above, scale=0.9, midway]{Start brewer}
@@ -263,12 +271,23 @@ see Figure \ref{fig:cafe-cooperative}.
             node[above, scale=0.9, midway]{Coffee ready}
             ($(baristan)!6.4cm!(baristan_ground)$);
         \draw[->] ($(baristan)!6.5cm!(baristan_ground)$) --
-            node[above, scale=0.9, midway]{Return $Order_{m-1}$}
+            node[above, scale=0.9, midway]{Serve $Order_j$}
             ($(customers)!6.5cm!(customers_ground)$);
 
         \draw[->, dashed] ($(dots)!5.5cm!(dots_ground)$) --
-            node[above, scale=0.9, pos=0.41]{Return $Order_{m-2}$}
+            node[above, scale=0.9, pos=0.41]{Serve $Order_{j-1}$}
             ($(customers)!5.5cm!(customers_ground)$);
+
+        \node[draw=none, fill=white, scale=0.9] at ($(brewern)!7cm!(brewern_ground)$)
+            {...};
+        \node[draw=none, fill=white, scale=0.9] at ($(baristan)!7cm!(baristan_ground)$)
+            {...};
+        \node[draw=none, fill=white, scale=0.9] at ($(brewer0)!7cm!(brewer0_ground)$)
+            {...};
+        \node[draw=none, fill=white, scale=0.9] at ($(barista0)!7cm!(barista0_ground)$)
+            {...};
+        \node[draw=none, fill=white, scale=0.9] at ($(customers)!7cm!(customers_ground)$)
+            {...};
     \end{tikzpicture}
     \caption{A sequence diagram of a preemptive cafe order line. There are
     $n$ baristas and brewers that can handle orders concurrently and
@@ -286,11 +305,11 @@ see Figure \ref{fig:cafe-cooperative}.
         \node[right of=brewer0] (barista) {Barista};
         \node[right of=barista] (customers) {Customer line};
 
-        \node[below of=brewern, node distance=8cm] (brewern_ground) {};
-        \node[below of=dots, node distance=8cm] (dots_ground) {};
-        \node[below of=brewer0, node distance=8cm] (brewer0_ground) {};
-        \node[below of=barista, node distance=8cm] (barista_ground) {};
-        \node[below of=customers, node distance=8cm] (customers_ground) {};
+        \node[below of=brewern, node distance=7cm] (brewern_ground) {};
+        \node[below of=dots, node distance=7cm] (dots_ground) {};
+        \node[below of=brewer0, node distance=7cm] (brewer0_ground) {};
+        \node[below of=barista, node distance=7cm] (barista_ground) {};
+        \node[below of=customers, node distance=7cm] (customers_ground) {};
 
         \draw (brewern) -- (brewern_ground);
         \draw (brewer0) -- (brewer0_ground);
@@ -298,7 +317,7 @@ see Figure \ref{fig:cafe-cooperative}.
         \draw (customers) -- (customers_ground);
 
         \draw[<-] ($(barista)!1cm!(barista_ground)$) --
-            node[above, scale=0.9, midway]{$Order_0$}
+            node[above, scale=0.9, midway]{Place $Order_0$}
             ($(customers)!1cm!(customers_ground)$);
         \draw[<-] ($(brewer0)!1.1cm!(brewer0_ground)$) --
             node[above, scale=0.9, midway]{Start brewer}
@@ -309,7 +328,7 @@ see Figure \ref{fig:cafe-cooperative}.
             node[above, scale=0.9, midway]{Coffee ready}
             ($(barista)!2.9cm!(barista_ground)$);
         \draw[->] ($(barista)!3cm!(barista_ground)$) --
-            node[above, scale=0.9, midway]{Return $Order_0$}
+            node[above, scale=0.9, midway]{Serve $Order_0$}
             ($(customers)!3cm!(customers_ground)$);
 
         \node[draw=none, fill=white, scale=0.9] at
@@ -317,7 +336,7 @@ see Figure \ref{fig:cafe-cooperative}.
             {Next customer};
 
         \draw[<-] ($(barista)!2cm!(barista_ground)$) --
-            node[above, scale=0.9, pos=0.4]{$Order_1$}
+            node[above, scale=0.9, pos=0.4]{Place $Order_1$}
             ($(customers)!2cm!(customers_ground)$);
         \draw[<-, dashed] ($(dots)!2.1cm!(dots_ground)$) --
             node[above, scale=0.9, pos=0.65]{Start brewer}
@@ -337,7 +356,7 @@ see Figure \ref{fig:cafe-cooperative}.
             {...};
 
         \draw[<-] ($(barista)!4.5cm!(barista_ground)$) --
-            node[above, scale=0.9, midway]{$Order_{m-1}$}
+            node[above, scale=0.9, midway]{Place $Order_j$}
             ($(customers)!4.5cm!(customers_ground)$);
         \draw[<-] ($(brewern)!4.6cm!(brewern_ground)$) --
             node[above, scale=0.9, pos=0.75]{Start brewer}
@@ -348,18 +367,133 @@ see Figure \ref{fig:cafe-cooperative}.
             node[above, scale=0.9, pos=0.75]{Coffee ready}
             ($(barista)!6.4cm!(barista_ground)$);
         \draw[->] ($(barista)!6.5cm!(barista_ground)$) --
-            node[above, scale=0.9, midway]{Return $Order_{m-1}$}
+            node[above, scale=0.9, midway]{Serve $Order_j$}
             ($(customers)!6.5cm!(customers_ground)$);
 
         \draw[->, dashed] ($(dots)!5.5cm!(dots_ground)$) --
-            node[above, scale=0.9, pos=0.41]{Return $Order_{m-2}$}
+            node[above, scale=0.9, pos=0.41]{Serve $Order_{j-1}$}
             ($(customers)!5.5cm!(customers_ground)$);
-        \fi
+
+        \node[draw=none, fill=white, scale=0.9] at ($(brewern)!7cm!(brewern_ground)$)
+            {...};
+        \node[draw=none, fill=white, scale=0.9] at ($(brewer0)!7cm!(brewer0_ground)$)
+            {...};
+        \node[draw=none, fill=white, scale=0.9] at ($(barista)!7cm!(barista_ground)$)
+            {...};
+        \node[draw=none, fill=white, scale=0.9] at ($(customers)!7cm!(customers_ground)$)
+            {...};
     \end{tikzpicture}
     \caption{A sequence diagram of a cooperative cafe order line. There is only
     one barista but $n$ brewers. As soon as a brewer is working, the next order
     can be handled.}
     \label{fig:cafe-cooperative}
+\end{figure}
+
+Looking at all three of these order handling approaches, we find a few common
+entities. They all have orders, a customer line, one or several baristas and
+brewers. Lets generalize this a bit and call orders \textit{events}, the
+customer line we call the \textit{dispatcher}, the barista and brewer combined
+we call the \textit{event handler} and the work being done on event
+$\epsilon_j$ we call $\Lambda_j$. The definition of the three event propagation
+models is as follows:
+
+\begin{description}
+
+    \item[\textbf{Serial event propagation}:] Given a set of $m$ events $\{
+            \epsilon_0, \epsilon_1, ..., \epsilon_j, ..., \epsilon_{m-1} \}$ no
+        event $\epsilon_j$ is dispatched before the work $\Lambda_{j-1}$ is
+        finished, see Figure \ref{fig:event-propagation-serial}.
+
+    \item[\textbf{Preemptive event propagation}:] Given a set of $m$ events $\{
+            \epsilon_0, \epsilon_1, ..., \epsilon_j, ..., \epsilon_{m-1} \}$
+        each event $\epsilon_j$ can be dispatched independent on
+        $\Lambda_{j-1}$ and the work $\Lambda_j$ can implicitly interleave and
+        make room for work $\Lambda_k$ where $k \ne j$.
+
+    \item[\textbf{Cooperative event propagation}:] Given a set of $m$ events
+        $\{ \epsilon_0, \epsilon_1, ..., \epsilon_j, ..., \epsilon_{m-1} \}$
+        each event $\epsilon_j$ can be dispatched independent on
+        $\Lambda_{j-1}$ and the work $\Lambda_j$ can explicitly make room for
+        work $\Lambda_k$ where $k \ne j$.
+
+\end{description}
+
+\begin{figure}[h!]
+    \centering
+    \begin{tikzpicture}[node distance=5cm, auto, >=stealth']
+        \node[] (event_handler) {Event handler};
+        \node[right of=event_handler] (dispatcher) {Dispatcher};
+
+        \node[below of=event_handler, node distance=8cm] (event_handler_ground) {};
+        \node[below of=dispatcher, node distance=8cm] (dispatcher_ground) {};
+
+        \draw (event_handler) -- (event_handler_ground);
+        \draw (dispatcher) -- (dispatcher_ground);
+
+        \draw[<-] ($(event_handler)!1cm!(event_handler_ground)$) --
+            node[above, scale=0.9, midway]{Dispatch $\epsilon_0$}
+            ($(dispatcher)!1cm!(dispatcher_ground)$);
+        \node[draw=none, fill=white, scale=0.9] at
+            ($(event_handler)!1.5cm!(event_handler_ground)$)
+            {$\Lambda_0$};
+        \draw[->] ($(event_handler)!2cm!(event_handler_ground)$) --
+            node[above, scale=0.9, midway]{Finish $\epsilon_0$}
+            ($(dispatcher)!2cm!(dispatcher_ground)$);
+
+        \node[draw=none, fill=white, scale=0.9] at
+            ($(dispatcher)!2.5cm!(dispatcher_ground)$)
+            {Next event};
+
+        \draw[<-] ($(event_handler)!3cm!(event_handler_ground)$) --
+            node[above, scale=0.9, midway]{Dispatch $\epsilon_1$}
+            ($(dispatcher)!3cm!(dispatcher_ground)$);
+        \node[draw=none, fill=white, scale=0.9] at
+            ($(event_handler)!3.5cm!(event_handler_ground)$)
+            {$\Lambda_1$};
+        \draw[->] ($(event_handler)!4cm!(event_handler_ground)$) --
+            node[above, scale=0.9, midway]{Finish $\epsilon_1$}
+            ($(dispatcher)!4cm!(dispatcher_ground)$);
+
+        \node[draw=none, fill=white, scale=0.9] at
+            ($(dispatcher)!4.5cm!(dispatcher_ground)$)
+            {Next event};
+
+        \node[draw=none, fill=white, scale=0.9] at
+        ($(event_handler)!5cm!(event_handler_ground)$)
+            {...};
+        \node[draw=none, fill=white, scale=0.9] at
+        ($(dispatcher)!5cm!(dispatcher_ground)$)
+            {...};
+
+        \draw[->] ($(event_handler)!5.5cm!(event_handler_ground)$) --
+            node[above, scale=0.9, midway]{Finish $\epsilon_{j-1}$}
+            ($(dispatcher)!5.5cm!(dispatcher_ground)$);
+
+        \node[draw=none, fill=white, scale=0.9] at
+            ($(dispatcher)!6cm!(dispatcher_ground)$)
+            {Next event};
+
+        \draw[<-] ($(event_handler)!6.5cm!(event_handler_ground)$) --
+            node[above, scale=0.9, midway]{Dispatch $\epsilon_j$}
+            ($(dispatcher)!6.5cm!(dispatcher_ground)$);
+        \node[draw=none, fill=white, scale=0.9] at
+            ($(event_handler)!7cm!(event_handler_ground)$)
+            {$\Lambda_j$};
+        \draw[->] ($(event_handler)!7.5cm!(event_handler_ground)$) --
+            node[above, scale=0.9, midway]{Finish $\epsilon_j$}
+            ($(dispatcher)!7.5cm!(dispatcher_ground)$);
+
+        \node[draw=none, fill=white, scale=0.9] at
+        ($(event_handler)!8cm!(event_handler_ground)$)
+            {...};
+        \node[draw=none, fill=white, scale=0.9] at
+        ($(dispatcher)!8cm!(dispatcher_ground)$)
+            {...};
+    \end{tikzpicture}
+    \caption{The serial event propagation model. Only one event $\epsilon_j$ is
+    dispatched and handled at a time and no event $\epsilon_j$ can be
+    dispatched before the previous work $\Lambda_{j-1}$ is finished.}
+    \label{fig:event-propagation-serial}
 \end{figure}
 
 \section{An abstract gateway}
