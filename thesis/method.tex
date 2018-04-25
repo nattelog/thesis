@@ -498,6 +498,42 @@ models is as follows:
     \label{fig:event-propagation-serial}
 \end{figure}
 
+\subsection{The anatomy of an event}
+
+The event is the actual data transmitted from the device to the gateway.
+Imagine a small weather station used at private homes. It has two sensors
+measuring wind velocity and air temperature. The gateway is the central system
+passing the data from each sensor to the application using the data. At a
+certain frequency, the gateway polls each sensor for new velocity and
+temperature values. These values are the actual events in the system. In this
+toy example, each event might not only carry the actual value of the sensor it
+corresponds to, but also information on what sensor this data is coming from.
+The weather application might draw a plot on how the air temperate has changed
+over time, therefore each event must also include the timestamp of each sensor
+value. In this study, however, there is no need for event data that represents
+some mimicked sensor value. What is needed is a way to track each event to see
+when it reaches certain places in its life. This is done by registering the
+timestamp when the event reaches those places, see Figure \ref{fig:event-life}.
+
+\begin{figure}[h!]
+    \centering
+    \begin{tikzpicture}[node distance=3cm, auto]
+        \node[block] (device) {Device};
+        \node[block, below of=device] (dispatcher) {Dispatcher};
+        \node[block, below of=dispatcher] (event_handler) {Event Handler};
+
+        \path[line] (device) -- (dispatcher);
+        \path[line] (dispatcher) -- (event_handler);
+
+        \node[comment, node distance=1cm, right =of device] (created) {Created};
+        \node[comment, node distance=1cm, right =of dispatcher] (dispatched) {Dispatched};
+        \node[comment, node distance=1cm, right =of event_handler] (processed) {Processed};
+    \end{tikzpicture}
+    \caption{The event travels from the device down to the event handler. At
+    each step the time point is registered, shown in the clouds.}
+    \label{fig:event-life}
+\end{figure}
+
 \section{An abstract gateway}
 
 A model of an abstract gateway is proposed as such: a gateway $\Gamma$ is a
