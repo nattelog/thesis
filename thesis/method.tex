@@ -66,7 +66,9 @@ they emit events whenever they find it necessary. See Figure
 \ref{fig:push-based} for an illustration. Note that not as many communication
 requests are necessary in this approach compared to the pull-based one. The
 gateway does not need to know about how many devices there are or what their
-addresses are.
+addresses are, but the devices need to know the address of the gateway. In
+contrast, the pull-based approach requires the gateway to know about each
+device, but the device does not need to know anything about the gateway.
 
 \begin{figure}[h!]
     \centering
