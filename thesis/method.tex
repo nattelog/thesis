@@ -23,6 +23,7 @@ network domain and is decoupled from whatever application the data from the
 sening domain is used for.
 
 \section{Two customer cases}
+\label{sec:customer-cases}
 
 Before presenting the architectural models used in this study, it is of
 importance to understand how they came about. Among the customers of Attentec,
@@ -519,19 +520,73 @@ timestamp when the event reaches those places, see Figure \ref{fig:event-life}.
     \centering
     \begin{tikzpicture}[node distance=3cm, auto]
         \node[block] (device) {Device};
-        \node[block, below of=device] (dispatcher) {Dispatcher};
+        \node[below of=device] (inv) {};
+        \node[block, below of=inv] (dispatcher) {Dispatcher};
         \node[block, below of=dispatcher] (event_handler) {Event Handler};
 
         \path[line] (device) -- (dispatcher);
         \path[line] (dispatcher) -- (event_handler);
 
         \node[comment, node distance=1cm, right =of device] (created) {Created};
+        \node[comment, align=left, node distance=1cm, right =of inv] (fetched_retrieved)
+            {Leaves device /\\ arrives at gateway};
         \node[comment, node distance=1cm, right =of dispatcher] (dispatched) {Dispatched};
         \node[comment, node distance=1cm, right =of event_handler] (processed) {Processed};
     \end{tikzpicture}
     \caption{The event travels from the device down to the event handler. At
     each step the time point is registered, shown in the clouds.}
     \label{fig:event-life}
+\end{figure}
+
+An event $\epsilon$ can generally be considered as a vector
+
+$$
+\epsilon = \big[ t_0, t_1, ..., t_{k-1} \big]
+$$
+
+where $t_i$ represents the timestamp when $\epsilon$ reached place $i$ in its
+life. Let $k$ be the number of different places the event can reach. In this
+study, five places are registered: the creation of the event, when the event
+leaves the device, when the event reaches the gateway, when the event is
+dispatched to the event handler and when the event is processed by the event
+handler.
+
+\subsection{The dispatcher}
+
+The purpose of the dispatcher is to listen to or poll for events and then
+dispatch them to the event handler. As mentioned in Section
+\ref{sec:customer-cases}, there are two main approaches to this: pull-based or
+push-based. The devices generating the events are either active and can push
+each event to the gateway, which in turn has to listen to them, or the devices
+are passive and the gateway must pull events from them. In this study, the
+pull-based approach is used to mimick the gateway used by Customer A.
+
+An important question to consider is: how is the dispatcher related to the
+event propagation models? If the architecture of the gateway implements the
+serial event propagation model, the dispatcher should make sure it does not
+dispatch an event before the previous event is processed, see Figure
+\ref{fig:dispatcher-serial}. Both the preemptive and the cooperative event
+propagation models loosens this constraint and allows the dispatcher to
+dispatch events before previous events have been processed.
+
+\begin{figure}[h!]
+    \centering
+    \begin{tikzpicture}[node distance=2.5cm, auto]
+        \node[block] (next) {Next device};
+        \node[decision, node distance=3cm, below of=next] (has) {Has event?};
+        \node[block, node distance=3cm, below of=has] (get) {Get event};
+        \node[block, below of=get] (process) {Process event};
+
+        \path[line] (next) -- (has);
+        \path[line] (has.west) -- node[above] {No} ++(-1cm,0) |- (next.west);
+        \path[line] (has) -- node {Yes} (get);
+        \path[line] (get) -- (process);
+        \path[line] (process.east) -- ++(1cm,0) |- (next.east);
+    \end{tikzpicture}
+    \caption{An illustration of the serial dispatcher. When "Next device" has
+    reached the end of the list it restarts from the beginning again, thus the
+    loop never breaks.}
+    \label{fig:dispatcher-serial}
 \end{figure}
 
 \section{An abstract gateway}
