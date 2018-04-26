@@ -396,9 +396,10 @@ Looking at all three of these order handling approaches, we find a few common
 entities. They all have orders, a customer line, one or several baristas and
 brewers. Lets generalize this a bit and call orders \textit{events}, the
 customer line we call the \textit{dispatcher}, the barista and brewer combined
-we call the \textit{event handler} and the work being done on event
-$\epsilon_j$ we call $\Lambda_j$. The definition of the three event propagation
-models is as follows:
+we call the \textit{event handler} and the work done by the dispatcher and the
+event handler on event $\epsilon_j$ we call $\lambda^d_j$ and $\lambda^e_j$
+respectively and the total work $\Lambda_j = \lambda^d_j + \lambda^e_j$. The
+definition of the three event propagation models is as follows:
 
 \begin{description}
 
@@ -421,6 +422,12 @@ models is as follows:
 
 \end{description}
 
+Common for all models is that the event $\epsilon_j$ can not be dispatched
+before the work $\lambda^d_j$ is done and the work $\lambda^e_j$ can not start
+before the event $\epsilon_j$ is dispatched. Each event follow the order
+$\epsilon_j \rightarrow \lambda^d_j \rightarrow dispatch \rightarrow
+\lambda^e_j \rightarrow finish$.
+
 \begin{figure}[h!]
     \centering
     \begin{tikzpicture}[node distance=5cm, auto, >=stealth']
@@ -433,33 +440,37 @@ models is as follows:
         \draw (event_handler) -- (event_handler_ground);
         \draw (dispatcher) -- (dispatcher_ground);
 
+        \node[draw=none, fill=white, scale=0.9] at
+            ($(dispatcher)!0.5cm!(dispatcher_ground)$)
+            {$\lambda^d_0$};
+
         \draw[<-] ($(event_handler)!1cm!(event_handler_ground)$) --
             node[above, scale=0.9, midway]{Dispatch $\epsilon_0$}
             ($(dispatcher)!1cm!(dispatcher_ground)$);
         \node[draw=none, fill=white, scale=0.9] at
             ($(event_handler)!1.5cm!(event_handler_ground)$)
-            {$\Lambda_0$};
+            {$\lambda^e_0$};
         \draw[->] ($(event_handler)!2cm!(event_handler_ground)$) --
             node[above, scale=0.9, midway]{Finish $\epsilon_0$}
             ($(dispatcher)!2cm!(dispatcher_ground)$);
 
         \node[draw=none, fill=white, scale=0.9] at
             ($(dispatcher)!2.5cm!(dispatcher_ground)$)
-            {Next event};
+            {$\lambda^d_1$};
 
         \draw[<-] ($(event_handler)!3cm!(event_handler_ground)$) --
             node[above, scale=0.9, midway]{Dispatch $\epsilon_1$}
             ($(dispatcher)!3cm!(dispatcher_ground)$);
         \node[draw=none, fill=white, scale=0.9] at
             ($(event_handler)!3.5cm!(event_handler_ground)$)
-            {$\Lambda_1$};
+            {$\lambda^e_1$};
         \draw[->] ($(event_handler)!4cm!(event_handler_ground)$) --
             node[above, scale=0.9, midway]{Finish $\epsilon_1$}
             ($(dispatcher)!4cm!(dispatcher_ground)$);
 
         \node[draw=none, fill=white, scale=0.9] at
             ($(dispatcher)!4.5cm!(dispatcher_ground)$)
-            {Next event};
+            {$\lambda^d_2$};
 
         \node[draw=none, fill=white, scale=0.9] at
         ($(event_handler)!5cm!(event_handler_ground)$)
@@ -474,14 +485,14 @@ models is as follows:
 
         \node[draw=none, fill=white, scale=0.9] at
             ($(dispatcher)!6cm!(dispatcher_ground)$)
-            {Next event};
+            {$\lambda^d_j$};
 
         \draw[<-] ($(event_handler)!6.5cm!(event_handler_ground)$) --
             node[above, scale=0.9, midway]{Dispatch $\epsilon_j$}
             ($(dispatcher)!6.5cm!(dispatcher_ground)$);
         \node[draw=none, fill=white, scale=0.9] at
             ($(event_handler)!7cm!(event_handler_ground)$)
-            {$\Lambda_j$};
+            {$\lambda^e_j$};
         \draw[->] ($(event_handler)!7.5cm!(event_handler_ground)$) --
             node[above, scale=0.9, midway]{Finish $\epsilon_j$}
             ($(dispatcher)!7.5cm!(dispatcher_ground)$);
@@ -559,7 +570,9 @@ dispatch them to the event handler. As mentioned in Section
 push-based. The devices generating the events are either active and can push
 each event to the gateway, which in turn has to listen to them, or the devices
 are passive and the gateway must pull events from them. In this study, the
-pull-based approach is used to mimick the gateway used by Customer A.
+pull-based approach is used to mimick the gateway used by Customer A. This
+approach requires the dispatcher to have a reference to each device to be able
+to pull events from them.
 
 An important question to consider is: how is the dispatcher related to the
 event propagation models? If the architecture of the gateway implements the
@@ -567,7 +580,11 @@ serial event propagation model, the dispatcher should make sure it does not
 dispatch an event before the previous event is processed, see Figure
 \ref{fig:dispatcher-serial}. Both the preemptive and the cooperative event
 propagation models loosens this constraint and allows the dispatcher to
-dispatch events before previous events have been processed.
+dispatch events before previous events have been processed. In contrast to the
+serial approach in Figure \ref{fig:dispatcher-serial}, all devices can be
+polled for events concurrently. There is no need, in theory, to loop through
+the list of device references and check them one by one. Instead, there can be
+one dispatch process for each device, see Figure \ref{fig:dispatcher-pre-coop}.
 
 \begin{figure}[h!]
     \centering
@@ -583,11 +600,42 @@ dispatch events before previous events have been processed.
         \path[line] (get) -- (process);
         \path[line] (process.east) -- ++(1cm,0) |- (next.east);
     \end{tikzpicture}
+
     \caption{An illustration of the serial dispatcher. When "Next device" has
     reached the end of the list it restarts from the beginning again, thus the
-    loop never breaks.}
+    loop never breaks. Each node in this model blocks the rest of the
+    execution. For instance, getting an event means sending a request over the
+    network to the device which in turn responds with the latest event. The
+    whole process is then blocked during the time it takes for the message to
+    travel across the network.}
+
     \label{fig:dispatcher-serial}
 \end{figure}
+
+\begin{figure}[h!]
+    \centering
+    \begin{tikzpicture}[node distance=2.5cm, auto]
+        \node[decision] (has) {Has event?};
+        \node[block, node distance=3cm, below of=has] (get) {Get event};
+        \node[block, below of=get] (process) {Process event};
+
+        \path[line] (has.west) -- node[above] {No} ++(-1cm,0) |- ++(0,2cm) -| (has.north);
+        \path[line] (has) -- node {Yes} (get);
+        \path[line] (get) -- (process);
+        \path[line] (process.east) -- ++(1cm,0) |- (has.east);
+    \end{tikzpicture}
+
+    \caption{An illustration of a preemptive and cooperative dispatcher. Each
+    device can have their own dispatch process, so there is no need to loop
+    through the list of device references.}
+
+    \label{fig:dispatcher-pre-coop}
+\end{figure}
+
+\todo{Perhaps an illustration with many of these processes next to each other
+is better?}
+
+\subsection{The event handler}
 
 \section{An abstract gateway}
 
