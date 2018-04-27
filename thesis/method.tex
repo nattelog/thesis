@@ -401,6 +401,8 @@ event handler on event $\epsilon_j$ we call $\lambda^d_j$ and $\lambda^e_j$
 respectively and the total work $\Lambda_j = \lambda^d_j + \lambda^e_j$. The
 definition of the three event propagation models is as follows:
 
+\todo{A better explaining on the work $\Lambda$}
+
 \begin{description}
 
     \item[\textbf{Serial event propagation}:] Given a set of $m$ events $\{
@@ -636,6 +638,26 @@ one dispatch process for each device, see Figure \ref{fig:dispatcher-pre-coop}.
 is better?}
 
 \subsection{The event handler}
+
+The purpose of the event handler is to process the event $\epsilon$. What type
+of processing to be done depends on the application and what the event
+represents. Returning to the weather station analogy; one application for the
+events received from the temperature sensor could be to monitor the change in
+temperature over time. This requires each event to be stored in some sort of
+persistent data storage, e.g. a database. This database could either be found
+locally on the gateway's filesystem or on some remote internet service. Perhaps
+the weather station has a feature that predicts the future wind velocity in
+real time. This requires some statistics or machine learning calculation to be
+done every time a new event arrives at the gateway. Generalising this idea, we
+get two different types of calculations: one depending on some peripheral unit
+of the CPU, for instance the file system or the network unit, and one depending
+on the CPU and its memory. The first we call I/O-work, or $\lambda^{io}$, for
+it is work not necessarily done by the CPU but by some peripheral I/O unit. The
+latter we call CPU-work, or $\lambda^{cpu}$, for it is work entirely performed
+by the CPU. The definition then follows that the total work done by the event
+handler $\lambda^e_j = \lambda^{io}_j + \lambda^{cpu}_j$ for an event
+$\epsilon_j$. It is however not necessarily the case that $\lambda^{io}$ is
+disjunct from $\lambda^{cpu}$, they might depend on each other to some extent.
 
 \section{An abstract gateway}
 
