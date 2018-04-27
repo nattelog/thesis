@@ -42,8 +42,9 @@ void usage()
 void on_handle_close(uv_handle_t* handle)
 {
     log_verbose("on_handle_close:handle=%p", handle);
-}
 
+    free(handle);
+}
 void close_boot_process(uv_idle_t* handle)
 {
     log_verbose("close_boot_process:handle=%p", handle);

@@ -270,6 +270,7 @@ void __net_on_read(uv_stream_t* handle, ssize_t nread, const uv_buf_t* buf)
 
         if (read_eof_edge != NULL) {
             state_run_next(state, read_eof_edge, context);
+            free(read_eof_edge);
         }
     }
     else if (nread > 0) {
@@ -288,14 +289,13 @@ void __net_on_read(uv_stream_t* handle, ssize_t nread, const uv_buf_t* buf)
         }
 
         state_run_next(state, read_chunk_edge, context);
+        free(read_chunk_edge);
     }
     else if (nread == 0) {
         return;
     }
 
-    if (buf->base != NULL) {
-        free(buf->base);
-    }
+    free(buf->base);
 }
 
 /*
@@ -380,6 +380,7 @@ void __net_on_write(uv_write_t* req, int status)
     log_check_uv_r(status, "__net_on_write");
 
     net_tcp_context_t* context = (net_tcp_context_t*) req->data;
+    log_debug("__net_on_write:context=%p", context);
     char* edge_name = context->data;
 
     free(req);

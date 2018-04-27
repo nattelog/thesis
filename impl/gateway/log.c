@@ -112,17 +112,6 @@ void log_send(char* message)
 {
     int r = 0;
 
-    /*
-    uv_udp_send_t* send_req = malloc(sizeof(uv_udp_send_t));
-    uv_buf_t bufs[] = {
-        { .base = message, .len = strlen(message) }
-    };
-    send_req->data = message;
-
-    r = uv_udp_send(send_req, &udp_handle, bufs, 1, (struct sockaddr*) &remote_addr, on_send_cb);
-    log_check_uv_r(r, "uv_udp_send");
-    */
-
     r = sendto(udp_sock, message, strlen(message), 0, (struct sockaddr*) &remote_addr, sizeof(remote_addr));
 
     if (r == -1) {
@@ -138,7 +127,7 @@ void log_send(char* message)
  */
 void log_write(const char* level, const char* format, ...)
 {
-    char* buf = malloc(16384);
+    char buf[16384];
     va_list args;
 
     va_start(args, format);

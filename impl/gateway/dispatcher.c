@@ -118,8 +118,6 @@ void dispatcher_serial(config_data_t* config, protocol_value_t* devices)
 
         protocol_free_build(status_request);
         protocol_free_build(get_event_request);
-        // protocol_free_build(status_did_value);
-        // protocol_free_build(get_event_did_value);
     }
 }
 
