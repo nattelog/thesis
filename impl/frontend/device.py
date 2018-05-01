@@ -63,6 +63,32 @@ class Device:
 
         return str(event)
 
+class PassiveDevice(threading.Thread):
+    logger = Log.get_logger('PassiveDevice', StandardWriter)
+
+    def __init__(self, address, delay):
+        threading.Thread.__init__(self)
+        self.daemon = True
+        self.device = Device()
+        self.server = TCPServer(address, self.device, delay)
+
+    def hostname(self):
+        return self.server.hostname()
+
+    def run(self):
+        PassiveDevice.logger.info('{}: Start', self.hostname())
+
+        while True:
+            self.server.accept()
+
+    def stop(self):
+        hostname = self.hostname()
+        self.server.close()
+        PassiveDevice.logger.info('{}: Stop', hostname)
+
+    def put_event(self, event):
+        self.device.put_event(event)
+
 class Producer(threading.Thread):
     """ Produces new events and puts them on the device event queue.
     """
@@ -83,7 +109,7 @@ class Producer(threading.Thread):
             return
 
         while not self.stop_event.wait(1 / self.frequency):
-            for did, device in self.devices.iteritems():
+            for device in self.devices:
                 event = Event()
                 device.put_event(event)
                 Producer.logger.debug('{}: Put event \'{}\'', id(self), event)
@@ -102,7 +128,7 @@ class NameServiceAPI:
         self.configuration = configuration
 
     def hostnames(self):
-        return [did for did, device in self.devices.iteritems()]
+        return [device.hostname()[1] for device in self.devices]
 
     def verify_gateway(self, gw_configuration, address):
         """ Called over the network by the gateway to verify it has been called
@@ -151,15 +177,15 @@ class NameService(threading.Thread):
         self.daemon = True
         self.gateway_verification_event = threading.Event()
         self.configuration = configuration
-        self.devices = {}
+        self.devices = []
 
         quantity = configuration['DEVICE_QUANTITY']
         frequency = configuration['DEVICE_FREQUENCY']
         delay = configuration['DEVICE_DELAY']
 
         for _ in range(quantity):
-            device = Device()
-            self.devices[device.id] = device
+            device = PassiveDevice(('0.0.0.0', 0), delay)
+            self.devices.append(device)
 
         self.producer = Producer(self.devices, frequency)
         self.server = TCPServer(
@@ -201,6 +227,9 @@ class NameService(threading.Thread):
         self.producer.stop()
 
     def start_devices(self):
+        for device in self.devices:
+            device.start()
+
         self.producer.start()
         NameService.logger.debug('Started {} devices', len(self.devices))
 
