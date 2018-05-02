@@ -2,13 +2,12 @@ import Queue
 import threading
 import time
 from device import NameService
-from db import Scenario, EventLifecycle, Configuration
+from db import Scenario, EventLifecycle, Configuration, TestReport
 from log import (\
         now,
         Log,
         UDPWriter,
-        StandardWriter,
-        LogServer)
+        StandardWriter, LogServer)
 
 class TestManager:
 
@@ -21,6 +20,7 @@ class TestManager:
         self.scenario = Scenario()
         self.lifecycle = EventLifecycle()
         self.configuration_table = Configuration()
+        self.test_report = TestReport()
         self.sid = self.scenario.create_scenario()
         self.event_messages = Queue.Queue(100)
 
@@ -84,6 +84,8 @@ class TestManager:
     def end_test(self):
         self.nameservice.close()
         self.scenario.set_end_time(self.sid, now())
+        self.test_report.register_scenario(self.configuration['REPORT_NAME'],
+                self.sid);
         TestManager.logger.info('Test ended')
 
     def update_event_lifecycle_time(self, event_keyword, event_id, timestamp):
