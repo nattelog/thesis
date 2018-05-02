@@ -138,11 +138,11 @@ void log_send(char* message)
  */
 void log_write(const char* level, const char* format, ...)
 {
-    char* buf = malloc(16384);
+    char buf[16384];
     va_list args;
 
     va_start(args, format);
-    log_format(buf, level, format, args);
+    log_format((char*) buf, level, format, args);
     va_end(args);
 
 #ifdef LOGSTD
