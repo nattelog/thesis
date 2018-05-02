@@ -223,12 +223,16 @@ class Report:
                 'avg d2',
                 'stdev d2',
                 'min d2',
-                'max d2']
+                'max d2',
+                'throughput',
+                'done ratio']
 
         print(('{};' * len(header)).format(*header)[:-1])
 
         for stat in stats:
-            print(('{};' * len(stat)).format(*stat)[:-1])
+            stat_str = ('{};' * len(stat)).format(*stat)[:-1]
+            stat_str = stat_str.replace('.', ',')
+            print(stat_str)
 
 def parse_input(argv):
     method = argv.pop(0)
