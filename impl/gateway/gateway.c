@@ -28,12 +28,14 @@ void usage()
         "            The CPU intensity each event induce. Value between 0 and 1.\n\n"
         "        -i <value>\n"
         "            The I/O intensity each event induce. Value between 0 and 1.\n\n"
+        "        -t <address>\n"
+        "            The IP address (not port) of the test manager.\n\n"
+        "        -n <port>\n"
+        "            The port of the nameservice.\n\n"
+        "        -l <port>\n"
+        "            The port of the log server.\n\n"
         "        -p <value>\n"
         "            The size of the thread pool. Defaults to 10.\n\n"
-        "        -n <address>:<port>\n"
-        "            The address and port of the nameservice.\n\n"
-        "        -l <address>:<port>\n"
-        "            The address and port of the log server.\n\n"
         "";
 
     printf("%s\n", usage_str);
@@ -119,7 +121,7 @@ void prepare_test(config_data_t* config, protocol_value_t** devices)
     state_t* boot_process;
     state_t* server;
 
-    r = log_init(loop, config->logserver_address, config->logserver_port);
+    r = log_init(loop, config->test_manager_address, config->logserver_port);
     log_check_uv_r(r, "log_init");
 
     boot_process = machine_boot_process(&boot_context, loop, config, (net_tcp_context_t*) &server_context);
@@ -172,7 +174,7 @@ int main(int argc, char** argv)
         return 0;
     }
 
-    while ((input_flag = getopt(argc, argv, "hd:e:c:i:p:l:n:")) != -1) {
+    while ((input_flag = getopt(argc, argv, "hd:e:c:i:p:t:l:n:")) != -1) {
         switch (input_flag) {
             case 'h':
                 usage();
@@ -192,19 +194,21 @@ int main(int argc, char** argv)
             case 'p':
                 config.tp_size = atoi(optarg);
                 break;
-            case 'l':
-                r = config_parse_address(optarg, (char*) &config.logserver_address, &config.logserver_port);
+            case 't':
+                r = config_parse_address(optarg,
+                        (char*) &config.test_manager_address);
+
                 if (r) {
-                    log_error("could not parse logserver address");
+                    log_error("could not parse test manager address");
                     return 1;
                 }
+
+                break;
+            case 'l':
+                config.logserver_port = atoi(optarg);
                 break;
             case 'n':
-                r = config_parse_address(optarg, (char*) &config.nameservice_address, &config.nameservice_port);
-                if (r) {
-                    log_error("could not parse nameserver address");
-                    return 1;
-                }
+                config.nameservice_port = atoi(optarg);
                 break;
             default:
                 break;

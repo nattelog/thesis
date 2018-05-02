@@ -40,26 +40,28 @@ int config_to_protocol_type(config_data_t* config, protocol_value_t** protocol)
     json_object_push(*protocol, "IO_INTENSITY", json_double_new(config->io));
     json_object_push(*protocol, "POOL_SIZE", json_integer_new(config->tp_size));
 
+    /*
     sprintf((char*) &pre, "%s:%d", config->nameservice_address, config->nameservice_port);
     json_object_push(*protocol, "NAMESERVICE_ADDRESS", json_string_new((char*) &pre));
 
     sprintf((char*) &pre, "%s:%d", config->logserver_address, config->logserver_port);
     json_object_push(*protocol, "LOGSERVER_ADDRESS", json_string_new((char*) &pre));
+    */
 
     return 0;
 }
 
 /**
- * Parses an address string on the format <address>:<port> and sets them in the
+ * Parses an address string on the format x.x.x.x and sets them in the
  * target parameters. Returns 1 if parsing was unsuccessful, 0 otherwise.
  */
-int config_parse_address(char* addr_string, char* target_addr, int* target_port)
+int config_parse_address(char* addr_string, char* target_addr)
 {
     regex_t regex;
     int r = 0;
-    int nmatch = 3;
+    int nmatch = 2;
     regmatch_t matches[nmatch];
-    char* str = "^([0-9]+\\.[0-9]+\\.[0-9]+\\.[0-9]+):([0-9]+)$";
+    char* str = "^([0-9]+\\.[0-9]+\\.[0-9]+\\.[0-9]+)$";
 
     r = regcomp(&regex, str, REG_EXTENDED);
 
@@ -75,15 +77,10 @@ int config_parse_address(char* addr_string, char* target_addr, int* target_port)
     }
     else {
         regmatch_t addr_match = matches[1];
-        regmatch_t port_match = matches[2];
         int addr_len = addr_match.rm_eo - addr_match.rm_so;
-        int port_len = port_match.rm_eo - port_match.rm_so;
-        char* port_str[24];
 
         memcpy(target_addr, addr_string, addr_len);
         target_addr[addr_len] = (char) 0;
-        memcpy(port_str, &addr_string[port_match.rm_so], port_len);
-        *target_port = atoi((char*) port_str);
 
         return 0;
     }
