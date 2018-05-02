@@ -1,6 +1,9 @@
 import Queue
 import threading
 import time
+from sys import platform
+import socket
+import subprocess
 from device import NameService
 from db import Scenario, EventLifecycle, Configuration, TestReport
 from log import (\
@@ -57,18 +60,32 @@ class TestManager:
     def verify_gateway(self, lsaddress):
         nsaddress = self.nameservice.hostname()
         self.nameservice.start()
-        TestManager.logger.info(
-                'Start gateway with ./gateway -t {} -l {} -n {} -d {} -e {} -c {} -i {} -p {} -g {}',
-                lsaddress[0],
-                lsaddress[1],
-                nsaddress[1],
-                self.configuration['DISPATCHER'],
-                self.configuration['EVENT_HANDLER'],
-                self.configuration['CPU_INTENSITY'],
-                self.configuration['IO_INTENSITY'],
-                self.configuration['POOL_SIZE'],
-                self.configuration['LOG_LEVEL']
-                )
+
+        # get local ip
+        s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        s.connect(('8.8.8.8', 80))
+        ip_addr = s.getsockname()[0]
+        s.close()
+
+        gateway_cmd_str = './gateway -t {} -l {} -n {} -d {} -e {} -c {} -i {} -p {}'.format(
+            ip_addr,
+            lsaddress[1],
+            nsaddress[1],
+            self.configuration['DISPATCHER'],
+            self.configuration['EVENT_HANDLER'],
+            self.configuration['CPU_INTENSITY'],
+            self.configuration['IO_INTENSITY'],
+            self.configuration['POOL_SIZE'])
+
+        # copy to clipboard
+        if platform == 'darwin':
+            process = subprocess.Popen('pbcopy', env={'LANG': 'en_US.UTF-8'},
+                    stdin=subprocess.PIPE)
+            process.communicate(gateway_cmd_str)
+
+            TestManager.logger.info('Start gateway with {} (copied to clipboard)'.format(gateway_cmd_str))
+        else:
+            TestManager.logger.info('Start gateway with {}'.format(gateway_cmd_str))
 
         return self.nameservice.verify_gateway()
 
