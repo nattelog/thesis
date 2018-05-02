@@ -16,32 +16,38 @@ void dispatcher_serial(config_data_t* config, protocol_value_t* devices)
     int r;
     size_t devices_len;
     net_tcp_context_sync_t* devices_context[MACHINE_MAX_DEVICES];
-    char* ns_addr = (char*) config->nameservice_address;
-    int ns_port = config->nameservice_port;
+    char* ts_addr = (char*) config->test_manager_address;
+    protocol_value_t* status_request;
+    protocol_value_t* get_event_request;
+
+    r = protocol_build_request(&status_request, "status", 0);
+    log_check_r(r, "dispatcher_serial:protocol_build_request");
+
+    r = protocol_build_request(&get_event_request, "next_event", 0);
+    log_check_r(r, "dispatcher_serial:protocol_build_request");
 
     devices_len = protocol_get_length(devices);
 
     for (size_t j = 0; j < devices_len; ++j) {
-        protocol_value_t* did_value;
+        protocol_value_t* port_value;
+        int device_port;
         net_tcp_context_sync_t* context = malloc(sizeof(net_tcp_context_sync_t));
 
-        r = net_tcp_context_sync_init(context, ns_addr, ns_port, config);
-        log_check_r(r, "net_tcp_context_sync_init");
-
-        r = protocol_get_at(devices, &did_value, j);
+        r = protocol_get_at(devices, &port_value, j);
         log_check_r(r, "dispatcher_serial:protocol_get_at");
 
-        r = protocol_get_string(did_value, context->did);
-        log_check_r(r, "dispatcher_serial:protocol_get_string");
+        device_port = protocol_get_int(port_value);
+        if (device_port < 0) {
+            log_check_r(device_port, "dispatcher_serial:protocol_get_int");
+        }
+
+        r = net_tcp_context_sync_init(context, ts_addr, device_port, config);
+        log_check_r(r, "net_tcp_context_sync_init");
 
         devices_context[j] = context;
     }
 
     while (1) {
-        protocol_value_t* status_request;
-        protocol_value_t* status_did_value;
-        protocol_value_t* get_event_request;
-        protocol_value_t* get_event_did_value;
         net_tcp_context_sync_t* device = devices_context[i];
         protocol_value_t* response;
         protocol_value_t* result;
@@ -55,18 +61,6 @@ void dispatcher_serial(config_data_t* config, protocol_value_t* devices)
             continue;
         }
         pthread_mutex_unlock(&device->mutex);
-
-        r = protocol_build_string(&status_did_value, (char*) &device->did);
-        log_check_r(r, "dispatcher_serial:protocol_build_string");
-
-        r = protocol_build_string(&get_event_did_value, (char*) &device->did);
-        log_check_r(r, "dispatcher_serial:protocol_build_string");
-
-        r = protocol_build_request(&status_request, "status", 1, status_did_value);
-        log_check_r(r, "dispatcher_serial:protocol_build_request");
-
-        r = protocol_build_request(&get_event_request, "next_event", 1, get_event_did_value);
-        log_check_r(r, "dispatcher_serial:protocol_build_request");
 
         device->write_payload = status_request;
         r = net_call_sync(device);
@@ -115,10 +109,10 @@ void dispatcher_serial(config_data_t* config, protocol_value_t* devices)
             }
 
         }
-
-        protocol_free_build(status_request);
-        protocol_free_build(get_event_request);
     }
+
+    protocol_free_build(status_request);
+    protocol_free_build(get_event_request);
 }
 
 /**
@@ -132,8 +126,7 @@ void dispatcher_cooperative(config_data_t* config, protocol_value_t* devices)
     int r;
     uv_loop_t* loop = uv_default_loop();
     state_t* coop_dispatch = machine_cooperative_dispatch();
-    char* ns_addr = (char*) config->nameservice_address;
-    int ns_port = config->nameservice_port;
+    char* ts_addr = (char*) config->test_manager_address;
     int devices_length = protocol_get_length(devices);
 
     if (devices_length < 0) {
@@ -142,16 +135,19 @@ void dispatcher_cooperative(config_data_t* config, protocol_value_t* devices)
 
     for (int i = 0; i < devices_length; ++i) {
         machine_coop_context_t* context = malloc(sizeof(machine_coop_context_t));
-        protocol_value_t* did_value;
+        protocol_value_t* port_value;
+        int device_port;
 
-        r = net_tcp_context_init((net_tcp_context_t*) context, loop, ns_addr, ns_port);
-        log_check_uv_r(r, "dispatcher_cooperative:net_tcp_context_init");
-
-        r = protocol_get_at(devices, &did_value, i);
+        r = protocol_get_at(devices, &port_value, i);
         log_check_r(r, "dispatcher_cooperative:protocol_get_at");
 
-        r = protocol_get_string(did_value, ((net_tcp_context_t* ) context)->did);
-        log_check_r(r, "dispatcher_cooperative:protocol_get_string");
+        device_port = protocol_get_int(port_value);
+        if (device_port < 0) {
+            log_check_r(device_port, "dispatcher_cooperative:protocol_get_int");
+        }
+
+        r = net_tcp_context_init((net_tcp_context_t*) context, loop, ts_addr, device_port);
+        log_check_uv_r(r, "dispatcher_cooperative:net_tcp_context_init");
 
         context->req_count = 0;
         context->config = config;

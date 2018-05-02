@@ -1,14 +1,16 @@
 import Queue
 import threading
 import time
+from sys import platform
+import socket
+import subprocess
 from device import NameService
-from db import Scenario, EventLifecycle, Configuration
+from db import Scenario, EventLifecycle, Configuration, TestReport
 from log import (\
         now,
         Log,
         UDPWriter,
-        StandardWriter,
-        LogServer)
+        StandardWriter, LogServer)
 
 class TestManager:
 
@@ -21,6 +23,7 @@ class TestManager:
         self.scenario = Scenario()
         self.lifecycle = EventLifecycle()
         self.configuration_table = Configuration()
+        self.test_report = TestReport()
         self.sid = self.scenario.create_scenario()
         self.event_messages = Queue.Queue(100)
 
@@ -57,19 +60,32 @@ class TestManager:
     def verify_gateway(self, lsaddress):
         nsaddress = self.nameservice.hostname()
         self.nameservice.start()
-        TestManager.logger.info(
-                'Start gateway with ./gateway -l {}:{} -n {}:{} -d {} -e {} -c {} -i {} -p {} -g {}',
-                lsaddress[0],
-                lsaddress[1],
-                nsaddress[0],
-                nsaddress[1],
-                self.configuration['DISPATCHER'],
-                self.configuration['EVENT_HANDLER'],
-                self.configuration['CPU_INTENSITY'],
-                self.configuration['IO_INTENSITY'],
-                self.configuration['POOL_SIZE'],
-                self.configuration['LOG_LEVEL']
-                )
+
+        # get local ip
+        s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        s.connect(('8.8.8.8', 80))
+        ip_addr = s.getsockname()[0]
+        s.close()
+
+        gateway_cmd_str = './gateway -t {} -l {} -n {} -d {} -e {} -c {} -i {} -p {}'.format(
+            ip_addr,
+            lsaddress[1],
+            nsaddress[1],
+            self.configuration['DISPATCHER'],
+            self.configuration['EVENT_HANDLER'],
+            self.configuration['CPU_INTENSITY'],
+            self.configuration['IO_INTENSITY'],
+            self.configuration['POOL_SIZE'])
+
+        # copy to clipboard
+        if platform == 'darwin':
+            process = subprocess.Popen('pbcopy', env={'LANG': 'en_US.UTF-8'},
+                    stdin=subprocess.PIPE)
+            process.communicate(gateway_cmd_str)
+
+            TestManager.logger.info('Start gateway with {} (copied to clipboard)'.format(gateway_cmd_str))
+        else:
+            TestManager.logger.info('Start gateway with {}'.format(gateway_cmd_str))
 
         return self.nameservice.verify_gateway()
 
@@ -85,6 +101,8 @@ class TestManager:
     def end_test(self):
         self.nameservice.close()
         self.scenario.set_end_time(self.sid, now())
+        self.test_report.register_scenario(self.configuration['REPORT_NAME'],
+                self.sid);
         TestManager.logger.info('Test ended')
 
     def update_event_lifecycle_time(self, event_keyword, event_id, timestamp):

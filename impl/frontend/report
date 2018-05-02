@@ -4,7 +4,7 @@ import sys
 import getopt
 import time
 import re
-from db import Database, Scenario, EventLifecycle, Configuration
+from db import Database, Scenario, EventLifecycle, Configuration, TestReport
 from log import now
 
 def parse_time(time_str):
@@ -27,10 +27,18 @@ class Report:
     """ Read test data from the database.
     """
 
+    TPAD = 20
+
     def __init__(self):
         self.lifecycle_table = EventLifecycle()
         self.scenario_table = Scenario()
         self.configuration_table = Configuration()
+        self.test_report = TestReport()
+
+    def get_scenario(self, sid):
+        return self.scenario_table.get_last_scenario() \
+                if sid is None else \
+                self.scenario_table.get_scenario(sid)
 
     def print_configuration(self, sid):
         config = self.configuration_table.get_configuration(sid)
@@ -39,13 +47,10 @@ class Report:
             key = row[1]
             value = row[2]
 
-            print('  {}{}'.format(key.ljust(20), value))
+            print('  {}{}'.format(key.ljust(Report.TPAD), value))
 
     def print_scenario(self, sid=None):
-        tpad = 20
-        scenario = self.scenario_table.get_last_scenario() \
-                if sid is None else \
-                self.scenario_table.get_scenario(sid)
+        scenario = self.get_scenario(sid)
         sid = scenario[0]
         start_time = scenario[2]
         end_time = scenario[3]
@@ -59,8 +64,8 @@ class Report:
             start_time = time.asctime(start_time)
 
         print(sid)
-        print('  {}{}'.format('START'.ljust(tpad), start_time))
-        print('  {}{} s'.format('DURATION'.ljust(tpad), duration_time))
+        print('  {}{}'.format('START'.ljust(Report.TPAD), start_time))
+        print('  {}{} s'.format('DURATION'.ljust(Report.TPAD), duration_time))
         self.print_configuration(sid)
 
         count_created = self.lifecycle_table.count_created_events(sid)
@@ -74,21 +79,42 @@ class Report:
 
         throughput = 0 if duration_time == 0 else \
                 float(count_processed) / float(duration_time)
-        d0 = self.lifecycle_table.avg_d0(sid)
-        d0 = int(d0) if d0 is not None else 0
+        avg_d0 = self.lifecycle_table.avg_d0(sid)
+        avg_d1 = self.lifecycle_table.avg_d1(sid)
+        avg_d2 = self.lifecycle_table.avg_d2(sid)
+        stdev_d0 = self.lifecycle_table.stdev_d0(sid)
+        stdev_d1 = self.lifecycle_table.stdev_d1(sid)
+        stdev_d2 = self.lifecycle_table.stdev_d2(sid)
+        min_d0 = self.lifecycle_table.min_d0(sid)
+        min_d1 = self.lifecycle_table.min_d1(sid)
+        min_d2 = self.lifecycle_table.min_d2(sid)
+        max_d0 = self.lifecycle_table.max_d0(sid)
+        max_d1 = self.lifecycle_table.max_d1(sid)
+        max_d2 = self.lifecycle_table.max_d2(sid)
 
         print('  {}{} created events'.format(
-            'COUNT'.ljust(tpad),
+            'COUNT'.ljust(Report.TPAD),
             count_created))
-        print('  {}{} fetched events'.format(''.ljust(tpad), count_fetched))
-        print('  {}{} retrieved events'.format(''.ljust(tpad), count_retrieved))
-        print('  {}{} dispatched events'.format(''.ljust(tpad), count_dispatched))
-        print('  {}{} processed events'.format(''.ljust(tpad), count_processed))
-        print('  {}{} proc/created'.format('RATIO'.ljust(tpad), processed_ratio))
+        print('  {}{} fetched events'.format(''.ljust(Report.TPAD), count_fetched))
+        print('  {}{} retrieved events'.format(''.ljust(Report.TPAD), count_retrieved))
+        print('  {}{} dispatched events'.format(''.ljust(Report.TPAD), count_dispatched))
+        print('  {}{} processed events'.format(''.ljust(Report.TPAD), count_processed))
+        print('  {}{} proc/created'.format('RATIO'.ljust(Report.TPAD), processed_ratio))
         print('  {}{} events/s'.format(
-            'THROUGHPUT'.ljust(tpad),
+            'THROUGHPUT'.ljust(Report.TPAD),
             throughput))
-        print('  {}{} ms'.format('D0'.ljust(tpad), d0))
+        print('  {}avg {} ms'.format('D0'.ljust(Report.TPAD), avg_d0))
+        print('  {}stdev {} ms'.format(''.ljust(Report.TPAD), stdev_d0))
+        print('  {}min {} ms'.format(''.ljust(Report.TPAD), min_d0))
+        print('  {}max {} ms'.format(''.ljust(Report.TPAD), max_d0))
+        print('  {}avg {} ms'.format('D1'.ljust(Report.TPAD), avg_d1))
+        print('  {}stdev {} ms'.format(''.ljust(Report.TPAD), stdev_d1))
+        print('  {}min {} ms'.format(''.ljust(Report.TPAD), min_d1))
+        print('  {}max {} ms'.format(''.ljust(Report.TPAD), max_d1))
+        print('  {}avg {} ms'.format('D2'.ljust(Report.TPAD), avg_d2))
+        print('  {}stdev {} ms'.format(''.ljust(Report.TPAD), stdev_d2))
+        print('  {}min {} ms'.format(''.ljust(Report.TPAD), min_d2))
+        print('  {}max {} ms'.format(''.ljust(Report.TPAD), max_d2))
 
     def print_scenarios(self, time_str=None):
         if time_str is None:
@@ -157,6 +183,56 @@ class Report:
                 retrieved_time,
                 dispatched_time,
                 done_time))
+
+    def print_reports(self):
+        reports = self.test_report.get_reports()
+
+        for report in reports:
+            name = report[0]
+            end_time = report[1]
+            end_time = time.localtime(int(end_time) / 1000)
+            end_time = time.asctime(end_time)
+
+            print('  {}{}'.format(end_time.ljust(30), name))
+
+    def print_report_csv(self, name):
+        stats = self.test_report.get_report(name)
+        header = ['scenario',
+                'duration',
+                'pool size',
+                'k0',
+                'k1',
+                'quantity',
+                'frequency',
+                'delay',
+                'l0',
+                'l1',
+                'created',
+                'fetched',
+                'retrieved',
+                'dispatched',
+                'done',
+                'avg d0',
+                'stdev d0',
+                'min d0',
+                'max d0',
+                'avg d1',
+                'stdev d1',
+                'min d1',
+                'max d1',
+                'avg d2',
+                'stdev d2',
+                'min d2',
+                'max d2',
+                'throughput',
+                'done ratio']
+
+        print(('{};' * len(header)).format(*header)[:-1])
+
+        for stat in stats:
+            stat_str = ('{};' * len(stat)).format(*stat)[:-1]
+            stat_str = stat_str.replace('.', ',')
+            print(stat_str)
 
 def parse_input(argv):
     method = argv.pop(0)

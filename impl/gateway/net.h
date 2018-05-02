@@ -17,8 +17,6 @@
 
 typedef struct net_tcp_context_s net_tcp_context_t;
 typedef struct net_tcp_context_sync_s net_tcp_context_sync_t;
-typedef struct net_request_s net_request_t;
-typedef struct net_response_s net_response_t;
 
 struct net_tcp_context_s {
     state_t* state;

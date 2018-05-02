@@ -104,9 +104,11 @@ class PassiveGateway():
         self.server.wait_for_start()
 
     def get_events(self):
-        for did in self.devices:
-            if (self.ns.status(did) == 1):
-                event = self.ns.next_event(did)
+        for port in self.devices:
+            device = Stub(('0.0.0.0', port))
+
+            if (device.status() == 1):
+                event = device.next_event()
                 PassiveGateway.logger.info('EVENT_LIFECYCLE_RETRIEVED:{}',
                         event)
                 PassiveGateway.logger.info('EVENT_LIFECYCLE_DISPATCHED:{}',

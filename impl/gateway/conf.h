@@ -11,9 +11,8 @@ struct config_data_s {
     char* eventhandler;
     double cpu;
     double io;
-    char logserver_address[128];
+    char test_manager_address[128];
     int logserver_port;
-    char nameservice_address[128];
     int nameservice_port;
 };
 
@@ -21,6 +20,6 @@ void config_init(config_data_t* config);
 
 int config_to_protocol_type(config_data_t* config, protocol_value_t** protocol);
 
-int config_parse_address(char* addr_string, char* target_addr, int* target_port);
+int config_parse_address(char* addr_string, char* target_addr);
 
 #endif

@@ -10,8 +10,10 @@ DISPATCHER = 'DISPATCHER'
 EVENT_HANDLER = 'EVENT_HANDLER'
 CPU_INTENSITY = 'CPU_INTENSITY'
 IO_INTENSITY = 'IO_INTENSITY'
-LOG_SERVER_ADDRESS = 'LOG_SERVER_ADDRESS'
-NAMESERVICE_ADDRESS = 'NAMESERVICE_ADDRESS'
+TEST_MANAGER_ADDRESS = 'TEST_MANAGER_ADDRESS'
+LOG_SERVER_PORT = 'LOG_SERVER_PORT'
+NAMESERVICE_PORT = 'NAMESERVICE_PORT'
+POOL_SIZE = 'POOL_SIZE'
 
 def usage():
     print(
@@ -38,15 +40,21 @@ def usage():
         -i, --io <value>
             The I/O intensity each event induce. Value between 0 and 1.
 
-        -l, --logserver <address>:<port>
-            The address and port of the log server.
+        -t, --testmanager <address>
+            The IP address (no port) of the test manager.
 
-        -n, --nameservice <address>:<port>
-            The address and port of the nameservice.
+        -l, --logserver <port>
+            The port of the log server.
+
+        -n, --nameservice <port>
+            The port of the nameservice.
 
         -g, --loglevel <value>
             The log level to print to stdout. One of 0 (DEBUG), 1 (INFO)
             (default) and 2 (ERROR).
+
+        -p, --poolsize <value>
+            Thread pool size.
     """
 )
 
@@ -54,12 +62,11 @@ def parse_address(address_string):
     """ Parses address on the format <address>:<port> and returns a tuple.
     """
 
-    m = re.match(r'^(\d+\.\d+\.\d+\.\d+):(\d+)$', address_string)
+    m = re.match(r'^(\d+\.\d+\.\d+\.\d+)$', address_string)
 
     if m:
         addr = m.group(1)
-        port = int(m.group(2))
-        return (addr, port)
+        return addr
     else:
         raise AttributeError('Not a valid address format')
 
@@ -69,8 +76,10 @@ def verify_parameters(configuration):
         EVENT_HANDLER,
         CPU_INTENSITY,
         IO_INTENSITY,
-        LOG_SERVER_ADDRESS,
-        NAMESERVICE_ADDRESS]
+        TEST_MANAGER_ADDRESS,
+        LOG_SERVER_PORT,
+        NAMESERVICE_PORT,
+        POOL_SIZE]
 
     return all(param in configuration for param in valid_parameters)
 
@@ -87,15 +96,17 @@ def main(argv):
     try:
         opts, args = getopt.getopt(
             argv,
-            'hd:e:c:i:l:n:g:',
+            'hd:e:c:i:t:l:n:g:p:',
             [
                 'dispatcher=',
                 'eventhandler=',
                 'cpu=',
                 'io=',
+                'testmanager=',
                 'logserver=',
                 'nameservice=',
-                'loglevel='
+                'loglevel=',
+                'poolsize='
             ])
     except getopt.GetoptError:
         usage()
@@ -115,23 +126,32 @@ def main(argv):
             configuration[CPU_INTENSITY] = float(arg)
         if opt in ('-i', '--io'):
             configuration[IO_INTENSITY] = float(arg)
+        if opt in ('-t', '--testmanager'):
+            configuration[TEST_MANAGER_ADDRESS] = parse_address(arg)
         if opt in ('-l', '--logserver'):
-            configuration[LOG_SERVER_ADDRESS] = parse_address(arg)
+            configuration[LOG_SERVER_PORT] = int(arg)
         if opt in ('-n', '--nameservice'):
-            configuration[NAMESERVICE_ADDRESS] = parse_address(arg)
+            configuration[NAMESERVICE_PORT] = int(arg)
         if opt in ('-g', '--loglevel'):
             log_level = int(arg)
+        if opt in ('-p', '--poolsize'):
+            configuration[POOL_SIZE] = int(arg)
 
     Log.config(level=log_level)
     logger.debug('Read configuration: \n{}',
             get_configuration_string(configuration))
 
     if verify_parameters(configuration):
-        writer = UDPWriter(configuration[LOG_SERVER_ADDRESS])
+        writer = UDPWriter((
+            configuration[TEST_MANAGER_ADDRESS],
+            configuration[LOG_SERVER_PORT]))
         Log.config(default_writer=writer)
 
         gw = PassiveGateway(
-                configuration[NAMESERVICE_ADDRESS],
+                (
+                    configuration[TEST_MANAGER_ADDRESS],
+                    configuration[NAMESERVICE_PORT]
+                ),
                 configuration[CPU_INTENSITY],
                 configuration[IO_INTENSITY])
         gw.start_server()

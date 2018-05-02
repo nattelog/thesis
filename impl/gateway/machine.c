@@ -221,7 +221,7 @@ state_t* machine_boot_process(
     boot_process = state_machine_build(si, nsi, ei, nei, &lookup);
     lookup_clear(&lookup);
 
-    nameservice_address = (char*) config->nameservice_address;
+    nameservice_address = (char*) config->test_manager_address;
     nameservice_port = config->nameservice_port;
 
     r = net_tcp_context_init((net_tcp_context_t*) context, loop, nameservice_address, nameservice_port);
@@ -394,12 +394,8 @@ void __coop_dispatch_status(state_t* state, void* payload)
     int r;
     net_tcp_context_t* context = net_get_context(state, payload);
     protocol_value_t* request;
-    protocol_value_t* did_value;
 
-    r = protocol_build_string(&did_value, (char*) context->did);
-    log_check_r(r, "__coop_dispatch_status:protocol_build_string");
-
-    r = protocol_build_request(&request, "status", 1, did_value);
+    r = protocol_build_request(&request, "status", 0);
     log_check_r(r, "__coop_dispatch_status:protocol_build_request");
 
     context->write_payload = request;
@@ -413,12 +409,8 @@ void __coop_dispatch_next_event(state_t* state, void* payload)
     int r;
     net_tcp_context_t* context = net_get_context(state, payload);
     protocol_value_t* request;
-    protocol_value_t* did_value;
 
-    r = protocol_build_string(&did_value, (char*) context->did);
-    log_check_r(r, "__coop_dispatch_next_event:protocol_build_string");
-
-    r = protocol_build_request(&request, "next_event", 1, did_value);
+    r = protocol_build_request(&request, "next_event", 0);
     log_check_r(r, "__coop_dispatch_next_event:protocol_build_request");
 
     context->write_payload = request;

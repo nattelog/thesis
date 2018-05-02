@@ -1,5 +1,27 @@
 import sqlite3
 import uuid
+import math
+
+class StdevFunc:
+    def __init__(self):
+        self.M = 0.0
+        self.S = 0.0
+        self.k = 1
+
+    def step(self, value):
+        if value is None:
+            return
+
+        tM = self.M
+        self.M += (value - tM) / self.k
+        self.S += (value - tM) * (value - self.M)
+        self.k += 1
+
+    def finalize(self):
+        if self.k < 3:
+            return -1
+
+        return math.sqrt(self.S / (self.k - 2))
 
 class Database:
     """ Abstract class that exposes database methods used by its concrete
@@ -13,6 +35,7 @@ class Database:
         if Database._db is None:
             Database._db = sqlite3.connect(Database.PATH)
 
+        Database._db.create_aggregate('stdev', 1, StdevFunc)
         self._execute_schema()
         self.row_factory = sqlite3.Row
 
@@ -165,6 +188,18 @@ class EventLifecycle(Database):
             );
             """
 
+    def _get_stat(self, aggr_func, from_time, to_time, sid):
+        val = self._execute(
+            """
+            select {}({} - {}) from eventlifecycle
+            where done_time not null and sid=?
+            """.format(aggr_func, to_time, from_time),
+            (sid, ),
+            True
+        )[0]
+
+        return round(val) if val is not None else 0
+
     def get_events(self, sid):
         return self._execute(
             """
@@ -269,14 +304,40 @@ class EventLifecycle(Database):
         )[0]
 
     def avg_d0(self, sid):
-        return self._execute(
-            """
-            select avg(done_time - created_time) from eventlifecycle
-            where done_time not null and sid=?
-            """,
-            (sid, ),
-            True
-        )[0]
+        return self._get_stat('avg', 'created_time', 'done_time', sid);
+
+    def avg_d1(self, sid):
+        return self._get_stat('avg', 'created_time', 'fetched_time', sid);
+
+    def avg_d2(self, sid):
+        return self._get_stat('avg', 'retrieved_time', 'done_time', sid);
+
+    def stdev_d0(self, sid):
+        return self._get_stat('stdev', 'created_time', 'done_time', sid);
+
+    def stdev_d1(self, sid):
+        return self._get_stat('stdev', 'created_time', 'fetched_time', sid);
+
+    def stdev_d2(self, sid):
+        return self._get_stat('stdev', 'retrieved_time', 'done_time', sid);
+
+    def min_d0(self, sid):
+        return self._get_stat('min', 'created_time', 'done_time', sid);
+
+    def min_d1(self, sid):
+        return self._get_stat('min', 'created_time', 'fetched_time', sid);
+
+    def min_d2(self, sid):
+        return self._get_stat('min', 'retrieved_time', 'done_time', sid);
+
+    def max_d0(self, sid):
+        return self._get_stat('max', 'created_time', 'done_time', sid);
+
+    def max_d1(self, sid):
+        return self._get_stat('max', 'created_time', 'fetched_time', sid);
+
+    def max_d2(self, sid):
+        return self._get_stat('max', 'retrieved_time', 'done_time', sid);
 
 class Configuration(Database):
     """ Contains configuration keys and values for a test.
@@ -316,4 +377,109 @@ class Configuration(Database):
             values (?, ?, ?)
             """,
             (sid, key, value)
+        )
+
+class TestReport(Database):
+    def _schema(self):
+        return \
+        """
+        create table if not exists testreport(
+        name text,
+        sid text,
+        primary key (name, sid),
+        foreign key (sid) references scenario(sid)
+        );
+        """
+
+    def register_scenario(self, report_name, sid):
+        self._execute(
+            """
+            insert into testreport (name, sid)
+            values (?, ?)
+            """,
+            (report_name, sid)
+        )
+
+    def get_reports(self):
+        return self._execute(
+            """
+            select tr.name, max(s.end) from testreport as tr
+            left join scenario as s
+            on tr.sid = s.sid
+            group by tr.name
+            order by s.end desc;
+            """
+        )
+
+    def get_report(self, name):
+        return self._execute(
+            """
+            select
+                tr.sid as scenario,
+                c1.value as test_duration,
+                c2.value as pool_size,
+                c3.value as dispatcher,
+                c4.value as event_handler,
+                c5.value as device_quantity,
+                c6.value as device_frequency,
+                c7.value as device_delay,
+                c8.value as cpu_intensity,
+                c9.value as io_intensity,
+                count(e.created_time),
+                count(e.fetched_time),
+                count(e.retrieved_time),
+                count(e.dispatched_time),
+                count(e.done_time),
+                round(avg(e.done_time - e.created_time)) as avg_d0,
+                round(stdev(e.done_time - e.created_time)) as stdev_d0,
+                min(e.done_time - e.created_time) as min_d0,
+                max(e.done_time - e.created_time) as max_d0,
+                round(avg(e.fetched_time - e.created_time)) as avg_d1,
+                round(stdev(e.fetched_time - e.created_time)) as stdev_d1,
+                min(e.fetched_time - e.created_time) as min_d1,
+                max(e.fetched_time - e.created_time) as max_d1,
+                round(avg(e.done_time - e.retrieved_time)) as avg_d2,
+                round(stdev(e.done_time - e.retrieved_time)) as stdev_d2,
+                min(e.done_time - e.retrieved_time) as min_d2,
+                max(e.done_time - e.retrieved_time) as max_d2,
+                round((count(e.done_time) * 1000.0) / c1.value, 3) as throughput,
+                round((count(e.done_time) * 1.0) / count(e.created_time), 3) as done_ratio
+            from testreport as tr
+            left join scenario as s
+            on tr.sid = s.sid
+            left join eventlifecycle as e
+            on tr.sid = e.sid
+            left join configuration as c1
+            on tr.sid = c1.sid
+            left join configuration as c2
+            on tr.sid = c2.sid
+            left join configuration as c3
+            on tr.sid = c3.sid
+            left join configuration as c4
+            on tr.sid = c4.sid
+            left join configuration as c5
+            on tr.sid = c5.sid
+            left join configuration as c6
+            on tr.sid = c6.sid
+            left join configuration as c7
+            on tr.sid = c7.sid
+            left join configuration as c8
+            on tr.sid = c8.sid
+            left join configuration as c9
+            on tr.sid = c9.sid
+            where
+                c1.key = 'TEST_DURATION' and
+                c2.key = 'POOL_SIZE' and
+                c3.key = 'DISPATCHER' and
+                c4.key = 'EVENT_HANDLER' and
+                c5.key = 'DEVICE_QUANTITY' and
+                c6.key = 'DEVICE_FREQUENCY' and
+                c7.key = 'DEVICE_DELAY' and
+                c8.key = 'CPU_INTENSITY' and
+                c9.key = 'IO_INTENSITY' and
+                tr.name=?
+            group by s.sid
+            order by s.end asc
+            """,
+            (name,)
         )
