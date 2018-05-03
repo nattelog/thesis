@@ -234,6 +234,10 @@ class Report:
             stat_str = stat_str.replace('.', ',')
             print(stat_str)
 
+    def delete_report(self, name):
+        self.test_report.delete_report(name)
+        self.print_reports()
+
 def parse_input(argv):
     method = argv.pop(0)
     args = argv if len(argv) > 0 else []
@@ -253,6 +257,13 @@ def usage():
             The path and name to the database. Defaults to \"db\".
 
     METHODS
+        print_reports
+            Print all reports found in the database.
+
+        print_report_csv <name>
+            Print all scenarios from the report with all relevant data in a csv
+            format.
+
         print_scenarios
             Print all scenarios and their configurations in the database
             ordered by date.

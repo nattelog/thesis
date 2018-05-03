@@ -483,3 +483,27 @@ class TestReport(Database):
             """,
             (name,)
         )
+
+    def delete_report(self, name):
+        self._execute(
+            """
+            delete from eventlifecycle where sid in (
+                select sid from testreport where name=?
+            );
+            """,
+            (name,)
+        )
+        self._execute(
+            """
+            delete from scenario where sid in (
+                select sid from testreport where name=?
+            );
+            """,
+            (name,)
+        )
+        self._execute(
+            """
+            delete from testreport where name=?
+            """,
+            (name,)
+        )
