@@ -66,5 +66,5 @@ int fs_append(fs_context_t* context, char* edge_name)
     context->next_edge = edge_name;
     req->data = context;
 
-    return uv_fs_open(loop, req, path, UV_FS_O_WRONLY | UV_FS_O_APPEND | UV_FS_O_CREAT, 0644, __fs_on_open);
+    return uv_fs_open(loop, req, path, UV_FS_O_WRONLY | UV_FS_O_CREAT, 0644, __fs_on_open);
 }
