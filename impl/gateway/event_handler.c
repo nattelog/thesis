@@ -81,19 +81,29 @@ int event_handler_fill_io_buffer(double intensity, char** buf)
     return 0;
 }
 
+void event_handler_make_io_path(char* buf)
+{
+    static int count = 0;
+
+    sprintf(buf, "EVENT_HANDLER_IO_FILE_%d", count++);
+}
+
 void __do_io_sync(double intensity)
 {
     log_verbose("__do_io_sync:intensity=%f", intensity);
 
     FILE* fd;
     char* buf;
+    char path[64];
+
+    event_handler_make_io_path((char*) &path);
 
     if (intensity > 0) {
         event_handler_fill_io_buffer(intensity, &buf);
-        fd = fopen(EVENT_HANDLER_IO_FILE, "a");
+        fd = fopen(path, "a");
         fprintf(fd, "%s", buf);
         fclose(fd);
-        unlink(EVENT_HANDLER_IO_FILE);
+        unlink(path);
         free(buf);
     }
 }

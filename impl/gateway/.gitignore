@@ -5,4 +5,4 @@ gateway
 test
 json
 thpool
-EVENT_HANDLER_IO_FILE
+EVENT_HANDLER_IO_FILE*

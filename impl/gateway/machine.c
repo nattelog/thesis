@@ -485,10 +485,10 @@ void __coop_dispatch_process(state_t* state, void* payload)
         log_event_dispatched((char*) context->event);
         event_handler_do_cpu(config->cpu); // the cpu will block here
 
-	if (io > 0) {
+	if (io > 0.0) {
             context->fs.state = state;
             context->fs.loop = context->tcp.loop;
-            strcpy(context->fs.path, EVENT_HANDLER_IO_FILE);
+            event_handler_make_io_path(context->fs.path);
             event_handler_fill_io_buffer(config->io, (char**) &context->fs.content);
             context->fs.data = context; // point back up again
 
@@ -540,7 +540,7 @@ void __coop_dispatch_handle_io(state_t* state, void* payload)
     machine_coop_context_t* coop_context = fs_context->data;
 
     free(fs_context->content);
-    unlink(EVENT_HANDLER_IO_FILE);
+    unlink(fs_context->path);
     log_event_done((char*) coop_context->event);
     state_run_next(state, "done", coop_context);
 }
