@@ -130,6 +130,9 @@ class Report:
             self.print_scenario(sid)
             print('')
 
+    def delete_scenario(self, sid):
+        self.scenario_table.delete_scenario(sid)
+
     def print_events(self, sid=None):
         tpad = 12
 

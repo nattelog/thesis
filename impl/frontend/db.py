@@ -129,6 +129,11 @@ class Scenario(Database):
 
         return sid
 
+    def delete_scenario(self, sid):
+        self._execute('delete from eventlifecycle where sid=?', (sid, ))
+        self._execute('delete from scenario where sid=?', (sid, ))
+        self._execute('delete from testreport where sid=?', (sid, ))
+
     def set_offset_time(self, sid, time):
         self._execute(
             """
