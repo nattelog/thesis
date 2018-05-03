@@ -224,6 +224,9 @@ class NameService(threading.Thread):
         return self.server.hostname()
 
     def stop_devices(self):
+        for device in self.devices:
+            device.stop()
+
         self.producer.stop()
 
     def start_devices(self):
