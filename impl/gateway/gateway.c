@@ -69,7 +69,7 @@ protocol_value_t* on_request(protocol_value_t* request)
     if (protocol_has_key(request, "method") && protocol_has_key(request, "args")) {
         protocol_value_t* method;
         protocol_value_t* result;
-        char method_str[NET_MAX_SIZE] = { 0 };
+        char method_str[NET_CHUNK_SIZE] = { 0 };
 
         r = protocol_get_key(request, &method, "method");
         log_check_r(r, "protocol_get_key");

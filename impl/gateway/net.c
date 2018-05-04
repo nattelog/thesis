@@ -7,25 +7,31 @@
 #include "log.h"
 #include "err.h"
 
+void __run_context_callback(net_context_t* context)
+{
+    (*context->callback)(context);
+}
+
 /**
  * Initializes the context. Allocates memory for the address struct. Returns an
  * uv error code if something goes wrong.
  */
-int net_tcp_context_init(
-        net_tcp_context_t* context,
+int net_context_init(
+        net_context_t* context,
         uv_loop_t* loop,
         char* address,
         int port)
 {
     log_verbose(
-            "net_tcp_context_init:context=%p, loop=%p, address=\"%s\", port=%d",
+            "net_context_init:context=%p, loop=%p, address=\"%s\", port=%d",
             context,
             loop,
             address,
             port);
 
     int r;
-    struct sockaddr* addr = calloc(1, sizeof(struct sockaddr));
+    struct sockaddr_storage* addr = calloc(1, sizeof(struct sockaddr_storage));
+    uv_tcp_t* handle = malloc(sizeof(uv_tcp_t));
 
     r = uv_ip4_addr(address, port, (struct sockaddr_in*) addr);
 
@@ -33,9 +39,11 @@ int net_tcp_context_init(
         return r;
     }
 
+    context->buf_len = 0;
+    context->buf = NULL;
     context->addr = addr;
     context->loop = loop;
-    context->buf = malloc(NET_MAX_SIZE);
+    context->handle = handle;
 
     return 0;
 }
@@ -62,7 +70,7 @@ int net_tcp_context_sync_init(
         return r;
     }
 
-    context->buf = calloc(1, NET_MAX_SIZE);
+    context->buf = calloc(1, NET_CHUNK_SIZE);
     context->addr = addr;
     context->config = config;
     context->is_processed = 1;
@@ -88,38 +96,23 @@ void __net_on_connection(uv_connect_t* req, int status)
     log_verbose("__net_on_connection:req=%p, status=%d", req, status);
     log_check_uv_r(status, "__net_on_connection");
 
-    net_tcp_context_t* context = (net_tcp_context_t*) req->data;
-    char* edge_name = context->data;
+    net_context_t* context = (net_context_t*) req->data;
 
     free(req);
-    state_run_next(context->state, edge_name, context);
+    __run_context_callback(context);
 }
 
-/**
- * Connects to a tcp host with address found in context->addr. Runs the state
- * associated with edge_name when done.
- */
-int net_connect(net_tcp_context_t* context, char* edge_name)
+int net_connect(net_context_t* context, net_callback done)
 {
-    log_verbose("net_connect:context=%p, edge_name=\"%s\"", context, edge_name);
+    log_verbose("net_connect::context=%p, done=%p", context, done);
 
     int r;
-    uv_tcp_t* handle = calloc(1, sizeof(uv_tcp_t));
-    uv_loop_t* loop = context->loop;
-    uv_connect_t* connect_req = calloc(1, sizeof(uv_connect_t));
+    uv_connect_t* req = malloc(sizeof(uv_connect_t));
 
-    r = uv_tcp_init(loop, handle);
+    context->callback = done;
+    req->data = context;
 
-    if (r) {
-        return r;
-    }
-
-    context->handle = handle;
-    connect_req->data = context;
-    handle->data = context;
-    context->data = edge_name;
-
-    return uv_tcp_connect(connect_req, handle, context->addr, __net_on_connection);
+    return uv_tcp_connect(req, context->handle, context->addr, __net_on_connection);
 }
 
 /**
@@ -241,8 +234,8 @@ void __net_on_alloc(uv_handle_t* handle, size_t size, uv_buf_t* buf)
 {
     log_verbose("__net_on_alloc:handle=%p, size=%d, buf=%p", handle, size, buf);
 
-    buf->base = calloc(1, NET_MAX_SIZE);
-    buf->len = NET_MAX_SIZE;
+    buf->base = malloc(NET_CHUNK_SIZE);
+    buf->len = NET_CHUNK_SIZE;
 
     if (buf->base == NULL) {
         log_error("reading buffer was not allocated properly");
@@ -258,74 +251,59 @@ void __net_on_read(uv_stream_t* handle, ssize_t nread, const uv_buf_t* buf)
     log_verbose("__net_on_read:handle=%p, nread=%d, buf=%p", handle, nread, buf);
 
     int r;
-    net_tcp_context_t* context = (net_tcp_context_t*) handle->data;
-    state_t* state = context->state;
-    char* read_chunk_edge = context->read_chunk_edge;
-    char* read_eof_edge = context->read_eof_edge;
+    net_context_t* context = (net_context_t*) handle->data;
 
     if (nread < 0) {
         if (nread != UV_EOF) {
             log_check_uv_r(nread, "tcp_on_reading");
         }
 
-        if (read_eof_edge != NULL) {
-            state_run_next(state, read_eof_edge, context);
-            free(read_eof_edge);
+        protocol_value_t* payload;
+
+        r = protocol_parse(&payload, context->buf, context->buf_len);
+
+        if (r) {
+            log_error("could not parse read data (%d)", r);
+            exit(1);
         }
+
+        context->read_payload = payload;
+
+        context->buf_len = 0;
+        free(buf->base);
+        free(context->buf);
+        __run_context_callback(context);
     }
     else if (nread > 0) {
         log_debug("__net_on_read:>>>> \"%s\" (%d)", buf->base, nread);
 
-        protocol_value_t* read_payload;
-
-        r = protocol_parse(&read_payload, buf->base, nread);
-
-        if (r) {
-            log_error("could not parse read data (%d)", r);
-            context->read_payload = NULL;
+        if (context->buf_len == 0) {
+            context->buf_len = nread;
+            context->buf = buf->base;
         }
         else {
-            context->read_payload = read_payload;
+            ssize_t new_buf_len = context->buf_len + nread;
+            char* new_buf = malloc(new_buf_len);
+
+            memcpy(new_buf, context->buf, context->buf_len);
+            memcpy(new_buf[context->buf_len], buf->base, nread);
+            free(context->buf);
+            free(buf->base);
+            context->buf = new_buf;
         }
-
-        state_run_next(state, read_chunk_edge, context);
-        free(read_chunk_edge);
     }
-    else if (nread == 0) {
-        return;
-    }
-
-    free(buf->base);
 }
 
 /*
  * Start read from context->handle. Goes to state associated with chunk_edge on
  * each chunk. Goes to state associated with eof_edge when eof has been read.
  */
-int net_read(net_tcp_context_t* context, char* chunk_edge, char* eof_edge)
+int net_read(net_context_t* context, net_callback done)
 {
-    log_verbose("net_read: context=%p, chunk_edge=\"%s\", eof_edge=\"%s\"", context, chunk_edge, eof_edge);
+    log_verbose("net_read: context=%p, done=%p", context, done);
 
-    char* read_chunk_edge = malloc(strlen(chunk_edge) + 1);
-    char* read_eof_edge;
-
-    if (eof_edge == NULL) {
-        read_eof_edge = NULL;
-    }
-    else {
-        read_eof_edge = malloc(strlen(read_eof_edge) + 1);
-    }
-
-    strcpy(read_chunk_edge, chunk_edge);
-    strcat(read_chunk_edge, "\0");
-
-    if (eof_edge != NULL) {
-        strcpy(read_eof_edge, eof_edge);
-        strcat(read_eof_edge, "\0");
-    }
-
-    context->read_chunk_edge = read_chunk_edge;
-    context->read_eof_edge = read_eof_edge;
+    context->callback = done;
+    context->handle->data = context;
 
     return uv_read_start((uv_stream_t*) context->handle, __net_on_alloc, __net_on_read);
 }
@@ -344,12 +322,12 @@ int net_read_sync(net_tcp_context_sync_t* context)
     int r;
     protocol_value_t* read_payload;
 
-    memset(buf, 0, NET_MAX_SIZE);
+    memset(buf, 0, NET_CHUNK_SIZE);
 
-    while (nread < NET_MAX_SIZE) {
+    while (nread < NET_CHUNK_SIZE) {
         int n;
 
-        n = read(sock, buf + nread, NET_MAX_SIZE - nread);
+        n = read(sock, buf + nread, NET_CHUNK_SIZE - nread);
 
         if (n == 0) {
             break;
@@ -400,12 +378,12 @@ int net_write(net_tcp_context_t* context, char* edge_name)
 
     uv_write_t* write_req = malloc(sizeof(uv_write_t));
 
-    if (protocol_size(write_payload) > NET_MAX_SIZE) {
+    if (protocol_size(write_payload) > NET_CHUNK_SIZE) {
         log_error("net_write:protocol is too large!");
         exit(1);
     }
 
-    memset(buf, 0, NET_MAX_SIZE);
+    memset(buf, 0, NET_CHUNK_SIZE);
     protocol_to_json(write_payload, buf);
     strcat(buf, "\n\0");
 
@@ -437,12 +415,12 @@ int net_write_sync(net_tcp_context_sync_t* context)
     char* buf = context->buf;
     int buf_len;
 
-    if (protocol_size(write_payload) > NET_MAX_SIZE) {
+    if (protocol_size(write_payload) > NET_CHUNK_SIZE) {
         log_error("net_write_sync:protocol is too large!");
         exit(1);
     }
 
-    memset(buf, 0, NET_MAX_SIZE);
+    memset(buf, 0, NET_CHUNK_SIZE);
     protocol_to_json(write_payload, buf);
     strcat(buf, "\n\0");
     buf_len = strlen(buf);

@@ -34,7 +34,7 @@ void __tcp_request_reading(state_t* state, void* payload)
     log_verbose("__tcp_request_reading:state=%p, payload=%p", state, payload);
 
     net_tcp_context_t* context = net_get_context(state, payload);
-    net_read(context, "done", NULL);
+    // net_read(context, "done", NULL);
 }
 
 void __tcp_request_closing(state_t* state, void* payload)
@@ -267,12 +267,12 @@ void __server_connecting(state_t* state, void* payload)
 
     ((net_tcp_context_t*) client_context)->handle = client_handle;
     ((net_tcp_context_t*) client_context)->state = state;
-    ((net_tcp_context_t*) client_context)->buf_len = NET_MAX_SIZE;
-    ((net_tcp_context_t*) client_context)->buf = calloc(1, NET_MAX_SIZE);
+    ((net_tcp_context_t*) client_context)->buf_len = NET_CHUNK_SIZE;
+    ((net_tcp_context_t*) client_context)->buf = calloc(1, NET_CHUNK_SIZE);
 
     client_context->on_request = server_context->on_request;
     client_handle->data = client_context;
-    r = net_read((net_tcp_context_t*) client_context, "process", "disconnect");
+    //r = net_read((net_tcp_context_t*) client_context, "process", "disconnect");
     log_check_uv_r(r, "net_read");
 }
 
