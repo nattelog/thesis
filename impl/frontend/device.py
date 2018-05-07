@@ -33,7 +33,7 @@ class Device:
 
     def __init__(self):
         self.id = str(uuid.uuid4())
-        self.event_queue = Queue.Queue(10);
+        self.event_queue = Queue.Queue(100);
 
     def status(self):
         """ 0 if no event is ready to be read, 1 otherwise.
@@ -107,6 +107,11 @@ class Producer(threading.Thread):
 
         if self.frequency <= 0:
             return
+
+        for device in self.devices:
+            event = Event()
+            device.put_event(event)
+            Producer.logger.debug('{}: Put event \'{}\'', id(self), event)
 
         while not self.stop_event.wait(1 / self.frequency):
             for device in self.devices:
