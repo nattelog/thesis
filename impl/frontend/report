@@ -246,6 +246,10 @@ class Report:
         result = {}
         result[x_axis] = []
 
+        if len(stats) == 0:
+            print('Report "{}" not found'.format(name))
+            return
+
         for stat in stats:
             k0 = stat[k0_index]
             k1 = stat[k1_index]
