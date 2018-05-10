@@ -28,6 +28,35 @@ class Report:
     """
 
     TPAD = 20
+    HEADER = ['scenario',
+            'duration',
+            'pool size',
+            'k0',
+            'k1',
+            'quantity',
+            'frequency',
+            'delay',
+            'l0',
+            'l1',
+            'created',
+            'fetched',
+            'retrieved',
+            'dispatched',
+            'done',
+            'avg d0',
+            'stdev d0',
+            'min d0',
+            'max d0',
+            'avg d1',
+            'stdev d1',
+            'min d1',
+            'max d1',
+            'avg d2',
+            'stdev d2',
+            'min d2',
+            'max d2',
+            'throughput',
+            'done ratio']
 
     def __init__(self):
         self.lifecycle_table = EventLifecycle()
@@ -200,42 +229,54 @@ class Report:
 
     def print_report_csv(self, name):
         stats = self.test_report.get_report(name)
-        header = ['scenario',
-                'duration',
-                'pool size',
-                'k0',
-                'k1',
-                'quantity',
-                'frequency',
-                'delay',
-                'l0',
-                'l1',
-                'created',
-                'fetched',
-                'retrieved',
-                'dispatched',
-                'done',
-                'avg d0',
-                'stdev d0',
-                'min d0',
-                'max d0',
-                'avg d1',
-                'stdev d1',
-                'min d1',
-                'max d1',
-                'avg d2',
-                'stdev d2',
-                'min d2',
-                'max d2',
-                'throughput',
-                'done ratio']
 
-        print(('{};' * len(header)).format(*header)[:-1])
+        print(('{};' * len(Report.HEADER)).format(*Report.HEADER)[:-1])
 
         for stat in stats:
             stat_str = ('{};' * len(stat)).format(*stat)[:-1]
             stat_str = stat_str.replace('.', ',')
             print(stat_str)
+
+    def print_report_by_axis(self, name, x_axis, y_axis):
+        stats = self.test_report.get_report(name)
+        k0_index = Report.HEADER.index('k0')
+        k1_index = Report.HEADER.index('k1')
+        x_axis_index = Report.HEADER.index(x_axis)
+        y_axis_index = Report.HEADER.index(y_axis)
+        result = {}
+        result[x_axis] = []
+
+        for stat in stats:
+            k0 = stat[k0_index]
+            k1 = stat[k1_index]
+            k_col_name = '{}/{}'.format(k0, k1)
+            x_value = stat[x_axis_index]
+            y_value = stat[y_axis_index]
+
+            if k_col_name not in result:
+                result[k_col_name] = []
+
+            if x_value not in result[x_axis]:
+                result[x_axis].append(x_value)
+
+            result[k_col_name].append(y_value)
+
+        x_axis_len = len(result[x_axis])
+
+        for column in result:
+            if len(result[column]) != x_axis_len:
+               raise AttributeError('len({}) != len({})'.format(x_axis, column))
+
+        columns = result.keys()
+        columns.remove(x_axis)
+        columns.sort()
+        columns.insert(0, x_axis)
+
+        print(('{};' * len(columns)).format(*columns)[:-1])
+
+        for i in range(x_axis_len):
+            row = [result[column][i] for column in columns]
+            print(('{};' * len(row)).format(*row)[:-1])
 
     def delete_report(self, name):
         self.test_report.delete_report(name)
@@ -266,6 +307,10 @@ def usage():
         print_report_csv <name>
             Print all scenarios from the report with all relevant data in a csv
             format.
+
+        print_report_by_axis <name> <x_axis> <y_axis>
+            Print csv report with x axis and all combinations of
+            dispatcher/event handler as columns.
 
         print_scenarios
             Print all scenarios and their configurations in the database
