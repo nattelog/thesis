@@ -1,58 +1,367 @@
-%%% lorem.tex --- 
-%% 
-%% Filename: lorem.tex
-%% Description: 
-%% Author: Ola Leifler
-%% Maintainer: 
-%% Created: Wed Nov 10 09:59:23 2010 (CET)
-%% Version: $Id$
-%% Version: 
-%% Last-Updated: Wed Nov 10 09:59:47 2010 (CET)
-%%           By: Ola Leifler
-%%     Update #: 2
-%% URL: 
-%% Keywords: 
-%% Compatibility: 
-%% 
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%% 
-%%% Commentary: 
-%% 
-%% 
-%% 
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%% 
-%%% Change log:
-%% 
-%% 
-%% RCS $Log$
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%% 
-%%% Code:
-
 \chapter{Results}
 \label{cha:results}
 
-This chapter presents the results. Note that the results are presented
-factually, striving for objectivity as far as possible.  The results
-shall not be analyzed, discussed or evaluated.  This is left for the
-discussion chapter.
+The results of the performance tests conducted are presented here. The chapter
+starts with a table describing each test case and what variable was adjusted in
+it, followed by all figures describing the results of the tests. The sections
+describe each test case and explains the outcome.
 
-In case the method chapter has been divided into subheadings such as
-pre-study, implementation and evaluation, the result chapter should
-have the same sub-headings. This gives a clear structure and makes the
-chapter easier to write.
+\bgroup
+\def\arraystretch{1.2}
+\begin{ctable}
+    {Overview of the performance test cases and their configurations. The
+    columns with arrows ($\rightarrow$) are the variables being adjusted in that
+    specific test case.}
+    {|r|l|r|r|r|r|r|}
+    \hline
+    \# & Related figures & Cores & Quantity $q$ & Delay $\delta$ [s] & CPU int. $\lambda_0$ & I/O int. $\lambda_1$ \\
+    \hline
+    1 & \ref{fig:quad_quantity_throughput}, \ref{fig:quad_quantity_avg_d0},
+    \ref{fig:quad_quantity_avg_d2} & 4 & $1 \rightarrow 50$ & 0 & 0.1 & $2
+    \times 10^{-4}$ \\
+    \hline
+    2 & \ref{fig:quad_delay_throughput}, \ref{fig:quad_delay_avg_d0} & 4 & 25 &
+    $0.01 \rightarrow 0.1$ & 0.1 & $2 \times 10^{-4}$ \\
+    \hline
+    3 & \ref{fig:cpu_throughput}, \ref{fig:cpu_avg_d0}, \ref{fig:cpu_avg_d1},
+    \ref{fig:cpu_avg_d2} & 4 & 25 & 0 & $0.1 \rightarrow 0.5$ & $10^{-4}$ \\
+    \hline
+    4 & \ref{fig:cpu_throughput}, \ref{fig:cpu_avg_d0}, \ref{fig:cpu_avg_d1},
+    \ref{fig:cpu_avg_d2} & 1 & 25 & 0 & $0.1 \rightarrow 0.5$ & $10^{-4}$ \\
+    \hline
+    5 & \ref{fig:io_throughput}, \ref{fig:io_avg_d0},
+    \ref{fig:quad_io_done_ratio} & 4 & 25 & 0 & 0.05 & $10^{-4} \rightarrow 10^{-3}$ \\
+    \hline
+    6 & \ref{fig:io_throughput}, \ref{fig:io_avg_d0} & 1 & 25 & 0 & 0.05 & $10^{-4} \rightarrow 10^{-3}$ \\
+    \hline
+\end{ctable}\label{tab:test-overview}
 
-In case results are presented from a process (e.g. an implementation
-process), the main decisions made during the process must be clearly
-presented and justified. Normally, alternative attempts, etc, have
-already been described in the theory chapter, making it possible to
-refer to it as part of the justification.
+\begin{figure}[h!]
+    \centering
+    \performanceplot
+    {data/quad_quantity_throughput.csv}
+    {
+        xlabel=Device quantity $q$,
+        ylabel={Throughput [events/s]},
+        legend pos=outer north east
+    }
+    \caption{Throughput result of the four event propagation models on a quad
+    core CPU as device quantity was increased.}
+    \label{fig:quad_quantity_throughput}
+\end{figure}
 
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%%% lorem.tex ends here
+\begin{figure}[h!]
+    \centering
+    \performanceplot
+    {data/quad_quantity_avg_d0.csv}
+    {
+        xlabel=Device quantity $q$,
+        ylabel={Response time [ms]},
+        legend pos=outer north east
+    }
+    \caption{The average response time of the four event propagation models on
+    a quad core CPU as device quantity was increased.}
+    \label{fig:quad_quantity_avg_d0}
+\end{figure}
 
-%%% Local Variables: 
-%%% mode: latex
-%%% TeX-master: "demothesis"
-%%% End: 
+\begin{figure}[h!]
+    \centering
+    \performanceplot
+    {data/quad_quantity_avg_d2.csv}
+    {
+        xlabel=Device quantity $q$,
+        ylabel={Time on gateway [ms]},
+        legend pos=outer north east
+    }
+    \caption{The average time each event spent on the gateway on a quad core
+    CPU as device quantity was increased.}
+    \label{fig:quad_quantity_avg_d2}
+\end{figure}
+
+\begin{figure}[h!]
+    \centering
+    \performanceplot
+    {data/quad_delay_throughput.csv}
+    {
+        xlabel={Network delay $\delta$ [s]},
+        ylabel={Throughput [events/s]},
+        legend pos=outer north east
+    }
+    \caption{Throughput result of the four event propagation models on a quad
+    core CPU as network delay was increased.}
+    \label{fig:quad_delay_throughput}
+\end{figure}
+
+\begin{figure}[h!]
+    \centering
+    \performanceplot
+    {data/quad_delay_avg_d0.csv}
+    {
+        xlabel={Network delay $\delta$ [s]},
+        ylabel={Response time [ms]},
+        legend pos=outer north east
+    }
+    \caption{The average response time of the four event propagation models on
+    a quad core CPU as network delay was increased.}
+    \label{fig:quad_delay_avg_d0}
+\end{figure}
+
+\begin{figure}[h!]
+    \centering
+    \begin{tikzpicture}
+        \begin{groupplot}[
+                group style = {group size = 2 by 1},
+                width = 0.45*\textwidth,
+                xlabel = CPU intensity $\lambda_0$,
+                ymax = 125,
+                legend pos = outer north east
+            ]
+            \nextperformanceplot{data/quad_cpu_throughput.csv}{
+                title = Quad core CPU,
+                ylabel = {Throughput [events/s]}
+            }
+            \nextperformanceplotwithlegend{data/single_cpu_throughput.csv}{
+                title = Single core CPU
+            }
+        \end{groupplot}
+    \end{tikzpicture}
+    \caption{Throughput result of the four event propagation models as CPU
+    intensity was increased.}
+    \label{fig:cpu_throughput}
+\end{figure}
+
+\begin{figure}[h!]
+    \centering
+    \begin{tikzpicture}
+        \begin{groupplot}[
+                group style = {group size = 2 by 1},
+                width = 0.45*\textwidth,
+                xlabel = CPU intensity $\lambda_0$,
+                legend pos = outer north east
+            ]
+            \nextperformanceplot{data/quad_cpu_avg_d0.csv}{
+                title = Quad core CPU,
+                ylabel = {Response time [ms]}
+            }
+            \nextperformanceplotwithlegend{data/single_cpu_avg_d0.csv}{
+                title = Single core CPU
+            }
+        \end{groupplot}
+    \end{tikzpicture}
+    \caption{The average response time of each event expressed in milliseconds
+    as CPU intensity increased.}
+    \label{fig:cpu_avg_d0}
+\end{figure}
+
+\begin{figure}[h!]
+    \centering
+    \begin{tikzpicture}
+        \begin{groupplot}[
+                group style = {group size = 2 by 1},
+                width = 0.45*\textwidth,
+                xlabel = CPU intensity $\lambda_0$,
+                legend pos = outer north east
+            ]
+            \nextperformanceplot{data/quad_cpu_avg_d1.csv}{
+                title = Quad core CPU,
+                ylabel = {Time on device [ms]}
+            }
+            \nextperformanceplotwithlegend{data/single_cpu_avg_d1.csv}{
+                title = Single core CPU
+            }
+        \end{groupplot}
+    \end{tikzpicture}
+    \caption{The average time each event spends on the device as CPU intensity
+    increased.}
+    \label{fig:cpu_avg_d1}
+\end{figure}
+
+\begin{figure}[h!]
+    \centering
+    \begin{tikzpicture}
+        \begin{groupplot}[
+                group style = {group size = 2 by 1},
+                width = 0.45*\textwidth,
+                xlabel = CPU intensity $\lambda_0$,
+                legend pos = outer north east,
+                ymax = 15000
+            ]
+            \nextperformanceplot{data/quad_cpu_avg_d2.csv}{
+                title = Quad core CPU,
+                ylabel = {Time on gateway [ms]}
+            }
+            \nextperformanceplotwithlegend{data/single_cpu_avg_d2.csv}{
+                title = Single core CPU
+            }
+        \end{groupplot}
+    \end{tikzpicture}
+    \caption{The average time each event spends on the gateway as CPU
+    intensity increased.}
+    \label{fig:cpu_avg_d2}
+\end{figure}
+
+\begin{figure}[h!]
+    \centering
+    \begin{tikzpicture}
+        \begin{groupplot}[
+                group style = {group size = 2 by 1},
+                width = 0.45*\textwidth,
+                xlabel = I/O intensity $\lambda_1$,
+                ymax = 125,
+                legend pos = outer north east
+            ]
+            \nextperformanceplot{data/quad_io_throughput.csv}{
+                ylabel = {Throughtput [events/s]},
+                title = Quad core CPU
+            }
+            \nextperformanceplotwithlegend{data/single_io_throughput.csv}{
+                title = Single core CPU
+            }
+        \end{groupplot}
+    \end{tikzpicture}
+    \caption{Throughput result of the four event propagation models as I/O
+    intensity was increased.}
+    \label{fig:io_throughput}
+\end{figure}
+
+\begin{figure}[h!]
+    \centering
+    \performanceplot
+    {data/quad_io_done_ratio.csv}
+    {table/x=l1, xlabel=I/O intensity $\lambda_1$, ylabel=Done ratio, legend pos=outer north east}
+    \caption{The ratio of processed (done) events to created events as I/O
+    intensity increased on a quad core CPU. This diagram shows the direct
+    correlation low values has on response time, see
+    Figure \ref{fig:io_avg_d0}.}
+    \label{fig:quad_io_done_ratio}
+\end{figure}
+
+\begin{figure}[h!]
+    \centering
+    \begin{tikzpicture}
+        \begin{groupplot}[
+                group style = {group size = 2 by 1},
+                width = 0.45*\textwidth,
+                xlabel = I/O intensity $\lambda_1$,
+                legend pos = outer north east
+            ]
+            \nextperformanceplot{data/quad_io_avg_d0.csv}{
+                title = Quad core CPU,
+                ylabel = {Response time [ms]}
+            }
+            \nextperformanceplotwithlegend{data/single_io_avg_d0.csv}{
+                title = Single core CPU
+            }
+        \end{groupplot}
+    \end{tikzpicture}
+    \caption{The average response time of each event expressed in milliseconds
+    as I/O intensity increased.}
+    \label{fig:io_avg_d0}
+\end{figure}
+
+\clearpage
+
+\section{Test case 1: Increasing device quantity}
+
+This test was conducted by running the SUT for 30 seconds 11 times, and for
+each run increase the number of devices by $1, 5, 10, 15, ..., 50$. Figure
+\ref{fig:quad_quantity_throughput} shows clearly that the
+cooperative/preemptive gateway is by far faster than the rest for this given
+configuration of delay, CPU and I/O intensity (0, $0.1$ and $20^{-4}$
+respectively). Each test had the SUT under full load, which means the SUT could
+not deliver higher throughput for the given quantity. Due to the restriction
+that events from the same device must be handled serially, i.e. even though the
+dispatcher is able to pull more events from a device it cannot if a previous
+event from the device is still being processed, the throughput is generally
+lower for small quantity values. However the throughput stabilises when the
+quantity reaches a certain level.
+
+The response time scales slowest for the preemptive event handlers, see Figure
+\ref{fig:quad_quantity_avg_d0}. There is a correlation between the throughput
+and the response time: the two models with highest throughput also has the
+lowest response time. The design of the dispatcher is not affecting the
+response time; both cooperative dispatch models gives distinct different
+outcomes in response time, same for the serial. However, the
+cooperative/cooperative gateway has a linear dependency to the device quantity,
+see Figure \ref{fig:quad_quantity_avg_d2}, compared to the rest wich seem
+unaffected by it. The reason is due to two things: the cooperative dispatcher
+will fetch events fast as soon they are available on each device and the
+single-threaded cooperative event handler will not be able to keep up with the
+incoming events, thus they must wait on the gateway. Comparing this to the
+serial event handler; each event is being processed direcly as soon as it lands
+on the gateway because the serial dispatcher will not fetch any new before the
+previous is processed. Therefore the time each event spends on the gateway is
+independent on the number of devices.
+
+\todo{What about the preemptive event handlers regarding d2?}
+
+\section{Test case 2: Increasing network delay}
+
+This test was conducted by running the SUT for 30 seconds 10 times, and each
+time the network delay was increased by 10 milliseconds. Only the quad core CPU
+was tested and the rest of the configuration was set to $q = 25$, $\lambda_0 =
+0.1$ and $\lambda_1 = 2 \times 10^{-4}$. Figure \ref{fig:quad_delay_throughput}
+shows the throughput result of the tests and it clearly shows that the
+cooperative approaches performs much better as network delay is increased.
+There is a clear distinction between the cooperative and the serial dispatcher
+as the serial/preemptive gateway converge to the same throughput as the
+serial/serial gateway quite fast. The serial dispatcher is the main bottleneck,
+despite the event handler design. The cooperative dispatcher is able to
+concurrently send out TCP requests and it lets the network and the devices work
+while the event handler can take care of incoming events. Figure
+\ref{fig:quad_delay_avg_d0} shows how the response time depends on the
+dispatcher design, not the event handler.
+
+\section{Test case 3 and 4: Increasing CPU intensity}
+
+This test was conducted by running the SUT for 30 seconds 9 times, and each
+time the CPU intensity $\lambda_0$ was increased from 0.1 to 0.5 with steps of
+0.05. Both quad and single core CPUs were tested and the rest of the
+configuration was set to $q = 25$, $\delta = 0$ and $\lambda_1 = 10^{-4}$. The
+throughput result in Figure \ref{fig:cpu_throughput} shows how the preemptive
+event handler performs much better than the cooperative and the serial on the
+quad core CPU. Both preemptive event handler designs converges as CPU intensity
+grows, however it is possible to see the serial dispatcher bottleneck in the
+serial/preemptive design when CPU intensity is low. The combination between a
+cooperative dispatcher and a preemptive event handler really shines in this
+case. For the single core CPU test, it is clear that the operating system
+cannot optimize CPU work despite using preemptive event handlers.
+
+Figure \ref{fig:cpu_avg_d0} shows how the response time for the
+cooperative/cooperative and serial/serial design is independent on number of
+cores. The cooperative/cooperative response time scales worse than
+serial/serial however. This can be explained by how the cooperative dispatcher
+works. It will fetch events as soon as they are available on the devices,
+leaving them queued up on the gateway. And as the cooperative event handler
+only runs on a single thread, as CPU intensity grows, so will the queue of
+events on the gateway. They will therefore wait significantly longer than the
+serial event handler. Figures \ref{fig:cpu_avg_d1} and \ref{fig:cpu_avg_d2}
+shows where the events are waiting. For the serial/serial design they spend
+longer time on the device than they do on the gateway. For the
+cooperative/cooperative design its the opposite: they spend longer time on the
+gateway than they do on the device.
+
+\todo{More on the other approaches}
+
+\section{Test case 5 and 6: Increasing I/O intensity}
+
+This test was conducted by running the SUT for 30 seconds 10 times, and each
+time the I/O intensity $\lambda_1$ was increased from $10^{-4}$ to $10^{-3}$
+with steps of $10^{-4}$. Both quad and single core CPUs were tested and the
+rest of the configuration was set to $q = 25$, $\delta = 0$ and $\lambda_0 =
+0.05$. The preemptive and cooperative approaches perform much better than the
+serial/serial design and they all perform about the same, especially as I/O
+increases, despite the amount of cores, see Figure \ref{fig:io_throughput}.
+Because the amount of work performed on each event by the event handler is
+mainly I/O oriented, there is no significant difference between the
+cooperative/cooperative and the cooperative/preemptive design. This is also why
+the number of cores does not affect throughput significantly. The main work is
+not done by the CPU, but by the filesystem. This also proves why the response
+in Figure \ref{fig:io_avg_d0} is not that different between the number of
+cores. There are a number of spikes in the response time measurements that
+correlate with the done ratio in Figure \ref{quad_io_done_ratio}. Done ratio is
+the number of processed or done events divided by the number of created events.
+When the ratio decreases, there are events waiting to be processed either on
+the device or on the gateway. This increases response time and is the reason
+why the spikes correlate between the quad core CPU graph in Figure
+\ref{fig:io_avg_d0} and Figure \ref{quad_io_done_ratio}.

@@ -97,7 +97,11 @@
 %% Tikz lib
 
 \usepackage{tikz}
+\usepackage{pgfplots}
+\usepackage{pgfplotstable}
+\usepackage{tikzscale}
 \usetikzlibrary{shapes, arrows, calc, positioning}
+\usepgfplotslibrary{groupplots}
 
 \tikzstyle{block} = [rectangle,
     draw,
@@ -118,6 +122,45 @@
     fill=yellow!15,
     inner sep=0.3cm,
     cloud ignores aspect]
+
+\newcommand{\performanceplot}[2]
+{
+    \begin{tikzpicture}
+        \pgfplotstableread[col sep = semicolon]{#1}\csvdata
+        \begin{axis}[#2]
+            \addplot table[y=serial/serial]{\csvdata};
+            \addlegendentry{s/s}
+            \addplot table[y=serial/preemptive]{\csvdata};
+            \addlegendentry{s/p}
+            \addplot table[y=cooperative/cooperative]{\csvdata};
+            \addlegendentry{c/c}
+            \addplot table[y=cooperative/preemptive]{\csvdata};
+            \addlegendentry{c/p}
+        \end{axis}
+    \end{tikzpicture}
+}
+
+\newcommand{\nextperformanceplot}[2]
+{
+    \nextgroupplot[#2]
+    \addplot table[y = serial/serial, col sep = semicolon]{#1};
+    \addplot table[y = serial/preemptive, col sep = semicolon]{#1};
+    \addplot table[y = cooperative/cooperative, col sep = semicolon]{#1};
+    \addplot table[y = cooperative/preemptive, col sep = semicolon]{#1};
+}
+
+\newcommand{\nextperformanceplotwithlegend}[2]
+{
+    \nextgroupplot[#2]
+    \addplot table[y = serial/serial, col sep = semicolon]{#1};
+    \addlegendentry{s/s}
+    \addplot table[y = serial/preemptive, col sep = semicolon]{#1};
+    \addlegendentry{s/p}
+    \addplot table[y = cooperative/cooperative, col sep = semicolon]{#1};
+    \addlegendentry{c/c}
+    \addplot table[y = cooperative/preemptive, col sep = semicolon]{#1};
+    \addlegendentry{c/p}
+}
 
 %% enumitem
 
