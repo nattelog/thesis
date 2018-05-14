@@ -15,6 +15,88 @@ language: \textit{Esterel}. They reimplement a component in a telephone
 switching system and reach the conclusion that Esterel is better suited for
 analysis and verification for reactive systems.
 
+\section{Related work}
+
+No previous research has been found regarding the internal architecture of the
+IoT gateway and how it affects performance. Most research regarding IoT
+gateways discuss architecture on an application level. Performance testing is
+also to a certain degree a non-explored area and most of the literature takes
+on empirical approaches, especially for distributed systems performance.
+
+Chen et al. \cite{chen2011brief} describes the IoT gateway as the bridge
+between the sensing domain in the IoT architecture and the network domain and
+argues its importance as one of the most significant in the IoT architecture.
+They describe some common features of the gateway such as support for multiple
+network interfaces (2G/3G, LTE, LAN), protocol conversion and manageability. A
+reference model is presented where these features are taken into account.
+However, the paper is not focusing on the same architectural abstraction level
+as this thesis, but provides a more holistic view on the entire IoT gateway
+application and sub-applications.
+
+Zachariah et al. \cite{zachariah2015internet} argues that application specific
+IoT gateways are not the best approach towards a scalable IoT infrastructure.
+The same reason there isn't one web browser per web page, gateways should be
+generic and support all types of IoT devices and sensors. They propose a
+smartphone-centric architecture where IoT devices connect to the internet via
+smartphones. This paper is valuable because it challenges the traditional mind
+around IoT gateways. It is however elaborating the gateway on a higher
+abstraction level than this thesis is.
+
+Weyuker et al. \cite{weyuker2000experience} states there has been very little
+research on software performance testing. In their paper, they discuss
+performance testing objectives, workload design and the role of requirements
+and specifications to eventually lead up to a case study where they test a
+gateway system without having access to historical usage data. They develop
+test cases based on usage scenarios to adhere their formulated performance
+objectives. The tests are conducted by running programs that simulate clients
+in the system, which sends transaction requests in various sizes and
+frequencies. The rate of transactions are monitored and used to assess the
+performance of the entire system. Their reflections and discussions on
+performance testing at large are very valuable to this thesis. However, their
+paper focuses on an already existing application upon which performance testing
+will be used to assess whether it fulfils its functional and non-functional
+requirements. This thesis dives into how an abstract gateway can be modeled and
+implemented and how its different configurations affects performance for some
+given contexts.
+
+Denaro et al. \cite{denaro2005performance} presents a systematic method to
+ascertain that a given distributed software architecture lives up its
+performance requirements. They mention some performance metrics such as
+latency, throughput and scalability. They state that the overall performance of
+a distributed system is often determined by the middleware used, and that same
+middleware can affect performance differently depending on its context of
+application. This is a good incentive to map and understand IoT gateway
+performance, which is done in this thesis.
+
+Kruger et al. \cite{kruger2014benchmarking} discuss the common use of
+off-the-shelf components for implementing IoT devices and gateways. They state
+little work has previously been done to explore the performance of these
+devices when different parameters are adjusted; such as system architecture and
+software components. They focus primarily on hardware adjustments (e.g.
+processor and memory speed) to identify performance bottlenecks in three common
+off-the-shelf brands: Raspberry Pi, Beaglebone and Beaglebone Black. They use
+\textit{micro-benchmarks} to identify performance bottlenecks at architecture
+level and \textit{macro-benchmarks} at application level. They reach the
+conclusion that gateway performance is most important when there is a large
+amount of data being transfered between the gateway and the IoT application.
+
+Aguilera et al. \cite{aguilera2003performance} presents an approach to identify
+performance bottlenecks in distributed systems where the components are seen as
+black boxes, i.e. sub-systems of unknown functionality. By monitoring the
+traffic of \textit{remote procedure calls} in the system and store them in a
+log they are able to find the \textit{casual paths} of messages and thereby
+understand the data flow in the system and where performance bottlenecks are
+located. The approach to capture log messages is used in this thesis, however
+the step of storing messages in a log file before computation is omitted and
+each log message is computed as it arrives.
+
+Liu et al. \cite{liu2002designing} presents an approach to predict distributed
+system performance empirically by running test suites. They map out some
+parameters that affect performance, such as client request load and thread pool
+size and some observable parameters such as throughout and response time. They
+reach the conclusion that gathering empirical results with simple test cases is
+an effective method to understand the performance profile of the system.
+
 \section{The big picture}
 
 An IoT architecture can be split up into a sensing domain, a network domain and
