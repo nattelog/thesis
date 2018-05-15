@@ -39,20 +39,187 @@ available in the database and output them as comma separated values (csv).
     \centering
     \begin{tikzpicture}
         \matrix (table) [layeredblocks] {
-            gw              &               &               & \\
-            conf            &               &               & log \\
-            Boot service    & Dispatcher    & Event handler & \\
-            net             &               &               & \\
+            gw              &               & \\
+            conf            &               & \\
+            Boot service    & Dispatcher    & Event handler \\
+            net             &               & \\
         };
 
-        \spanblock{table-1-1}{table-1-4}{Gateway}
+        \spanblock{table-1-1}{table-1-3}{Gateway}
         \spanblock{table-2-1}{table-2-3}{Configuration}
-        \spanblock{table-2-4}{table-4-4}{Log module}
         \spanblock{table-4-1}{table-4-3}{Net}
     \end{tikzpicture}
     \caption{The architecture of the gateway.}
     \label{fig:gateway_impl_architecture}
 \end{figure}
+
+\section{Configuration}
+
+The test manager and the gateway processes must be configurable in order to
+test different configurations of the gateway. Both the test manager and the
+gateway process are started from the command line and the configuration
+parameters are set with flags to the respective command, see Listings
+\ref{lst:test_manager_usage} and \ref{lst:gateway_usage}.
+
+\begin{lstlisting}[
+    caption = {Usage manual for the test manager process.},
+    label = {lst:test_manager_usage}
+]
+usage: ./run_test [<options>...]
+
+OPTIONS
+    -h
+        Show this message.
+
+    -q <value>
+        The number of simulated devices to run in the test.
+
+    -f <value>
+        The frequency in which one device creates new events, expressed in
+        times per seconds.
+
+    -l <value>
+        The delay expressed in seconds added to each TCP call.
+
+    -d <architecture>
+        The architecture of the event dispatcher. Can be one of the following:
+            serial
+            preemptive
+            cooperative
+
+    -e <architecture>
+        The architecture of the event handler. Same alternatives as for the
+        dispatcher.
+
+    -c <value>
+        The CPU intensity each event induce. Value between 0 and 1.
+
+    -i <value>
+        The I/O intensity each event induce. Value between 0 and 1.
+
+    -p <value>
+        The size of the thread pool. Defaults to 10.
+
+    -t <time value>
+        The duration for the test to run. Written in hours, minutes and
+        seconds. E.g. 1h2m or 1m10s.
+
+    -g <value>
+        The log level to print to stdout. One of 0 (DEBUG), 1 (INFO, default)
+        and 2 (ERROR).
+
+    -b <path>
+        The file path and name to the database. Defaults to "db".
+
+    -r <value>
+        The name of the report to connect this test scenario to. Defaults to
+        "Undefined report".
+\end{lstlisting}
+
+\begin{lstlisting}[
+    caption = {Usage manual for the gateway process.},
+    label = {lst:gateway_usage}
+]
+usage: ./gateway [<options>...]
+
+OPTIONS
+    -h
+        Show this message.
+
+    -d <architecture>
+        The architecture of the event dispatcher. Can be one of the following:
+            serial
+            preemptive
+            cooperative
+
+    -e <architecture>
+        The architecture of the event handler. Same alternatives as for the
+        dispatcher.
+
+    -c <value>
+        The CPU intensity each event induce. Value between 0 and 1.
+
+    -i <value>
+        The I/O intensity each event induce. Value between 0 and 1.
+
+    -t <address>
+        The IP address (excluding port) of the test manager.
+
+    -n <port>
+        The port of the nameservice.
+
+    -l <port>
+        The port of the log server.
+
+    -p <value>
+        The size of the thread pool. Defaults to 10.
+\end{lstlisting}
+
+\subsection{Implementing CPU intensity}
+
+The purpose of the CPU intensity $\lambda_0$ is to simulate CPU intensive work
+induced by each event. The intensity value can be set in the configuration to
+be a value between 0 and 1, where 0 means no intensity and 1 means maximum
+intensity on each event. CPU intensity is simulated by calculating the $n$th
+prime number, where $n = 2^{12} \times \lambda_0$.
+
+\subsection{Implementing I/O intensity}
+
+The purpose of the I/O intensity $\lambda_1$ is to simulate I/O intensive work
+induced by each event. The intensity value is set to be between 0 and 1, where
+0 means no I/O work and 1 means maximum I/O work for each event. I/O work can
+be any type of work performed by some peripheral unit to the CPU. In this case,
+file system operations were chosen. A buffer och size $n$, where $n = 2^{28}
+\times \lambda_1$, is allocated and written to a file.
+
+\iffalse
+\bgroup
+\def\arraystretch{1.2}
+\begin{ctable}
+    {The parameters enabled for configuration on the test manager and the
+    gateway processes.}
+    {|l|p{8cm}|}
+
+    \hline
+    Name                & Description \\
+    \hline
+    Quantity ($q$)      & Number of devices to simulate. \\
+    \hline
+    Frequency ($\phi$)  & The frequency in events per seconds for which each
+    device creates a new event. \\
+    \hline
+    Delay ($\delta$)    & The delay in seconds added for each TCP call made on
+    the network. \\
+    \hline
+    Dispatcher ($\kappa_0$) & The dispatcher model used. Either "serial",
+    "cooperative" or "preemptive". \\
+    \hline
+    Event handler ($\kappa_1$)  & The event handler model used. Same options as
+    for $\kappa_0$. \\
+    \hline
+    CPU intensity ($\lambda_0$) & The CPU intensity induced by each event. Must
+    be a value between 0 and 1. \\
+    \hline
+    I/O intensity ($\lambda_1$) & The I/O intensity induced by each event. Must
+    be a value between 0 and 1. \\
+    \hline
+    Threadpool size             & The max number of threads available for the
+    gateway. \\
+    \hline
+    Duration                    & The time the test scenario will run before stopping.
+    \\
+    \hline
+    Log level                   & The log level on the test manager. Can be set
+    to "VERBOSE", "DEBUG", "INFO" and "ERROR". \\
+    \hline
+    Database path               & The filesystem path to the database. \\
+    \hline
+    Report name                 & The name of the report this test scenario
+    belongs to. \\
+    \hline
+
+\end{ctable} \label{tab:config_parameters}
+\fi
 
 \section{Communication and protocols}
 
@@ -313,7 +480,7 @@ Note that the method \texttt{put\_event()} in the Device class in Figure
 \ref{fig:device_class_diagram} is not part of the TCP server API of the device.
 This is because the method is only available locally for the EventProducer class.
 
-\begin{figure}
+\begin{figure}[h!]
     \centering
     \begin{tikzpicture}[node distance = 5cm]
         \node[
