@@ -103,25 +103,34 @@
 \usetikzlibrary{shapes, arrows, calc, positioning, fit, matrix}
 \usepgfplotslibrary{groupplots}
 
-\tikzstyle{block} = [rectangle,
+\tikzstyle{block} = [
+    rectangle,
     draw,
-    fill=blue!5,
+    fill = blue!5,
     text centered,
     rounded corners,
-    inner sep=0.5cm,
-    outer sep=0.1cm]
-\tikzstyle{decision} = [diamond,
+    inner sep = 0.5cm,
+    outer sep = 0.1cm
+]
+
+\tikzstyle{decision} = [
+    diamond,
     draw,
-    fill=blue!5,
+    fill = blue!5,
     text badly centered,
-    node distance=2.5cm,
-    inner sep=0.1cm,
-    outer sep=0.1cm]
+    node distance = 2.5cm,
+    inner sep = 0.1cm,
+    outer sep = 0.1cm
+]
+
 \tikzstyle{line} = [draw, -latex']
-\tikzstyle{comment} = [cloud,
-    fill=yellow!15,
-    inner sep=0.3cm,
-    cloud ignores aspect]
+
+\tikzstyle{comment} = [
+    cloud,
+    fill = yellow!15,
+    inner sep = 0.3cm,
+    cloud ignores aspect
+]
 
 \tikzstyle{fitblock} = [
     draw = black,
@@ -140,6 +149,16 @@
     nodes = {fitblock},
     row sep = 3pt,
     column sep = 3pt
+]
+
+\tikzstyle{classblock} = [
+    block,
+    inner sep = 0.2cm,
+    text width = 4cm,
+    rectangle split,
+    rectangle split parts = 2,
+    every second node part/.style={align = left},
+    every third node part/.style={align = left},
 ]
 
 \pgfkeys{

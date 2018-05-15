@@ -217,30 +217,101 @@ illustrated in Figure \ref{fig:bootup_process}.
 
 \section{The name service}
 
-The name service is instantiated and started by the test manager. Its purpose
-is to simulate the devices the gateway pulls event information from. The name
-service provide a single API for the gateway:
+The name service is a TCP server instantiated and started by the test manager.
+Its purpose is to act as the main API available for the gateway to communicate
+to the test manager. It also holds references to all simulated devices the
+gateway pulls event information from. The name service provide a single API for
+the gateway:
 
 \begin{description}
-    \item[\texttt{hostnames()}:] Returns a list of the names of all devices in
-the test. The name is a unique 64-bit UUID.
-    \item[\texttt{status(device)}:] Returns 1 if the device, identified with
-its unique UUID, has an event ready to be fetched. Returns 0 otherwise.
-    \item[\texttt{next\_event(device)}:] Returns the next event in the queue of
-the device. Throws an error if no event is available in the queue.
+
+    \item[\texttt{verify\_gateway(configuration, address)}:] Verifies that the
+        gateway configuration matches the test manager configuration. The
+        address of the gateway API is passed in as well for later use. Returns
+        true if the configuration matches, false otherwise.
+
+    \item[\texttt{hostnames()}:] Returns a list of socket ports associated to
+        all devices in the test.
+
 \end{description}
 
-\todo{There is an argument in the theory regarding why actual payload data is
-not necessary in performance testing, only the frequency of data. Might be good
-to use here.}
+When conducting performance tests, the payload data in each event is
+irrelevant, only the frequency of events \cite{weyuker2000experience}. The
+events are therefore nothing but an identifier. A device is implemented as a
+TCP server class with one primary attribute: an event queue. The event queue
+stores each event in a FIFO manner (first in, first out). An event is
+implemented as a class with a single attribute: its ID, which is a 64-bit UUID
+string. The device does not generate events by itself, instead an \textit{event
+producer} runs on a separate thread and for a given time interval it pushes new
+events onto each device. A class diagram over these components is shown in
+Figure \ref{fig:device_class_diagram}. Each device is its own TCP server,
+listening to TCP requests on an IP address. The gateway communicates to each
+device via its API:
 
-A device is implemented as a class with two attributes: a name and an event
-queue. The name acts as a unique ID and is a 64-bit UUID string \todo{What is
-UUID?}. The event queue stores each event in a FIFO manner (first in, first
-out). An event is implemented as a class with a single attribute: its ID, which
-is a 64-bit UUID string \todo{Some diagram?}. The device does not generate
-events by itself, instead an \textit{event producer} runs on a separate thread
-and for a given time interval it pushes new events onto each device.
+\begin{description}
+
+    \item[\texttt{status()}:] Returns 1 if there is at least one event ready to
+        be fetched from the device's event queue. Returns 0 otherwise.
+
+    \item[\texttt{next\_event()}] Returns the next event in the queue. Throws
+        and returns an error otherwise.
+
+\end{description}
+
+Note that the method \texttt{put\_event()} in the Device class in Figure
+\ref{fig:device_class_diagram} is not part of the TCP server API of the device.
+This is because the method is only available locally for the EventProducer class.
+
+\begin{figure}
+    \centering
+    \begin{tikzpicture}[node distance = 5cm]
+        \node[
+            classblock,
+            text width = 5cm,
+            rectangle split parts = 3
+        ] (device) {
+            Device
+            \nodepart{second}
+            event\_queue: Queue<Event>
+            \nodepart{third}
+            status(): int \\
+            put\_event(): void \\
+            next\_event(): Event
+        };
+
+        \node[
+            classblock,
+            text width = 2cm,
+            right of = device,
+            yshift = 0.1cm
+        ] (event) {
+            Event
+            \nodepart{second}
+            id: string
+        };
+
+        \node[
+            classblock,
+            text width = 4cm,
+            rectangle split parts = 3,
+            below of = device,
+            node distance = 3.5cm
+        ] (producer) {
+            EventProducer
+            \nodepart{second}
+            devices: List<Device>
+            \nodepart{third}
+            generate\_events(): void
+        };
+
+        \draw[->] (producer.two west) -- ++(-1cm, 0) |- (device.one west);
+        \draw[->] (device.two east) -- (event.one west);
+    \end{tikzpicture}
+
+    \caption{Class diagram of the dependencies between the Device, EventProducer and
+    Event class.}
+    \label{fig:device_class_diagram}
+\end{figure}
 
 \section{The log server}
 \label{sec:log_server}
