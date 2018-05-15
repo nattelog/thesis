@@ -284,7 +284,9 @@ finished processed at time \texttt{timestamp}.
 
 \end{description}
 
-The log server is run on a separate thread in the test manager process and
-listens for UDP packets. Both the test manager and the gateway sends each
-log message as a UDP packet to the log server.
+A regular expression is used both to check whether the message is an event
+lifecycle message and to extract the relevant values from it. The log server is
+run on a separate thread in the test manager process and listens for UDP
+packets. Both the test manager and the gateway sends log messages as UDP
+packets to the log server.
 
