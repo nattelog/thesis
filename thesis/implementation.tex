@@ -57,13 +57,13 @@ available in the database and output them as comma separated values (csv).
 \section{Communication and protocols}
 
 TCP and UDP technologies are used as communication methods between the test
-manager and the gateway. UDP is not connection-oriented like TCP and is able to
-send messages with less overhead. UDP is therefore used as medium to send log
-messages to the log server, both by the gateway and the name service. Each log
-message is sent on a specific format and is explained in Section
-\ref{sec:log_server}. The TCP communication middleware is implemented using
-\textit{Remote Method Invocation} (RMI) \cite{coulouris2005distributed} and is
-placed in the "Net"-module, see Figures
+manager and the gateway, see Figure \ref{fig:comm_flow}. UDP is not
+connection-oriented like TCP and is able to send messages with less overhead.
+UDP is therefore used as medium to send log messages to the log server, both by
+the test manager and the gateway. Each log message is sent on a specific format
+and is explained in Section \ref{sec:log_server}. The TCP communication
+middleware is implemented using \textit{Remote Method Invocation} (RMI)
+\cite{coulouris2005distributed} and is placed in the "Net"-module, see Figures
 \ref{fig:test_manager_impl_architecture} and
 \ref{fig:gateway_impl_architecture}. For the gateway to call an API function on
 the test manager (or vice versa), it must produce a JSON-string message on the
@@ -100,6 +100,57 @@ is returned instead of the result. The error is sent back on the format:
 
 The name of the error and the arguments used to create the error is sent back
 and enables the receiving end to throw the error as if it was created locally.
+
+\begin{figure}[h!]
+    \centering
+    \begin{tikzpicture}[node distance = 2cm, auto, >=stealth']
+        \node[draw = none] (middle) {};
+        \node[draw = none, node distance = 3cm, left = of middle] (hidden_left) {};
+        \node[draw = none, node distance = 5cm, above = of middle] (hidden_top) {};
+        \node[draw = none, node distance = 4cm, below = of middle] (hidden_bottom) {};
+
+        \node[
+            node distance = 0.4cm,
+            yshift = -0.1cm,
+            left = of hidden_top
+        ] {Test manager process};
+        \node[
+            node distance = 0.4cm,
+            yshift = -0.1cm,
+            right = of hidden_top
+        ] {Gateway process};
+
+        \node[block, text width = 3cm, above = of hidden_left] (tm) {
+            Boot service \\
+            Name service \\
+            Devices
+        };
+
+        \node[block, below = of hidden_left] (ls) {
+            Log server
+        };
+
+        \node[
+            block,
+            text width = 3cm,
+            right = of middle
+        ] (gw) {
+            Boot service \\
+            Dispatcher \\
+            Event handler
+        };
+
+        \draw[dashed] (hidden_top.north) -- (hidden_bottom.south);
+        \draw[->] (tm) -- node[left] {UDP} (ls);
+        \draw[->] (gw) -- node[fill = white, sloped, above] {TCP/RMI} (tm);
+        \draw[<-] (gw) -- (tm);
+        \draw[->] (gw) -- node[fill = white, sloped, above] {UDP} (ls);
+    \end{tikzpicture}
+
+    \caption{Illustration of the communication flow between the test manager
+    and the gateway.}
+    \label{fig:comm_flow}
+\end{figure}
 
 \section{The test bootup process}
 
