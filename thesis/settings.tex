@@ -100,7 +100,7 @@
 \usepackage{pgfplots}
 \usepackage{pgfplotstable}
 \usepackage{tikzscale}
-\usetikzlibrary{shapes, arrows, calc, positioning}
+\usetikzlibrary{shapes, arrows, calc, positioning, fit, matrix}
 \usepgfplotslibrary{groupplots}
 
 \tikzstyle{block} = [rectangle,
@@ -122,6 +122,40 @@
     fill=yellow!15,
     inner sep=0.3cm,
     cloud ignores aspect]
+
+\tikzstyle{fitblock} = [
+    draw = black,
+    fill = white,
+    rounded corners,
+    text width = 2.5cm,
+    font = {\sffamily\bfseries\color{black}},
+    align = center,
+    text height = 12pt,
+    text depth = 9pt
+]
+
+\tikzstyle{layeredblocks} = [
+    matrix of nodes,
+    nodes in empty cells,
+    nodes = {fitblock},
+    row sep = 3pt,
+    column sep = 3pt
+]
+
+\pgfkeys{
+    /tikz/node distance/.append code = {
+        \pgfkeyssetvalue{/tikz/node distance value}{#1}
+    }
+}
+
+\newcommand{\spanblock}[3]{
+    \node[
+        fitblock,
+        inner sep = 0pt,
+        fit = {(#1) (#2)},
+        label = center:{\sffamily\bfseries\color{black}#3}
+    ] {};
+}
 
 \newcommand{\performanceplot}[2]
 {

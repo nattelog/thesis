@@ -1,14 +1,105 @@
 \chapter{Implementation}
 
 The be able to reach the goal of this thesis, to map the performance of the
-abstract gateway $\Gamma$, a software system has been made. The ultimate goal
-of this system is to generate and store all events and their respective
+abstract gateway $\Gamma$, a software system has been developed. The ultimate
+purpose of this system is to generate and store all events and their respective
 timestamps to be able to analyse the performance of $\Gamma$, which processed
-them. The system consists of two processes called \textit{Frontend} and
-\textit{Gateway} and an analysation tool called \textit{Report}. The main
-purpose of Frontend is to simulate devices and store event data while the
-purpose of Gateway is to practically act as a gateway: pull events from the
-devices and process them.
+them. The system consists of two processes: a \textit{test manager} and a
+\textit{gateway} and an analysation tool. The main purpose of the test manager
+is to simulate devices and store event data in a database while the purpose of
+the gateway is to pull events from the devices and process them. The
+analysation tool, hereby referred to as \textit{the reporter}, provide utility
+functions to assemble event timestamp information from one or several test runs
+available in the database and output them as comma separated values (csv).
+
+\begin{figure}[h!]
+    \centering
+    \begin{tikzpicture}
+        \matrix (table) [layeredblocks] {
+            tm      &           &           &       & \\
+            conf    &           &           & ls    & db \\
+            boot    & ns        &           &       & \\
+                    & Device    & Producer  &       & \\
+            net     &           &           &       & \\
+        };
+
+        \spanblock{table-1-1}{table-1-5}{Test manager}
+        \spanblock{table-2-1}{table-2-3}{Configuration}
+        \spanblock{table-3-1}{table-4-1}{Boot service}
+        \spanblock{table-3-2}{table-3-3}{Name service}
+        \spanblock{table-2-4}{table-5-4}{Log server}
+        \spanblock{table-5-1}{table-5-3}{Net}
+        \spanblock{table-2-5}{table-5-5}{Database}
+    \end{tikzpicture}
+    \caption{The architecture of the test manager.}
+    \label{fig:test_manager_impl_architecture}
+\end{figure}
+
+\begin{figure}[h!]
+    \centering
+    \begin{tikzpicture}
+        \matrix (table) [layeredblocks] {
+            gw              &               &               & \\
+            conf            &               &               & log \\
+            Boot service    & Dispatcher    & Event handler & \\
+            net             &               &               & \\
+        };
+
+        \spanblock{table-1-1}{table-1-4}{Gateway}
+        \spanblock{table-2-1}{table-2-3}{Configuration}
+        \spanblock{table-2-4}{table-4-4}{Log module}
+        \spanblock{table-4-1}{table-4-3}{Net}
+    \end{tikzpicture}
+    \caption{The architecture of the gateway.}
+    \label{fig:gateway_impl_architecture}
+\end{figure}
+
+\section{Communication and protocols}
+
+TCP and UDP technologies are used as communication methods between the test
+manager and the gateway. UDP is not connection-oriented like TCP and is able to
+send messages with less overhead. UDP is therefore used as medium to send log
+messages to the log server, both by the gateway and the name service. Each log
+message is sent on a specific format and is explained in Section
+\ref{sec:log_server}. The TCP communication middleware is implemented using
+\textit{Remote Method Invocation} (RMI) \cite{coulouris2005distributed} and is
+placed in the "Net"-module, see Figures
+\ref{fig:test_manager_impl_architecture} and
+\ref{fig:gateway_impl_architecture}. For the gateway to call an API function on
+the test manager (or vice versa), it must produce a JSON-string message on the
+format:
+
+\begin{lstlisting}
+{
+    "name": "hostnames",
+    "args": []
+}
+\end{lstlisting}
+
+If the gateway sends this message to the test manager, the API function
+\texttt{hostnames()} will be invoced and its result will be sent back to the
+gateway on the format:
+
+\begin{lstlisting}
+{
+    "result": [5000, 5001, 5002, 5003]
+}
+\end{lstlisting}
+
+However, if the RMI induce an error while being processed by the API, the error
+is returned instead of the result. The error is sent back on the format:
+
+\begin{lstlisting}
+{
+    "error": {
+        "name": "AttributeError",
+        "args": ["The API-function is not available."]
+    }
+}
+\end{lstlisting}
+
+The name of the error and the arguments used to create the error is sent back
+and enables the receiving end to throw the error as if it was created locally.
 
 \section{The test bootup process}
 
@@ -87,6 +178,7 @@ events by itself, instead an \textit{event producer} runs on a separate thread
 and for a given time interval it pushes new events onto each device.
 
 \section{The log server}
+\label{sec:log_server}
 
 The purpose of the log server is to act as a global logging portal for both the
 test manager and the gateway and to extract event lifecycle information from
