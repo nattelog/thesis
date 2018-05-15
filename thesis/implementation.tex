@@ -146,9 +146,74 @@ Once the configuration has been verified and the time offset is identified, the
 test is started by the test manager by calling the "start\_test" API function on
 the gateway. The entire test scenario is stored in a database as a table with
 four attributes: \textit{scenario ID}, \textit{time offset}, \textit{start
-time} of the test and its \textit{end time}.
+time} of the test and its \textit{end time}. The entire bootup sequence is
+illustrated in Figure \ref{fig:bootup_process}.
 
-\todo{Sequence diagram here?}
+\begin{figure}[h!]
+    \centering
+    \begin{tikzpicture}[node distance = 5cm, auto, >=stealth']
+        \node[] (tm) {Test manager};
+        \node[right of = tm] (gw) {Gateway};
+
+        \node[below of = tm, node distance = 10cm] (tm_ground) {};
+        \node[below of = gw, node distance = 10cm] (gw_ground) {};
+
+        \draw (tm) -- (tm_ground);
+        \draw (gw) -- (gw_ground);
+
+        \node[draw = none, fill = white, scale = 0.9] at
+        ($(tm)!1cm!(tm_ground)$)
+        {Waiting for gateway};
+
+        \draw[<-] ($(tm)!2cm!(tm_ground)$) --
+        node[above, scale = 0.9, midway]{Verify config}
+        ($(gw)!2cm!(gw_ground)$);
+        \draw[->] ($(tm)!2.5cm!(tm_ground)$) --
+        node[above, scale = 0.9, midway]{Config OK}
+        ($(gw)!2.5cm!(gw_ground)$);
+
+        \node[draw = none, fill = white, scale = 0.9] at
+        ($(tm)!3.5cm!(tm_ground)$)
+        {Start time sync};
+
+        \draw[->] ($(tm)!4.5cm!(tm_ground)$) --
+        node[above, scale = 0.9, midway]{Get timestamp}
+        ($(gw)!4.5cm!(gw_ground)$);
+        \draw[<-] ($(tm)!5cm!(tm_ground)$) --
+        node[above, scale = 0.9, midway]{Return timestamp}
+        ($(gw)!5cm!(gw_ground)$);
+        \draw[->] ($(tm)!5.5cm!(tm_ground)$) --
+        node[above, scale = 0.9, midway]{Get timestamp}
+        ($(gw)!5.5cm!(gw_ground)$);
+
+        \draw[<-, draw = none] ($(tm)!6cm!(tm_ground)$) --
+        node[above, scale = 0.9, midway]{...}
+        ($(gw)!6cm!(gw_ground)$);
+        \draw[<-] ($(tm)!6.5cm!(tm_ground)$) --
+        node[above, scale = 0.9, midway]{Return timestamp}
+        ($(gw)!6.5cm!(gw_ground)$);
+
+        \node[draw = none, fill = white, scale = 0.9] at
+        ($(tm)!7.5cm!(tm_ground)$)
+        {Store time offset};
+
+        \draw[->] ($(tm)!8.5cm!(tm_ground)$) --
+        node[above, scale = 0.9, midway]{Start test}
+        ($(gw)!8.5cm!(gw_ground)$);
+
+        \node[draw = none, fill = white, scale = 0.9] at
+        ($(gw)!9cm!(gw_ground)$)
+        {Start test};
+    \end{tikzpicture}
+    \caption{Sequence diagram of the bootup process. The test manager waits for
+    the gateway to verify its configuration settings. If the configuration does
+    not match the one on the test manager, the test is aborted (not shown in
+    this figure). If the configuration matches, the test manager starts the
+    time sync process that retrieves the timestamp from the gateway a couple of
+    times with a 1 second pause between each call. The offset is then stored in
+    the database and the test can start.}
+    \label{fig:bootup_process}
+\end{figure}
 
 \section{The name service}
 
