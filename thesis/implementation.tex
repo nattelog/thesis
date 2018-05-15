@@ -54,6 +54,7 @@ available in the database and output them as comma separated values (csv).
 \end{figure}
 
 \section{Configuration}
+\label{sec:configuration}
 
 The test manager and the gateway processes must be configurable in order to
 test different configurations of the gateway. Both the test manager and the
@@ -319,7 +320,8 @@ and enables the receiving end to throw the error as if it was created locally.
     \label{fig:comm_flow}
 \end{figure}
 
-\section{The test bootup process}
+\section{The bootup service}
+\label{sec:bootup_service}
 
 The test manager and the gateway are run as two different processes on two
 different machines. They are started manually from the command line with the
@@ -579,3 +581,89 @@ run on a separate thread in the test manager process and listens for UDP
 packets. Both the test manager and the gateway sends log messages as UDP
 packets to the log server.
 
+\section{The database}
+
+The primary use of the database is to store event lifecycle timestamps during
+the test run so they can be analysed at a later stage. The database schema is
+designed to order event lifecycle data with their corresponding test scenario,
+see Figure \ref{fig:er_db}. The test scenario, with its ID (sid), is built
+around the notion that a test run has a start and an end time and $n$ amount of
+events created during the test. The event life cycle has 5 timestamps
+associated with it; created, fetched, retrieved, dispatched and done time. Each
+event has an event ID (eid) and is associated with a test scenario. Each
+scenario has a set of configuration values that are associated with their keys,
+which are: \texttt{CPU\_INTENSITY}, \texttt{DEVICE\_DELAY},
+\texttt{DEVICE\_FREQUENCY}, \texttt{DEVICE\_QUANTITY}, \texttt{DISPATCHER},
+\texttt{EVENT\_HANDLER}, \texttt{IO\_INTENSITY}, \texttt{POOL\_SIZE},
+\texttt{TEST\_DURATION}. Test scenarios are grouped into reports. For instance,
+if a CPU intensity test is planned where different values of CPU intensity are
+run, each test scenario will be associated with a new report that is named
+based on the test, e.g. "test cpu 0.1-0.5" if the CPU intensity is tested with
+values between $0.1$ and $0.5$.
+
+When a test is about to start, the user specifies the configuration of the test
+in the command line, see Section \ref{sec:configuration}. A new record for each
+configuration key is created in the configuration table. When the test start, a
+new scenario record is created with its start time set.  During the time sync
+process, see Section \ref{sec:bootup_service}, the time offset between the test
+manager and the gateway is identified and set in the offset attribute in the
+scenario record. When a new event is created, the device sends a log message to
+the log server, which in turn extracts the relevant data from the message and
+creates a new eventlifecycle record with the created\_time attribute set. The
+device and the gateway sends log messages as the event passes the associated
+lifecycles and the log server updates the eventlifecycle record. When the test
+stops the test manager sets the end timestamp in the scenario record and an
+entire scenario is stored.
+
+\begin{figure}[h!]
+    \centering
+    \begin{tikzpicture}[node distance = 1cm]
+        \node[entity, node distance = 2cm] (scenario) {scenario};
+        \node[attribute, left = of scenario] (sid) {\underline{sid}} edge
+        (scenario);
+        \node[attribute, above left = of scenario] (offset) {offset} edge
+        (scenario);
+        \node[attribute, above = of scenario] (start) {start} edge
+        (scenario);
+        \node[attribute, above right = of scenario] (end) {end} edge
+        (scenario);
+        \node[attribute, right = of scenario] (report) {report} edge
+        (scenario);
+
+        \node[
+            entity,
+            node distance = 2cm,
+            below left = of scenario
+        ] (eventlifecycle) {eventlifecycle} edge node[above, pos = 0.1] {$n$}
+        node[above, pos = 0.8] {1} (scenario);
+        \node[
+            attribute,
+            node distance = 0.5cm,
+            above = of eventlifecycle
+        ] (eid) {\underline{eid}} edge (eventlifecycle);
+        \node[attribute, above left = of eventlifecycle] (created)
+        {created\_time} edge (eventlifecycle);
+        \node[attribute, left = of eventlifecycle] (fetched)
+        {fetched\_time} edge (eventlifecycle);
+        \node[attribute, below left = of eventlifecycle] (retrieved)
+        {retrieved\_time} edge (eventlifecycle);
+        \node[attribute, below = of eventlifecycle] (dispatched)
+        {dispatched\_time} edge (eventlifecycle);
+        \node[attribute, below right = of eventlifecycle] (done)
+        {done\_time} edge (eventlifecycle);
+
+        \node[
+            entity,
+            node distance = 2cm,
+            below right = of scenario
+        ] (configuration) {configuration} edge node[above, pos = 0.1] {$n$}
+        node[above, pos = 0.8] {1} (scenario);
+        \node[attribute, left = of configuration] (key)
+        {\underline{key}} edge (configuration);
+        \node[attribute, below = of configuration] (value)
+        {value} edge (configuration);
+    \end{tikzpicture}
+
+    \caption{Entitry relationship diagram of the database schema.}
+    \label{fig:er_db}
+\end{figure}
