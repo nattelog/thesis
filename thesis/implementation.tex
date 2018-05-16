@@ -8,9 +8,22 @@ them. The system consists of two processes: a \textit{test manager} and a
 \textit{gateway} and an analysation tool. The main purpose of the test manager
 is to simulate devices and store event data in a database while the purpose of
 the gateway is to pull events from the devices and process them. The
-analysation tool, hereby referred to as \textit{the reporter}, provide utility
-functions to assemble event timestamp information from one or several test runs
-available in the database and output them as comma separated values (csv).
+analysation tool is not discussed more than that it provide utility functions
+to assemble event timestamp information from one or several test runs available
+in the database and output them as comma separated values (\textit{csv}).
+
+The test manager is entirely built in Python with standard libraries. SQLite is
+used for the database. Figure \ref{fig:test_manager_impl_architecture} depicts
+the overall architecture of the test manager. Each part is explained in the
+following sections. The main thread of the program is the actual test manager
+that waits for new event lifecycle messages from the logserver, which are
+updated in the database. One thread is created for the name service, which is a
+TCP server hosting the name service API. One thread is also created for each
+device in the test as they are TCP servers hosting the device API used by the
+gateway. The producer is also working in its own thread, creating new events at
+a given frequency. The log server is a UDP server listening for UDP log
+messages in its own thread. The "Net"-module implements the middleware
+functionality, enabling communication between the test manager and the gateway.
 
 \begin{figure}[h!]
     \centering
@@ -34,6 +47,14 @@ available in the database and output them as comma separated values (csv).
     \caption{The architecture of the test manager.}
     \label{fig:test_manager_impl_architecture}
 \end{figure}
+
+The gateway is entirely built in C with standard libraries and the libuv
+library. The overall architecture of the gateway is shown in Figure
+\ref{fig:gateway_impl_architecture}. The boot service is partly a short lived
+TCP server listening for timestamp request and start events from the test
+manager's boot service. The dispatcher and the event handler have different
+configurations, depending on the event propagation model, see Sections
+\ref{sec:impl_dispatcher} and \ref{sec:impl_event_handler}.
 
 \begin{figure}[h!]
     \centering
@@ -171,56 +192,7 @@ induced by each event. The intensity value is set to be between 0 and 1, where
 0 means no I/O work and 1 means maximum I/O work for each event. I/O work can
 be any type of work performed by some peripheral unit to the CPU. In this case,
 file system operations were chosen. A buffer och size $n$, where $n = 2^{28}
-\times \lambda_1$, is allocated and written to a file.
-
-\iffalse
-\bgroup
-\def\arraystretch{1.2}
-\begin{ctable}
-    {The parameters enabled for configuration on the test manager and the
-    gateway processes.}
-    {|l|p{8cm}|}
-
-    \hline
-    Name                & Description \\
-    \hline
-    Quantity ($q$)      & Number of devices to simulate. \\
-    \hline
-    Frequency ($\phi$)  & The frequency in events per seconds for which each
-    device creates a new event. \\
-    \hline
-    Delay ($\delta$)    & The delay in seconds added for each TCP call made on
-    the network. \\
-    \hline
-    Dispatcher ($\kappa_0$) & The dispatcher model used. Either "serial",
-    "cooperative" or "preemptive". \\
-    \hline
-    Event handler ($\kappa_1$)  & The event handler model used. Same options as
-    for $\kappa_0$. \\
-    \hline
-    CPU intensity ($\lambda_0$) & The CPU intensity induced by each event. Must
-    be a value between 0 and 1. \\
-    \hline
-    I/O intensity ($\lambda_1$) & The I/O intensity induced by each event. Must
-    be a value between 0 and 1. \\
-    \hline
-    Threadpool size             & The max number of threads available for the
-    gateway. \\
-    \hline
-    Duration                    & The time the test scenario will run before stopping.
-    \\
-    \hline
-    Log level                   & The log level on the test manager. Can be set
-    to "VERBOSE", "DEBUG", "INFO" and "ERROR". \\
-    \hline
-    Database path               & The filesystem path to the database. \\
-    \hline
-    Report name                 & The name of the report this test scenario
-    belongs to. \\
-    \hline
-
-\end{ctable} \label{tab:config_parameters}
-\fi
+\times \lambda_1$, is allocated, filled with letters and written to a file.
 
 \section{Communication and protocols}
 
@@ -669,30 +641,21 @@ entire scenario is stored.
 \end{figure}
 
 \section{The dispatcher}
+\label{sec:impl_dispatcher}
 
 Two event propagation models were implemented for the dispatcher: the serial
 and the cooperative. The serial dispatcher was implemented using standard
-libraries in C, see Listing \ref{lst:serial_dispatcher}. The cooperative
-dispatcher was implemented using libuv. Listing
-\ref{lst:cooperative_dispatcher} shows a snippet of the cooperative dispatcher
-function. The serial dispatcher performs socket operations synchronously, i.e.
-the entire process is paused while waiting for RMI responses to return. The
-cooperative dispatcher uses a state machine functionality, where nodes are
-represented as state callback functions. A state callback can make an
-asynchronous RMI call and pass in the edge to traverse to when the RMI response
-has returned. Each asynchronous RMI call wraps libuv socket operations and
-returns instantly. That allows the process to continue despite having socket
-transmissions on the line.
+libraries in C, see Listing \ref{lst:serial_dispatcher}. This function loops
+endlessly over each device retrieved from the \texttt{hostnames()} API function
+on the name service. In each iteration a \texttt{status()} call is made to the
+device. If the response equals 1, the event is retrieved by
+\texttt{next\_event()} and dispatched to either the serial or the preemptive
+event handler, depending on the configuration.
 
 \begin{lstlisting}[
     language = C,
     caption = {Code snippet from the serial dispatcher. Some parts has been
-    left out in the \texttt{/* */} markings. This function loops endlessly over
-    each device retrieved from the \texttt{hostnames()} API function on the
-    name service. In each loop a \texttt{status()} call is made to the device.
-    If the response equals 1, the event is retrieved by \texttt{next\_event()}
-    and dispatched to either the serial or the preemptive event handler,
-    depending on the configuration.},
+    left out in the \texttt{/* */} markings.},
     label = {lst:serial_dispatcher}
 ]
 void dispatcher_serial(config_data_t* config, protocol_value_t* devices)
@@ -739,12 +702,21 @@ void dispatcher_serial(config_data_t* config, protocol_value_t* devices)
 }
 \end{lstlisting}
 
+The cooperative dispatcher was implemented using libuv. Listing
+\ref{lst:cooperative_dispatcher} shows a snippet of the cooperative dispatcher
+function. The serial dispatcher performs socket operations synchronously, i.e.
+the entire process is paused while waiting for RMI responses to return. The
+cooperative dispatcher uses a state machine functionality, where nodes are
+represented as state callback functions. A state callback can make an
+asynchronous RMI call and pass in the edge to traverse to when the RMI response
+has returned. Each asynchronous RMI call wraps libuv socket operations and
+returns instantly. That allows the process to continue despite having socket
+transmissions on the line.
+
 \begin{lstlisting}[
     language = C,
     caption = {Code snippet from the cooperative dispatcher. Some parts have
-    been left out in the \texttt{/* */} markings. For each device, a context is
-    created and initialized and the state machine is started for that context.
-    The libuv event loop is then started.},
+    been left out in the \texttt{/* */} markings.},
     label = {lst:cooperative_dispatcher}
 ]
 void dispatcher_cooperative(config_data_t* config, protocol_value_t* devices)
@@ -769,5 +741,70 @@ void dispatcher_cooperative(config_data_t* config, protocol_value_t* devices)
 \end{lstlisting}
 
 \section{The event handler}
+\label{sec:impl_event_handler}
 
+Three event propagation models were implemented in the event handler: the
+serial, preemptive and cooperative. The serial event handler performs the CPU
+work and the I/O work, one after another synchronously, blocking the rest of the
+execution, see Listing \ref{lst:serial_event_handler}.
+
+\begin{lstlisting}[
+    language = C,
+    caption = {Code snippet inspired by the code from the serial event handler
+    implementation.},
+    label = {lst:serial_event_handler}
+]
+void event_handler_serial(double cpu_intensity, double io_intensity)
+{
+    do_cpu_work(cpu_intensity);
+    do_io_work(io_intensity);
+}
+\end{lstlisting}
+
+The preemptive event handler dispatch each event to a thread pool and returns
+immediately, see Figure \ref{lst:preemptive_event_handler}. If all threads in
+the pool are busy with previous events, the event handler waits for a thread to
+be free and blocks the execution on the main thread. The work each thread
+performs is identical to the serial event handler.
+
+\begin{lstlisting}[
+    language = C,
+    caption = {Code snippet inspired by the code from the preemptive event
+    handler implementation.},
+    label = {lst:preemptive_event_handler}
+]
+void event_handler_preemptive(double cpu_intensity, double io_intensity)
+{
+    thpool_add_work(
+        threadpool,
+        &event_handler_serial,
+        cpu_intensity,
+        io_intensity);
+}
+\end{lstlisting}
+
+The cooperative event handler will perform CPU work first, on the same thread,
+blocking the rest of the execution, followed by the I/O work that is performed
+asynchronously and returns instantly, see Listing
+\ref{lst:cooperative_event_handler}. The I/O work will be performed using
+libuv's filesystem API. libuv perform filesystem operations in its built-in
+threadpool. That means the only difference between the preemptive and the
+cooperative event handler is that the cooperative perform CPU work first before
+dispatching the work further to the threadpool. libuv's internal threadpool
+gets the same size as the number of threads configured when the gateway starts,
+but if the threadpool is full the cooperative event handler will not wait for a
+thread to be free before the I/O work can be dispatched.
+
+\begin{lstlisting}[
+    language = C,
+    caption = {Code snippet inspired by the code from the cooperative event
+    handler implementation.},
+    label = {lst:cooperative_event_handler}
+]
+void event_handler_cooperative(double cpu_intensity, double io_intensity)
+{
+    do_cpu_work(cpu_intensity);
+    do_io_work_async(io_intensity); // returns immidiately
+}
+\end{lstlisting}
 
