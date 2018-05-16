@@ -744,15 +744,19 @@ disjunct from $\lambda^{cpu}$, they might depend on each other to some extent.
 \section{An abstract gateway}
 
 A model of an abstract gateway is proposed as such: a gateway $\Gamma$ is a
-five-tuple describing its internal properties and its environment.
+six-tuple describing its internal properties and its environment.
 
 \begin{equation}
-\Gamma = \big \langle \Omega, \phi, \delta, K, \Lambda \big \rangle
+\Gamma = \big \langle \Omega, \phi, \delta, K, \Lambda, \chi \big \rangle
 \end{equation}
 
+\todo{active/passive devices?}
+
 Let $\Omega$, $\phi$ and $\delta$ describe the properties of the environment of
-$\Gamma$. $\Omega$ describes the devices communicating with $\Gamma$ and can be
-expressed as a set $\Omega = \{ \omega_0, \omega_1, ..., \omega_{q-1} \}$ where
+$\Gamma$, also called the \textit{configuration} of $\Gamma$. The following
+parameters are listed in Table \ref{tab:gateway_config} for easier reading.
+$\Omega$ describes the devices communicating with $\Gamma$ and can be expressed
+as a set $\Omega = \{ \omega_0, \omega_1, ..., \omega_{q-1} \}$ where
 $\omega_i$ represents a device and $q$ is the total number of devices. Let
 $\phi$ be the number of events $\omega_i$ generates each second and let
 $\delta$ be the time it takes for a network request to travel from $\omega_i$
@@ -764,7 +768,31 @@ respectively and $\kappa_i \in \{ \textit{serial}, \textit{preemptive},
 \textit{cooperative} \}$. Let $\Lambda$ describe the resource demand in
 $\Gamma$ from each event. It is expressed as $\Lambda = \{ \lambda_0, \lambda_1
 \}$ where $\lambda_0$ and $\lambda_1$ represents the CPU intensity and the I/O
-intensity induced by each event, where $0 \leq \lambda_i \leq 1$.
+intensity induced by each event, where $0 \leq \lambda_i \leq 1$. Let $\chi$
+describe the hardware platform of $\Gamma$, specifically the number of cores on
+the CPU.
+
+\begin{table}[h!]
+    \caption{An overview of the internal and external properties of $\Gamma$.}
+    \label{tab:gateway_config}
+
+    \begin{center}
+        \begin{tabular}{|l|l|}
+            \hline
+            Parameter   & Description \\
+            \hline
+            $q$         & Number of devices. \\
+            $\phi$      & Frequency of generated events. \\
+            $\delta$    & The delay, or latency, added to the network. \\
+            $\kappa_0$  & Event propagation model of the dispatcher. \\
+            $\kappa_1$  & Event propagation model of the event handler. \\
+            $\lambda_0$ & CPU intensity induced by each event. \\
+            $\lambda_1$ & I/O intensity induced by each event. \\
+            $\chi$      & Number of CPU cores. \\
+            \hline
+        \end{tabular}
+    \end{center}
+\end{table}
 
 In addition to the rather static expression of an abstract gateway $\Gamma$,
 the function $E$ is provided:
@@ -799,7 +827,7 @@ These timestamps holds a set of basic constraints:
 t_{start} \leq t_k^j
 \end{equation}
 
-\begin{equation}
+\begin{equation} \label{eq:t_0}
 t_0^j \leq t_{end}
 \end{equation}
 
@@ -807,11 +835,12 @@ t_0^j \leq t_{end}
 t_0^j \leq t_1^j \leq t_2^j \leq t_3^j \leq t_4^j
 \end{equation}
 
-By taking $\delta$ into account, we
+Let $\Gamma_c$ be a specific gateway with the configuration $c$.  Running
+$E(\Gamma_c, t_{start}, t_{end})$ returns the vector $M_c$, which contains the
+events produced by $\Gamma_c$.
 
-\todo{A sequence diagram visualizing the event lifecycle?}
-
-\subsection{Analysing the performance}
+\subsection{Performance metrics}
+\label{sec:performance_metrics}
 
 With $M$ and $\epsilon_j$ it is possible to derive some performance metrics.
 Throughput $T$ can be calculated as:
@@ -821,22 +850,39 @@ T = \frac{\sum_{\epsilon_j \in M}{\pi(\epsilon_j)}}{t_{end} - t_{start}}
 \text{ [events / s]}
 $$
 
-It is also possible to analyze the life length of an event, how long time it
+It is also possible to analyze the response time for an event, how long time it
 spent in $\omega_i$ and how long time it spent in $\Gamma$. Let:
 
 \begin{description}
-    \item[$d_0^j = t_4^j - t_0^j$] be the life length of $\epsilon_j$, i.e. the
+
+    \item[$d_0^j = t_4^j - t_0^j$] be the response time of $\epsilon_j$, i.e. the
         total time between that the event was created until it was processed.
-    \item[$d_1^j = t_1^j - t_0^j$] be the time $\epsilon_j$ spent in
-        $\omega_i$.
-    \item[$d_2^j = t_4^j - t_2^j$] be the time $\epsilon_j$ spent in
-        $\Gamma$.
+
+    \item[$d_1^j = t_1^j - t_0^j$] be the wait time, i.e. the time $\epsilon_j$
+        spent in $\omega_i$.
+
+    \item[$d_2^j = t_4^j - t_2^j$] be the process time, i.e. $\epsilon_j$ spent
+        in $\Gamma$.
+
+\end{description}
+
+Given a vector of events $M_c$, with length $m$, created by running $E$ on a
+gateway with the configuration $c$, let $D_k^c$ be a vector containing $\big[
+    d_k^0, d_k^1, ..., d_k^{m-1} \big]$, where $k = 0, 1, 2$, $d_0^j$ is the
+response time, $d_1^j$ is the wait time and $d_2^j$ is the process time for
+$\epsilon_j \in M_c$. Then:
+
+\begin{description}
+
+    \item[$avg(D_k^c)$] is the average value of all $d_k^j \in D_k^c$.
+
 \end{description}
 
 \subsection{Analysing the load}
+\label{sec:load}
 
 A system is said to be \textit{at load} when the system is working at full
-capacity and is not able to perform any better \todo{Reference?}. Due to the
+capacity and is not able to produce higher throughput. Due to the
 strict time limitation provided by $t_{end}$ there might be cases where some
 events $\epsilon_j$ has $t_k^j \geq t_{end}$. These are events that haven't
 been entirely processed by $\Gamma$. Let $\pi$ be a function such that:
@@ -854,24 +900,28 @@ events and processed events can give hint on how many events $\Gamma$ can
 handle. Let $P$ denote the ratio between created and processed events:
 
 $$
-P = \frac{m}{P_\pi} = \frac{m}{\sum_{\epsilon_j \in M}{\pi(\epsilon_j)}}
+P = \frac{P_\pi}{m} = \frac{\sum_{\epsilon_j \in M}{\pi(\epsilon_j)}}{m}
 $$
 
-$P$ will always be in the interval $0 \leq P \leq 1$. In cases where $P \simeq
-1$, $\Gamma$ is able to process most of the events and it might even be so that
-$\Gamma$ is waiting for new events to be created. In that case, we can not be
-sure whether $\Gamma$ is at a proper load or not. However, in cases where $P
-\ll 1$ we know for sure $\Gamma$ is not able to process all events and is not
-waiting for new events to be created. A proper load is therefore one where
-$P_\pi \ll m$. $m$ can be calculated as:
+$P$ will always be in the interval $0 \leq P \leq 1$, because $t_4^j$ can be
+greater than $t_{end}$, which means $\pi(\epsilon_j) = 0$, thus $m \geq P_\pi$.
+In cases where $P \simeq 1$, $\Gamma$ is able to process most of the events and
+it might even be so that $\Gamma$ is waiting for new events to be created. In
+that case, we can not be sure whether $\Gamma$ is at a proper load or not.
+However, in cases where $P \ll 1$ we know for sure $\Gamma$ is not able to
+process all events, so there must be events on the device waiting for $\Gamma$.
+The response time, $t_4^j - t_0^j$, must therefore grow for each new event that
+is created. A proper load is therefore one where $P \simeq 1$, but where an
+increase in total amount of events $m$ only reduces $P$.
 
-$$
-m = q \times \phi \times (t_{end} - t_{start})
-$$
+\section{Approach}
 
-The variable affecting $P_\pi$ is basically just the condition $t_4^j \leq
-t_{end}$. Increasing $t_{end}$ is not a solution since that will also increase
-$m$. We know that $t_4^j \geq t_$
+The goal of this thesis is to map how different gateway architectures affect
+its performance in different environments. Using the abstract gateway model
+$\Gamma$, it is possible to derive the performance mapping. By running $E$ with
+a set of different gateways $\Gamma_c$ and analyse the throughput, load,
+response time, wait time and process time on the resulting vector $M_c$ the
+performance mapping will be developed.
 
 \section{Development methodology}
 

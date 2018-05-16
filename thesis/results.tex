@@ -18,13 +18,15 @@ from the four tested event propagation models and the legend is interpreted as:
 
 \bgroup
 \def\arraystretch{1.2}
-\begin{ctable}
-    {Overview of the performance test cases and their configurations. The
-    columns with arrows ($\rightarrow$) are the variables being adjusted in that
-    specific test case.}
-    {|r|l|r|r|r|r|r|}
+\begin{table}[h!]
+    \caption{Overview of the performance test cases and their configurations.
+    The columns with arrows ($\rightarrow$) are the variables being adjusted in
+    that specific test case.}
+    \label{tab:test_overview}
+\begin{center}
+\begin{tabular}{|r|l|r|r|r|r|r|}
     \hline
-    \# & Related figures & Cores & Quantity $q$ & Delay $\delta$ [s] & CPU int. $\lambda_0$ & I/O int. $\lambda_1$ \\
+    \# & Related figures & Cores $\chi$ & Quantity $q$ & Delay $\delta$ [s] & CPU int. $\lambda_0$ & I/O int. $\lambda_1$ \\
     \hline
     1 & \ref{fig:quad_quantity_throughput}, \ref{fig:quad_quantity_avg_d0},
     \ref{fig:quad_quantity_avg_d2} & 4 & $1 \rightarrow 50$ & 0 & 0.1 & $2
@@ -44,12 +46,14 @@ from the four tested event propagation models and the legend is interpreted as:
     \hline
     6 & \ref{fig:io_throughput}, \ref{fig:io_avg_d0} & 1 & 25 & 0 & 0.05 & $10^{-4} \rightarrow 10^{-3}$ \\
     \hline
-\end{ctable}\label{tab:test_overview}
+\end{tabular}
+\end{center}
+\end{table}
 
 After a test has finished, each event has timestamps associated with its
 lifecycle in the database. This data is used to calculate throughput, done
-ratio, response time, time on device and time on gateway \todo{refer to
-performance metrics section}. Response time is defined as the done timestamp
+ratio, response time, time on device and time on gateway
+\ref{sec:performance_metrics}. Response time is defined as the done timestamp
 subtracted with the created timestamp. Time on device is defined as the fetched
 timestamp subtracted with the created timestamp. Time on gateway is defined as
 the done timestamp subtracted with the retrieved timestamp. The retrieved
@@ -59,20 +63,20 @@ that time on device plus time on gateway is not necessarily equal to the total
 response time. Some time is "lost" between the fetched timestamp and the
 retrieved timestamp.
 
-Each test has a done ratio above 90 \%. This means that more than 90 \% of all
+Each test has a load above 90 \%. This means that more than 90 \% of all
 created events in the test were processed and flagged done. The reason for
-having a done ratio on this level is that a done ratio smaller than 90 \% will
-give an unfair image of the response time, since many events will be queued up
-on the device because they are created too fast. The way to achieve this was to
-modify the event frequency parameter $\phi$ so the gateway was at its peek load
-while still letting most events be processed. Each test run was run twice:
-first with a high $\phi$ value, meaning the done ratio became smaller than 90
-\%, and second with $\phi = \frac{T}{q}$ where $q$ is the amount of devices in
-the test and $T$ is the throughput result of the previous test run. Most of the
-time, $\phi$ will get a proper value on the second run and the done ratio will
-be above 90 \%. However, due to high traffic in the network and other processes
-on the testing platform, the resulting done ratio can be smaller than expected
-and a new test run must be executed.
+having a load on this level is that a load smaller than 90 \% will give an
+unfair image of the response time, since many events will be queued up on the
+device because they are created too fast (see Section \ref{sec:load}). The way
+to achieve this was to modify the event frequency parameter $\phi$ so the
+gateway was at its peek load while still letting most events be processed. Each
+test run was run twice: first with a high $\phi$ value, meaning the load became
+smaller than 90 \%, and second with $\phi = \frac{T}{q}$ where $q$ is the
+amount of devices in the test and $T$ is the throughput result of the previous
+test run. Most of the time, $\phi$ will get a proper value on the second run
+and the done ratio will be above 90 \%. However, due to high traffic in the
+network and other processes on the testing platform, the resulting done ratio
+can be smaller than expected and a new test run must be executed.
 
 \section{Test case 1: Increasing device quantity}
 
