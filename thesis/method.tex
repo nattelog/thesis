@@ -1,21 +1,78 @@
 \chapter{Method}
 \label{cha:method}
 
-The aim of this study is to present the differences in performance and
-maintainability three event-driven architectures constitutes. Previous attempts
-have been made to prove how certain programming languages perform better when
-used in a reactive context. Terber \cite{terber2017function} discusses the lack
-of function-oriented software decomposition for reactive software. With an
-industrial application as context, he replaces legacy code with code written in
-the \textit{Cèu} programming language, reaching the conclusion that Cèu
-preserves fundamental software engineering principles and is at the same time
-able to fullfill resource limitations in the system. Jagadeesan et al
-\cite{jagadeesan1996formal} performs a similar study but with a different
-language: \textit{Esterel}. They reimplement a component in a telephone
-switching system and reach the conclusion that Esterel is better suited for
-analysis and verification for reactive systems.
+The goal of this study is to map out and understand how IoT gateway
+architectures can be developed and how they perform. Also, the asynchronous I/O
+library libuv will be studied to see how it can increase the performance of IoT
+gateways.
+
+\section{Three phases}
+
+The overall phases of the study has been a design phase, a technological phase
+and a reflexive phase \cite{novikov2013research}. In the design phase, the
+concept and goals of the study were developed. Together with the author's own
+ideas and input from Attentec, the value of understanding IoT gateway
+performance was identified. The hypothesis that the libuv library will improve
+IoT gateway performance was stated and a theoretical framework was mapped out
+as previous research was studied.
+
+The theoretical framework was developed in this phase to support claims and
+form a general direction of the entire study. Multiple databases were queried
+in order to find interesting material from previous research. Mainly the online
+library hosted by \textit{Linköping University}\footnote{\url{www.bibl.liu.se}}
+was used since it allow access to material otherwise unviewable due to
+institutional login requirements. Query results from this library is a
+collection of query results from other research databases such as \textit{ACM
+Digital Library}\footnote{\url{dl.acm.org}}, \textit{ProQuest Ebook
+Central}\footnote{\url{ebookcentral.proquest.com}} and \textit{IEEE Xplore
+Digital Library}\footnote{\url{ieeexplore.ieee.org}}; so it acts as a gateway
+to a global collection of scientific research.
+
+The \textit{three-pass approach} presented by Keshav \cite{keshav2007read} was
+be used as a basic approach to find interesting material. It helps the reader
+grasp the paper's content in three \textit{passes}. The first pass' purpose is
+to give the reader an overview of the paper. The title, abstract, introduction,
+headings, sub-headings, conclusions and references are read. This information
+should help the reader understand the paper's category and context and help
+decide whether to continue read this paper or leave it. If the reader choose to
+continue read it, the second pass starts. Here the paper is read more
+thoroughly. The figures and diagrams are examined and after this pass the
+reader should be able to summarize the paper, with leading evidence, to someone
+else. The purpose of the third pass is to fully understand the paper. By making
+the same assumptions as the author, the paper is virtually re-created. It helps
+identify the true innovations of the paper, as well as the hidden failures.
+
+Together with Attentec, a model of a general, or abstract, gateway was
+theoretically developed. The idea was that all IoT gateway implementations have
+some common features, constraints and environments that can be simulated and
+tested. Another hypothesis developed that different IoT gateway architectures
+performed different in different environments, and that there is no
+"one-size-fit-all" architecture.
+
+The next phase, the technological phase, started with implementation of the
+abstract gateway in order to enable empirical data collection of different
+performance measures of different configurations of the abstract gateway. Once
+the implementation was considered done, the data collection began.
+
+In the reflexive phase the empirical data was interpreted. There were efforts
+in filtering the data and prioritizing what was the most interesting and
+significant data that would lead to the best result. The results were then
+formulated in this thesis.
 
 \section{Related work}
+
+Previous attempts have been made to prove how certain programming languages
+perform better when used in a reactive context. Terber
+\cite{terber2017function} discusses the lack of function-oriented software
+decomposition for reactive software. With an industrial application as context,
+he replaces legacy code with code written in the \textit{Cèu} programming
+language, reaching the conclusion that Cèu preserves fundamental software
+engineering principles and is at the same time able to fullfill resource
+limitations in the system. Jagadeesan et al \cite{jagadeesan1996formal}
+performs a similar study but with a different language: \textit{Esterel}. They
+reimplement a component in a telephone switching system and reach the
+conclusion that Esterel is better suited for analysis and verification for
+reactive systems.
 
 No previous research has been found regarding the internal architecture of the
 IoT gateway and how it affects performance. Most research regarding IoT
@@ -96,13 +153,6 @@ parameters that affect performance, such as client request load and thread pool
 size and some observable parameters such as throughout and response time. They
 reach the conclusion that gathering empirical results with simple test cases is
 an effective method to understand the performance profile of the system.
-
-\section{The big picture}
-
-An IoT architecture can be split up into a sensing domain, a network domain and
-an application domain \cite{chen2011brief}. The IoT gateway resides in the
-network domain and is decoupled from whatever application the data from the
-sening domain is used for.
 
 \section{Two customer cases}
 \label{sec:customer-cases}
@@ -185,15 +235,16 @@ time. This is repeated for each customer in line with the constraint that no
 new order is accepted before the current order is served, see Figure
 \ref{fig:cafe-serial}. This can be seen as a \textit{serial order handling};
 only one order can be handled at a time. Imagine now that the cafe hires more
-baristas and more coffee machines. There is still one line, but orders can be
-handled concurrently, so the next customer in line does not necessarily have to
-wait for the previous customer to be served before he can place his order, see
-Figure \ref{fig:cafe-preemptive}. This can be seen as \textit{preemptive order
-handling}. Now lets keep the brewers but let go all baristas except for one.
-All customers place their order to the same barista which in turn start one of
-the brewers. While the brewer is working, the next customer in line places his
-order and the barista can start a second brewer, see Figure
-\ref{fig:cafe-cooperative}. This is called \textit{cooperative order handling}.
+baristas and more coffee machines. There is still one line (but there can be
+several), but orders can be handled concurrently, so the next customer in line
+does not necessarily have to wait for the previous customer to be served before
+he can place his order, see Figure \ref{fig:cafe-preemptive}. This can be seen
+as \textit{preemptive order handling}. Now lets keep the brewers but let go all
+baristas except for one.  All customers place their order to the same barista
+which in turn start one of the brewers. While the brewer is working, the next
+customer in line places his order and the barista can start a second brewer,
+see Figure \ref{fig:cafe-cooperative}. This is called \textit{cooperative order
+handling}.
 
 \begin{figure}[h!]
     \centering
@@ -716,8 +767,20 @@ one dispatch process for each device, see Figure \ref{fig:dispatcher-pre-coop}.
     \label{fig:dispatcher-pre-coop}
 \end{figure}
 
-\todo{Perhaps an illustration with many of these processes next to each other
-is better?}
+What differentiates the cooperative dispatcher from the preemptive, though, is
+that the dispatcher interleaves between devices implicitly and explicitly
+respectively. The preemptive dispatcher can be implemented by creating one
+thread per device and simply run a serial dispatcher for each thread that only
+dispatch events from one device. The concurrency mechanism in the operating
+system scheduler will perform the interleaving, thus making it implicit for the
+user. The cooperative approach can be implemented with libuv, which has been
+done in this study. By creating one state machine (like the one in Figure
+\ref{fig:dispatcher-pre-coop}) per device and by letting the edges represent
+asynchronous network transmissions, other device states can do work while the
+network transmission is on the line. The explicit interleaving is happening
+when the user initiates an asynchronous network transmission. The cooperative
+approach only requires one thread, utilizing the asynchronous features of the
+I/O drivers to the operating system.
 
 \subsection{The event handler}
 
@@ -731,15 +794,15 @@ locally on the gateway's filesystem or on some remote internet service. Perhaps
 the weather station has a feature that predicts the future wind velocity in
 real time. This requires some statistics or machine learning calculation to be
 done every time a new event arrives at the gateway. Generalising this idea, we
-get two different types of calculations: one depending on some peripheral unit
-of the CPU, for instance the file system or the network unit, and one depending
-on the CPU and its memory. The first we call I/O-work, or $\lambda^{io}$, for
-it is work not necessarily done by the CPU but by some peripheral I/O unit. The
-latter we call CPU-work, or $\lambda^{cpu}$, for it is work entirely performed
-by the CPU. The definition then follows that the total work done by the event
-handler $\lambda^e_j = \lambda^{io}_j + \lambda^{cpu}_j$ for an event
-$\epsilon_j$. It is however not necessarily the case that $\lambda^{io}$ is
-disjunct from $\lambda^{cpu}$, they might depend on each other to some extent.
+get two different types of calculations: one depending on the CPU and its
+memory, and one depending on some peripheral unit of the CPU, for instance the
+file system or the network unit. The first we call CPU-work, or $\lambda^0$,
+for it is work entirely performed by the CPU. The latter we call I/O-work, or
+$\lambda^1$, for it is work not necessarily done by the CPU but by some
+peripheral I/O unit. The definition then follows that the total work done by
+the event handler $\lambda^e_j = \lambda^0_j + \lambda^1_j$ for an event
+$\epsilon_j$. It is however not necessarily the case that $\lambda^0$ is
+disjunct from $\lambda^0$, they might depend on each other to some extent.
 
 \section{An abstract gateway}
 
@@ -923,6 +986,8 @@ a set of different gateways $\Gamma_c$ and analyse the throughput, load,
 response time, wait time and process time on the resulting vector $M_c$ the
 performance mapping will be developed.
 
+\subsection{Test environment}
+
 \section{Development methodology}
 
 This entire study will be conducted with Scrum as its backbone. Both the
@@ -950,35 +1015,6 @@ traditional sprint planning \cite{sims2012scrum} where only the product owner
 and team members are present, include a mentor from Attentec to help plan the
 upcoming sprint. At the end of each sprint the current status of the project
 will be presented to the stakeholders.
-
-\section{Literature study}
-
-A major literature study will be conducted prior and during the implementation.
-The theoretical framework will be vindicated in this phase to support claims
-and form a general direction of the entire study. Multiple databases will be
-queried in order to find interesting material from previous research. Mainly
-the online library hosted by \textit{Linköping
-University}\footnote{\url{www.bibl.liu.se}} will be used since it allow access
-to material otherwise unviewable due to institutional login requirements. Query
-results from this library is a collection of query results from other research
-databases such as \textit{ACM Digital Library}\footnote{\url{dl.acm.org}},
-\textit{ProQuest Ebook Central}\footnote{\url{ebookcentral.proquest.com}} and
-\textit{IEEE Xplore Digital Library}\footnote{\url{ieeexplore.ieee.org}}; so it
-acts as a gateway to a global collection of scientific research.
-
-The \textit{three-pass approach} presented by Keshav \cite{keshav2007read} will
-be used as a basic approach to find interesting material. It helps the reader
-grasp the paper's content in three \textit{passes}. The first pass' purpose is
-to give the reader an overview of the paper. The title, abstract, introduction,
-headings, sub-headings, conclusions and references are read. This information
-should help the reader understand the paper's category and context and help
-decide whether to continue read this paper or leave it. If the reader choose to
-continue read it, the second pass starts. Here the paper is read more
-thoroughly. The figures and diagrams are examined and after this pass the
-reader should be able to summarize the paper, with leading evidence, to someone
-else. The purpose of the third pass is to fully understand the paper. By making
-the same assumptions as the author, the paper is virtually re-created. It helps
-identify the true innovations of the paper, as well as the hidden failures.
 
 \section{Implementation}
 
