@@ -667,3 +667,107 @@ entire scenario is stored.
     \caption{Entitry relationship diagram of the database schema.}
     \label{fig:er_db}
 \end{figure}
+
+\section{The dispatcher}
+
+Two event propagation models were implemented for the dispatcher: the serial
+and the cooperative. The serial dispatcher was implemented using standard
+libraries in C, see Listing \ref{lst:serial_dispatcher}. The cooperative
+dispatcher was implemented using libuv. Listing
+\ref{lst:cooperative_dispatcher} shows a snippet of the cooperative dispatcher
+function. The serial dispatcher performs socket operations synchronously, i.e.
+the entire process is paused while waiting for RMI responses to return. The
+cooperative dispatcher uses a state machine functionality, where nodes are
+represented as state callback functions. A state callback can make an
+asynchronous RMI call and pass in the edge to traverse to when the RMI response
+has returned. Each asynchronous RMI call wraps libuv socket operations and
+returns instantly. That allows the process to continue despite having socket
+transmissions on the line.
+
+\begin{lstlisting}[
+    language = C,
+    caption = {Code snippet from the serial dispatcher. Some parts has been
+    left out in the \texttt{/* */} markings. This function loops endlessly over
+    each device retrieved from the \texttt{hostnames()} API function on the
+    name service. In each loop a \texttt{status()} call is made to the device.
+    If the response equals 1, the event is retrieved by \texttt{next\_event()}
+    and dispatched to either the serial or the preemptive event handler,
+    depending on the configuration.},
+    label = {lst:serial_dispatcher}
+]
+void dispatcher_serial(config_data_t* config, protocol_value_t* devices)
+{
+    int i = 0;
+
+    /* ... */
+
+    while (1) {
+        net_tcp_context_sync_t* device = devices_context[i];
+        int status_ok;
+
+        /*
+        make the status() RMI-call and set the result in status_ok...
+        */
+
+        if (status_ok) {
+            /*
+            make the next_event() RMI-call and set the result in device->event...
+            */
+
+            // send log messages to the log server
+            // these two lines means there is theoratically no time difference
+            // between the retrieved- and the dispatched-timestamp.
+            log_event_retrieved(device->event);
+            log_event_dispatched(device->event);
+
+            // call serial event handler
+            if (strcmp(config->eventhandler, "serial") == 0) {
+                event_handler_esrial(config->cpu, config->io);
+            }
+            // call preemptive event handler
+            else if (strcmp(config->eventhandler, "preemptive") == 0) {
+                /*
+                wait for thread pool queue
+                */
+
+                event_handler_preemptive(device);
+            }
+        }
+
+        i = (i + 1) % devices_len;
+    }
+}
+\end{lstlisting}
+
+\begin{lstlisting}[
+    language = C,
+    caption = {Code snippet from the cooperative dispatcher. Some parts have
+    been left out in the \texttt{/* */} markings. For each device, a context is
+    created and initialized and the state machine is started for that context.
+    The libuv event loop is then started.},
+    label = {lst:cooperative_dispatcher}
+]
+void dispatcher_cooperative(config_data_t* config, protocol_value_t* devices)
+{
+    // create the cooperative state machine
+    state_t* coop_dispatch = machine_cooperative_dispatch();
+
+    // just loop each device once
+    for (int i = 0; i < devices_len; ++i) {
+        machine_coop_context_t* context;
+
+        /* ... */
+
+        // start the state machine for this device, this function returns
+        // immediately
+        state_machine_run(coop_dispatch, context);
+    }
+
+    // start the libuv event loop, this function will not return
+    uv_run(loop, UV_RUN_DEFAULT);
+}
+\end{lstlisting}
+
+\section{The event handler}
+
+
