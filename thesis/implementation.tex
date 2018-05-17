@@ -398,15 +398,32 @@ illustrated in Figure \ref{fig:bootup_process}.
         ($(gw)!9cm!(gw_ground)$)
         {Start test};
     \end{tikzpicture}
-    \caption{Sequence diagram of the bootup process. The test manager waits for
-    the gateway to verify its configuration settings. If the configuration does
-    not match the one on the test manager, the test is aborted (not shown in
-    this figure). If the configuration matches, the test manager starts the
-    time sync process that retrieves the timestamp from the gateway a couple of
-    times with a 1 second pause between each call. The offset is then stored in
-    the database and the test can start.}
+
+    \caption[Sequence diagram of the bootup process.]{Sequence diagram of the
+    bootup process. The test manager waits for the gateway to verify its
+    configuration settings. If the configuration does not match the one on the
+    test manager, the test is aborted (not shown in this figure). If the
+    configuration matches, the test manager starts the time sync process that
+    retrieves the timestamp from the gateway a couple of times with a 1 second
+    pause between each call. The offset is then stored in the database and the
+    test can start.}
+
     \label{fig:bootup_process}
 \end{figure}
+
+The gateway bootup process starts a TCP server hosting an API used by the test
+manager with the following functions:
+
+\begin{description}
+
+    \item[\texttt{get\_timestamp()}:] Returns the timestamp in milliseconds on
+        the gateway machine.
+
+    \item[\texttt{start\_test()}:] Signals the gateway that the bootup process
+        is finished and that the test can start. The gateway will start
+        communication with the devices.
+
+\end{description}
 
 \section{The name service}
 
@@ -501,8 +518,9 @@ This is because the method is only available locally for the EventProducer class
         \draw[->] (device.two east) -- (event.one west);
     \end{tikzpicture}
 
-    \caption{Class diagram of the dependencies between the Device, EventProducer and
-    Event class.}
+    \caption[Class diagram of name service components.]{Class diagram of the
+    dependencies between the Device, EventProducer and Event class.}
+
     \label{fig:device_class_diagram}
 \end{figure}
 
@@ -655,8 +673,11 @@ event handler, depending on the configuration.
 
 \begin{lstlisting}[
     language = C,
-    caption = {Code snippet from the serial dispatcher. Some parts has been
-    left out in the \texttt{/* */} markings.},
+
+    caption = {[Code snippet from the serial dispatcher.]Code snippet from the
+    serial dispatcher. Some parts has been left out in the \texttt{/* */}
+    markings.},
+
     label = {lst:serial_dispatcher}
 ]
 void dispatcher_serial(config_data_t* config, protocol_value_t* devices)

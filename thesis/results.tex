@@ -19,9 +19,12 @@ from the four tested event propagation models and the legend is interpreted as:
 \bgroup
 \def\arraystretch{1.2}
 \begin{table}[h!]
-    \caption{Overview of the performance test cases and their configurations.
-    The columns with arrows ($\rightarrow$) are the variables being adjusted in
-    that specific test case.}
+
+    \caption[Overview of the performance test cases.]{Overview of the
+    performance test cases and their configurations.  The columns with arrows
+    ($\rightarrow$) are the variables being adjusted in that specific test
+    case.}
+
     \label{tab:test_overview}
 \begin{center}
 \begin{tabular}{|r|l|r|r|r|r|r|}
@@ -102,8 +105,10 @@ quantity reaches a certain level.
         ylabel={Throughput [events/s]},
         legend pos=outer north east
     }
-    \caption{Throughput result of the four event propagation models on a quad
+
+    \caption[Throughput result when device quantity was increased.]{Throughput result of the four event propagation models on a quad
     core CPU as device quantity was increased.}
+
     \label{fig:quad_quantity_throughput}
 \end{figure}
 
@@ -140,8 +145,11 @@ concurrently are dispatched.
         ylabel={Response time [ms]},
         legend pos=outer north east
     }
-    \caption{The average response time of the four event propagation models on
-    a quad core CPU as device quantity was increased.}
+
+    \caption[Response time result when device quantity was increased.]{The
+    average response time of the four event propagation models on a quad core
+    CPU as device quantity was increased.}
+
     \label{fig:quad_quantity_avg_d0}
 \end{figure}
 
@@ -154,8 +162,11 @@ concurrently are dispatched.
         ylabel={Time on gateway [ms]},
         legend pos=outer north east
     }
-    \caption{The average time each event spent on the gateway on a quad core
-    CPU as device quantity was increased.}
+
+    \caption[Time spent on gateway when device quantity was increased.]{The
+    average time each event spent on the gateway on a quad core CPU as device
+    quantity was increased.}
+
     \label{fig:quad_quantity_avg_d2}
 \end{figure}
 
@@ -185,8 +196,11 @@ dispatcher design, not the event handler.
         ylabel={Throughput [events/s]},
         legend pos=outer north east
     }
-    \caption{Throughput result of the four event propagation models on a quad
-    core CPU as network delay was increased.}
+
+    \caption[Throughput result when network delay was increased.]{Throughput
+    result of the four event propagation models on a quad core CPU as network
+    delay was increased.}
+
     \label{fig:quad_delay_throughput}
 \end{figure}
 
@@ -199,8 +213,11 @@ dispatcher design, not the event handler.
         ylabel={Response time [ms]},
         legend pos=outer north east
     }
-    \caption{The average response time of the four event propagation models on
-    a quad core CPU as network delay was increased.}
+
+    \caption[Response time when network delay was increased.]{The average
+    response time of the four event propagation models on a quad core CPU as
+    network delay was increased.}
+
     \label{fig:quad_delay_avg_d0}
 \end{figure}
 
@@ -238,8 +255,11 @@ cannot optimize CPU work despite using preemptive event handlers.
             }
         \end{groupplot}
     \end{tikzpicture}
-    \caption{Throughput result of the four event propagation models as CPU
-    intensity was increased.}
+
+    \caption[Throughput result when CPU intensity was increased.]{Throughput
+    result of the four event propagation models as CPU intensity was
+    increased.}
+
     \label{fig:cpu_throughput}
 \end{figure}
 
@@ -256,8 +276,6 @@ shows where the events are waiting. For the serial/serial design they spend
 longer time on the device than they do on the gateway. For the
 cooperative/cooperative design its the opposite: they spend longer time on the
 gateway than they do on the device.
-
-\todo{More on the other approaches}
 
 \begin{figure}[h!]
     \centering
@@ -277,8 +295,11 @@ gateway than they do on the device.
             }
         \end{groupplot}
     \end{tikzpicture}
-    \caption{The average response time of each event expressed in milliseconds
-    as CPU intensity increased.}
+
+    \caption[Response time result when CPU intensity was increased.]{The
+    average response time of each event expressed in milliseconds as CPU
+    intensity increased.}
+
     \label{fig:cpu_avg_d0}
 \end{figure}
 
@@ -300,8 +321,10 @@ gateway than they do on the device.
             }
         \end{groupplot}
     \end{tikzpicture}
-    \caption{The average time each event spends on the device as CPU intensity
-    increased.}
+
+    \caption[Time on device when CPU intensity was increased.]{The average time
+    each event spends on the device as CPU intensity increased.}
+
     \label{fig:cpu_avg_d1}
 \end{figure}
 
@@ -324,8 +347,10 @@ gateway than they do on the device.
             }
         \end{groupplot}
     \end{tikzpicture}
-    \caption{The average time each event spends on the gateway as CPU
-    intensity increased.}
+
+    \caption[Time on gateway when CPU intensity was increased.]{The average
+    time each event spends on the gateway as CPU intensity increased.}
+
     \label{fig:cpu_avg_d2}
 \end{figure}
 
@@ -345,12 +370,12 @@ the number of cores does not affect throughput significantly. The main work is
 not done by the CPU, but by the filesystem. This also proves why the response
 in Figure \ref{fig:io_avg_d0} is not that different between the number of
 cores. There are a number of spikes in the response time measurements that
-correlate with the done ratio in Figure \ref{quad_io_done_ratio}. Done ratio is
-the number of processed or done events divided by the number of created events.
-When the ratio decreases, there are events waiting to be processed either on
-the device or on the gateway. This increases response time and is the reason
-why the spikes correlate between the quad core CPU graph in Figure
-\ref{fig:io_avg_d0} and Figure \ref{quad_io_done_ratio}.
+correlate with the done ratio in Figure \ref{fig:quad_io_done_ratio}. Done
+ratio is the number of processed or done events divided by the number of
+created events.  When the ratio decreases, there are events waiting to be
+processed either on the device or on the gateway. This increases response time
+and is the reason why the spikes correlate between the quad core CPU graph in
+Figure \ref{fig:io_avg_d0} and Figure \ref{fig:quad_io_done_ratio}.
 
 \begin{figure}[h!]
     \centering
@@ -371,8 +396,11 @@ why the spikes correlate between the quad core CPU graph in Figure
             }
         \end{groupplot}
     \end{tikzpicture}
-    \caption{Throughput result of the four event propagation models as I/O
-    intensity was increased.}
+
+    \caption[Throughput result when I/O intensity was increased.]{Throughput
+    result of the four event propagation models as I/O intensity was
+    increased.}
+
     \label{fig:io_throughput}
 \end{figure}
 
@@ -381,10 +409,12 @@ why the spikes correlate between the quad core CPU graph in Figure
     \performanceplot
     {data/quad_io_done_ratio.csv}
     {table/x=l1, xlabel=I/O intensity $\lambda_1$, ylabel=Done ratio, legend pos=outer north east}
-    \caption{The ratio of processed (done) events to created events as I/O
-    intensity increased on a quad core CPU. This diagram shows the direct
-    correlation low values has on response time, see
-    Figure \ref{fig:io_avg_d0}.}
+
+    \caption[Load result when I/O intensity was increased.]{The load result as
+    I/O intensity increased on a quad core CPU. This diagram shows the direct
+    correlation low values has on response time, see Figure
+    \ref{fig:io_avg_d0}.}
+
     \label{fig:quad_io_done_ratio}
 \end{figure}
 
@@ -406,7 +436,10 @@ why the spikes correlate between the quad core CPU graph in Figure
             }
         \end{groupplot}
     \end{tikzpicture}
-    \caption{The average response time of each event expressed in milliseconds
-    as I/O intensity increased.}
+
+    \caption[Response time result when I/O intensity was increased.]{The
+    average response time of each event expressed in milliseconds as I/O
+    intensity increased.}
+
     \label{fig:io_avg_d0}
 \end{figure}

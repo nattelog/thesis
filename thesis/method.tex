@@ -202,7 +202,7 @@ emit any events on their own, only when asked to by the gateway. Figure
         \path [->] (device_n) edge [bend left=5] (gateway);
         \path [->] (gateway) edge [bend left=5] (device_n);
     \end{tikzpicture}
-    \caption[Pull-based event propagation]{Pull-based event propagation with
+    \caption[Pull-based event propagation.]{Pull-based event propagation with
     passive devices. The gateway pulls events from the devices by requesting
     them first.}
     \label{fig:pull-based}
@@ -231,7 +231,7 @@ device, but the device does not need to know anything about the gateway.
         \path [line] (device_2) -- (gateway);
         \path [line] (device_n) -- (gateway);
     \end{tikzpicture}
-    \caption[Push-based event propagation]{Push-based event propagation with
+    \caption[Push-based event propagation.]{Push-based event propagation with
     active devices. Events are pushed from the devices to the gateway that
     listens for incoming requests.}
     \label{fig:push-based}
@@ -344,9 +344,11 @@ handling}.
         \node[draw=none, fill=white, scale=0.9] at ($(customers)!7.5cm!(customers_ground)$)
             {...};
     \end{tikzpicture}
-    \caption{A sequence diagram of a serial cafe order line. Each customer is
-    served one at a time and no customer is served before the previous customer
-    receives its order.}
+
+    \caption[A sequence diagram of a serial cafe order line.]{A sequence diagram
+    of a serial cafe order line. Each customer is served one at a time and no
+    customer is served before the previous customer receives its order.}
+
     \label{fig:cafe-serial}
 \end{figure}
 
@@ -441,10 +443,13 @@ handling}.
         \node[draw=none, fill=white, scale=0.9] at ($(customers)!7cm!(customers_ground)$)
             {...};
     \end{tikzpicture}
-    \caption{A sequence diagram of a preemptive cafe order line. There are
-    $n$ baristas and brewers that can handle orders concurrently and
-    customers does not necessarily have to wait for previous orders to be
-    returned before they can place their own.}
+
+    \caption[A sequence diagram of a preemptive cafe order line.]{A sequence
+    diagram of a preemptive cafe order line. There are $n$ baristas and brewers
+    that can handle orders concurrently and customers does not necessarily have
+    to wait for previous orders to be returned before they can place their
+    own.}
+
     \label{fig:cafe-preemptive}
 \end{figure}
 
@@ -535,9 +540,11 @@ handling}.
         \node[draw=none, fill=white, scale=0.9] at ($(customers)!7cm!(customers_ground)$)
             {...};
     \end{tikzpicture}
-    \caption{A sequence diagram of a cooperative cafe order line. There is only
-    one barista but $n$ brewers. As soon as a brewer is working, the next order
-    can be handled.}
+
+    \caption[A sequence diagram of a cooperative cafe order line.]{A sequence
+    diagram of a cooperative cafe order line. There is only one barista but $n$
+    brewers. As soon as a brewer is working, the next order can be handled.}
+
     \label{fig:cafe-cooperative}
 \end{figure}
 
@@ -637,10 +644,10 @@ workflow of a serial event propagation model is illustrated in Figure
             {...};
     \end{tikzpicture}
 
-    \caption{A sequence diagram of the serial event propagation model. Only one
-    event $\epsilon_j$ is dispatched and handled at a time and no event
-    $\epsilon_j$ can be dispatched before the previous work $\Lambda_{j-1}$ is
-    finished.}
+    \caption[A sequence diagram of the serial event propagation model.]{A
+    sequence diagram of the serial event propagation model. Only one event
+    $\epsilon_j$ is dispatched and handled at a time and no event $\epsilon_j$
+    can be dispatched before the previous work $\Lambda_{j-1}$ is finished.}
 
     \label{fig:event-propagation-serial}
 \end{figure}
@@ -679,8 +686,11 @@ timestamp when the event reaches those places, see Figure \ref{fig:event-life}.
         \node[comment, node distance=1cm, right =of dispatcher] (dispatched) {Dispatched};
         \node[comment, node distance=1cm, right =of event_handler] (processed) {Processed};
     \end{tikzpicture}
-    \caption{The event travels from the device down to the event handler. At
-    each step the time point is registered, shown in the clouds.}
+
+    \caption[Over of the event lifecycle.]{Overview of the event lifecycle. The
+    event travels from the device down to the event handler. At each step the
+    time point is registered, shown in the clouds.}
+
     \label{fig:event-life}
 \end{figure}
 
@@ -736,13 +746,13 @@ one dispatch process for each device, see Figure \ref{fig:dispatcher-pre-coop}.
         \path[line] (process.east) -- ++(1cm,0) |- (next.east);
     \end{tikzpicture}
 
-    \caption{An illustration of the serial dispatcher. When "Next device" has
-    reached the end of the list it restarts from the beginning again, thus the
-    loop never breaks. Each node in this model blocks the rest of the
-    execution. For instance, getting an event means sending a request over the
-    network to the device which in turn responds with the latest event. The
-    whole process is then blocked during the time it takes for the message to
-    travel across the network.}
+    \caption[An illustration of the serial dispatcher.]{An illustration of the
+    serial dispatcher. When "Next device" has reached the end of the list it
+    restarts from the beginning again, thus the loop never breaks. Each node in
+    this model blocks the rest of the execution. For instance, getting an event
+    means sending a request over the network to the device which in turn
+    responds with the latest event. The whole process is then blocked during
+    the time it takes for the message to travel across the network.}
 
     \label{fig:dispatcher-serial}
 \end{figure}
@@ -760,9 +770,10 @@ one dispatch process for each device, see Figure \ref{fig:dispatcher-pre-coop}.
         \path[line] (process.east) -- ++(1cm,0) |- (has.east);
     \end{tikzpicture}
 
-    \caption{An illustration of a preemptive and cooperative dispatcher. Each
-    device can have their own dispatch process, so there is no need to loop
-    through the list of device references.}
+    \caption[An illustration of a preemptive and cooperative dispatcher.]{An
+    illustration of a preemptive and cooperative dispatcher. Each device can
+    have their own dispatch process, so there is no need to loop through the
+    list of device references.}
 
     \label{fig:dispatcher-pre-coop}
 \end{figure}
@@ -866,8 +877,9 @@ system scheduler will perform what the user perceives as implicit interleaving.
         \node[node distance = 0.5cm, below = of t1] (dots) {...};
     \end{tikzpicture}
 
-    \caption{Workflow of the preemptive event handler. Serial work is done on
-    multiple threads.}
+    \caption[Workflow of the preemptive event handler.]{Workflow of the
+    preemptive event handler. Serial work is done on multiple threads.}
+
     \label{fig:event_handler_preemptive}
 \end{figure}
 
@@ -888,10 +900,11 @@ parallelized with only one working thread.
 
     \end{tikzpicture}
 
-    \caption{Workflow of the cooperative event handler. CPU work $\lambda_0$ is
-    performed on a single thread, I/O work $\lambda_1$ is however performed
-    asynchronously, thus letting event handler return immediately after
-    $\lambda_0$ is done.}
+    \caption[Workflow of the cooperative event handler.]{Workflow of the
+    cooperative event handler. CPU work $\lambda_0$ is performed on a single
+    thread, I/O work $\lambda_1$ is however performed asynchronously, thus
+    letting event handler return immediately after $\lambda_0$ is done.}
+
     \label{fig:event_handler_cooperative}
 \end{figure}
 
@@ -903,8 +916,6 @@ six-tuple describing its internal properties and its environment.
 \begin{equation}
 \Gamma = \big \langle \Omega, \phi, \delta, K, \Lambda, \chi \big \rangle
 \end{equation}
-
-\todo{active/passive devices?}
 
 Let $\Omega$, $\phi$ and $\delta$ describe the properties of the environment of
 $\Gamma$, also called the \textit{configuration} of $\Gamma$. The following
@@ -1083,8 +1094,11 @@ propagation models. Due to lack of time, not all of them will be supported by
 the implementation, see Table \ref{tab:event_prop_combinations}.
 
 \begin{table}[h!]
-    \caption{Overview of the combination of event propagation models available
-    for the dispatcher and event handler.}
+
+    \caption[Overview of the combination of event propagation models.]{Overview
+    of the combination of event propagation models available for the dispatcher
+    and event handler.}
+
     \label{tab:event_prop_combinations}
 
     \begin{center}
