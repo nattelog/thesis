@@ -1,53 +1,68 @@
-%%% lorem.tex --- 
-%% 
-%% Filename: lorem.tex
-%% Description: 
-%% Author: Ola Leifler
-%% Maintainer: 
-%% Created: Wed Nov 10 09:59:23 2010 (CET)
-%% Version: $Id$
-%% Version: 
-%% Last-Updated: Wed Nov 10 09:59:47 2010 (CET)
-%%           By: Ola Leifler
-%%     Update #: 2
-%% URL: 
-%% Keywords: 
-%% Compatibility: 
-%% 
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%% 
-%%% Commentary: 
-%% 
-%% 
-%% 
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%% 
-%%% Change log:
-%% 
-%% 
-%% RCS $Log$
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%% 
-%%% Code:
-
 \chapter{Conclusion}
 \label{cha:conclusion}
 
-This chapter contains a summarization of the purpose and the research
-questions. To what extent has the aim been achieved, and what are the
-answers to the research questions?
+To understand what internal and external properties affects the functionality
+and performance of the IoT gateway, a combination of observations of
+state-of-the-art technologies and consulting from experienced professionals led
+to a list of common parameters in most IoT gateway systems. These parameters
+were used to develop a theoretical model called the abstract gateway, which is
+proposed to model \textit{any} type of gateway application. This model laid the
+foundation to a configurable gateway implementation and a performance test
+system. The test system was used to test the performance of different
+configurations of the gateway implementation. The internal and external
+properties of the gateway are:
 
-The consequences for the target audience (and possibly for researchers
-and practitioners) must also be described. There should be a section
-on future work where ideas for continued work are described. If the
-conclusion chapter contains such a section, the ideas described
-therein must be concrete and well thought through.
+\begin{enumerate}
 
+    \item The number of devices.
+    \item The frequency of generated events on each device.
+    \item The delay added to each request on the network.
+    \item The event propagation model of the dispatcher.
+    \item The event propagation model of the event handler.
+    \item The CPU intensity induced by each event.
+    \item The I/O intensity induced by each event.
+    \item The number of CPU cores on the gateway machine.
 
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%%% lorem.tex ends here
+\end{enumerate}
 
-%%% Local Variables: 
-%%% mode: latex
-%%% TeX-master: "demothesis"
-%%% End: 
+The abstract gateway has two major building blocks: the dispatcher and the
+event handler. The dispatcher handles incoming events from the devices
+communicating with the gateway and dispatch them forward to the event handler.
+The event handler performs some CPU- and I/O intensive work on each event.
+Three event propagation models are proposed that describes the fundamental
+architectures of the dispatcher and the event handler. The serial event
+propagation model communicates with devices and handles events serially, i.e.
+one device at a time. The preemptive model can communicate with several devices
+and handle several events concurrently on different threads and the operating
+system scheduler interleaves between the working threads implicitly. The
+definition of the cooperative model states that CPU and I/O work induced by
+each event can \textit{explicitly} interleave and make room for other work. The
+cooperative model is implemented with libuv and allows multiple devices and
+events to be handled in parallell while still only running on one major thread.
+
+Increasing the number of devices will increase the response time drastically
+for the serial and cooperative event handlers compared to the preemptive ones.
+The cooperative dispatcher gives much better response time when network delay
+is increased, however. For single core CPUs, all event propagation models
+perform equally in terms of throughput when CPU intensity is increased. The
+cooperative dispatcher combined with a cooperative event handler creates worst
+response time, despite the number of cores. For I/O intensive work, the
+cooperative approaches perform best in terms of throughput.
+
+The best approach to implement libuv in this context is to model the gateway as
+a state machine. As libuv uses callback functions to let the user know when
+asynchronous I/O work is done, the callbacks can be seen as vertices in the
+state machine. Whenever an asynchronous I/O request is initiated in libuv, the
+user can explicitly choose other tasks to do while the I/O request is working.
+This makes libuv a good choice to implement the cooperative approach. The
+results of the performance tests shows that a cooperative dispatcher combined
+with a preemptive event handler performs better or equal to the next best event
+propagation model in all test cases.
+
+\section{Future work}
+
+The preemptive dispatcher was not developed and it would be interesting to do
+so in future work. This study only focused on passive devices that needed to be
+polled in order to retrieve their events. The alternative are active devices
+that push data to the gateway by themselves. This approach would be interesting
+to study as well.
