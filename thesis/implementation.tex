@@ -1,15 +1,15 @@
 \chapter{Implementation}
 \label{ch:implementation}
 
-The be able to reach the goal of this thesis, to map the performance of the
+To be able to reach the goal of this thesis, to map the performance of the
 abstract gateway $\Gamma$, a software system has been developed. The ultimate
 purpose of this system is to generate and store all events and their respective
 timestamps to be able to analyse the performance of $\Gamma$, which processed
 them. The system consists of two processes: a \textit{test manager} and a
-\textit{gateway} and an analysation tool. The main purpose of the test manager
-is to simulate devices and store event data in a database while the purpose of
-the gateway is to pull events from the devices and process them. The
-analysation tool is not discussed more than that it provide utility functions
+\textit{gateway} as well as an analysation tool. The main purpose of the test
+manager is to simulate devices and store event data in a database while the
+purpose of the gateway is to pull events from the devices and process them. The
+analysation tool is not discussed more than that it provides utility functions
 to assemble event timestamp information from one or several test runs available
 in the database and output them as comma separated values (\textit{csv}).
 
@@ -184,7 +184,7 @@ The purpose of the CPU intensity $\lambda_0$ is to simulate CPU intensive work
 induced by each event. The intensity value can be set in the configuration to
 be a value between 0 and 1, where 0 means no intensity and 1 means maximum
 intensity on each event. CPU intensity is simulated by calculating the $n$th
-prime number, where $n = 2^{12} \times \lambda_0$.
+prime number, where $n = \lfloor 2^{12} \times \lambda_0 \rfloor$.
 
 \subsection{Simulating I/O intensity}
 
@@ -192,8 +192,9 @@ The purpose of the I/O intensity $\lambda_1$ is to simulate I/O intensive work
 induced by each event. The intensity value is set to be between 0 and 1, where
 0 means no I/O work and 1 means maximum I/O work for each event. I/O work can
 be any type of work performed by some peripheral unit to the CPU. In this case,
-file system operations were chosen. A buffer och size $n$, where $n = 2^{28}
-\times \lambda_1$, is allocated, filled with letters and written to a file.
+file system operations were chosen. A buffer of size $n$, where $n = \lfloor
+2^{28} \times \lambda_1 \rfloor$, is allocated, filled with letters and written
+to a file.
 
 \section{Communication and protocols}
 
@@ -464,7 +465,7 @@ device via its API:
         be fetched from the device's event queue. Returns 0 otherwise.
 
     \item[\texttt{next\_event()}] Returns the next event in the queue. Throws
-        and returns an error otherwise.
+        and returns an error if the event queue is empty.
 
 \end{description}
 
@@ -673,11 +674,8 @@ event handler, depending on the configuration.
 
 \begin{lstlisting}[
     language = C,
-
-    caption = {[Code snippet from the serial dispatcher.]Code snippet from the
-    serial dispatcher. Some parts has been left out in the \texttt{/* */}
-    markings.},
-
+    caption = {Code snippet from the serial dispatcher. Some parts has been
+    left out in the \texttt{/* */} markings.},
     label = {lst:serial_dispatcher}
 ]
 void dispatcher_serial(config_data_t* config, protocol_value_t* devices)
@@ -707,7 +705,7 @@ void dispatcher_serial(config_data_t* config, protocol_value_t* devices)
 
             // call serial event handler
             if (strcmp(config->eventhandler, "serial") == 0) {
-                event_handler_esrial(config->cpu, config->io);
+                event_handler_serial(config->cpu, config->io);
             }
             // call preemptive event handler
             else if (strcmp(config->eventhandler, "preemptive") == 0) {
@@ -784,7 +782,7 @@ void event_handler_serial(double cpu_intensity, double io_intensity)
 \end{lstlisting}
 
 The preemptive event handler dispatch each event to a thread pool and returns
-immediately, see Figure \ref{lst:preemptive_event_handler}. If all threads in
+immediately, see Listing \ref{lst:preemptive_event_handler}. If all threads in
 the pool are busy with previous events, the event handler waits for a thread to
 be free and blocks the execution on the main thread. The work each thread
 performs is identical to the serial event handler.

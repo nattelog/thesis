@@ -55,7 +55,7 @@ from the four tested event propagation models and the legend is interpreted as:
 
 After a test has finished, each event has timestamps associated with its
 lifecycle in the database. This data is used to calculate throughput, done
-ratio, response time, time on device and time on gateway
+ratio, response time, time on device and time on gateway, see Section
 \ref{sec:performance_metrics}. Response time is defined as the done timestamp
 subtracted with the created timestamp. Time on device is defined as the fetched
 timestamp subtracted with the created timestamp. Time on gateway is defined as
@@ -119,22 +119,22 @@ lowest response time. The design of the dispatcher is not affecting the
 response time; both cooperative dispatch models gives distinct different
 outcomes in response time, same for the serial. However, the
 cooperative/cooperative gateway has a linear dependency to the device quantity,
-see Figure \ref{fig:quad_quantity_avg_d2}, compared to the rest wich seem
+see Figure \ref{fig:quad_quantity_avg_d2}, compared to the rest which seem
 unaffected by it. The reason is due to two things: the cooperative dispatcher
 will fetch events fast as soon they are available on each device and the
 single-threaded cooperative event handler will not be able to keep up with the
 incoming events, thus they must wait on the gateway. Comparing this to the
-serial event handler; each event is being processed direcly as soon as it lands
-on the gateway because the serial dispatcher will not fetch any new before the
-previous is processed. Therefore the time each event spends on the gateway is
-independent on the number of devices. The preemptive event handlers are able to
-keep the time on the gateway low, despite the dispatcher design. This is
-because they, similar to the serial event handler, will pause the dispatcher
-when the thread work queue is full. If the thread pool is configured to hold
-four threads, only four events are processed concurrently. The fifth event must
-wait for a thread to be free before being dispatched. This wait-task will pause
-the entire dispatcher, thus only as many events the gateway can handle
-concurrently are dispatched.
+serial event handler; each event is being processed directly as soon as it
+lands on the gateway because the serial dispatcher will not fetch any new event
+before the previous is processed. Therefore the time each event spends on the
+gateway is independent of the number of devices. The preemptive event handlers
+are able to keep the time on the gateway low, despite the dispatcher design.
+This is because they, similar to the serial event handler, will pause the
+dispatcher when the thread work queue is full. If the thread pool is configured
+to hold four threads, only four events are processed concurrently. The fifth
+event must wait for a thread to be free before being dispatched. This wait-task
+will pause the entire dispatcher, thus only as many events the gateway can
+handle concurrently are dispatched.
 
 \begin{figure}[h!]
     \centering

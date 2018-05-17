@@ -133,7 +133,7 @@ implemented and how its different configurations affects performance for some
 given contexts.
 
 Denaro et al. \cite{denaro2005performance} presents a systematic method to
-ascertain that a given distributed software architecture lives up its
+ascertain that a given distributed software architecture lives up to its
 performance requirements. They mention some performance metrics such as
 latency, throughput and scalability. They state that the overall performance of
 a distributed system is often determined by the middleware used, and that same
@@ -655,7 +655,7 @@ workflow of a serial event propagation model is illustrated in Figure
 \subsection{The anatomy of an event}
 
 The event is the actual data transmitted from the device to the gateway.
-Imagine a small weather station used at private homes. It has two sensors
+Imagine a small weather station used in private homes. It has two sensors
 measuring wind velocity and air temperature. The gateway is the central system
 passing the data from each sensor to the application using the data. At a
 certain frequency, the gateway polls each sensor for new velocity and
@@ -1106,15 +1106,15 @@ the implementation, see Table \ref{tab:event_prop_combinations}.
             \hline
             Dispatcher  & Event handler & Comment \\
             \hline
-            Serial      & Serial        & Implemented. \\
-            Serial      & Preemptive    & Implemented. \\
-            Serial      & Cooperative   & Not implemented. \\
-            Preemptive  & Serial        & Not implemented. \\
-            Preemptive  & Preemptive    & Not implemented. \\
-            Preemptive  & Cooperative   & Not implemented. \\
-            Cooperative & Serial        & Not implemented. \\
-            Cooperative & Preemptive    & Implemented. \\
-            Cooperative & Cooperative   & Implemented. \\
+            Serial      & Serial        & Implemented \\
+            Serial      & Preemptive    & Implemented \\
+            Cooperative & Preemptive    & Implemented \\
+            Cooperative & Cooperative   & Implemented \\
+            Serial      & Cooperative   & Not implemented \\
+            Preemptive  & Serial        & Not implemented \\
+            Preemptive  & Preemptive    & Not implemented \\
+            Preemptive  & Cooperative   & Not implemented \\
+            Cooperative & Serial        & Not implemented \\
             \hline
         \end{tabular}
     \end{center}
@@ -1141,7 +1141,7 @@ hardware used are described in Table \ref{tab:test_environment_hardware}.
             Gateway         & Raspberry Pi 3 Model B    & Quad Core 1.2GHz Broadcom
             BCM2837 64bit  & 1 GB \\
 
-            Test manager    & Macbook Pro               & Dual Core 2.6Ghz
+            Test manager    & Macbook Pro               & Dual Core 2.6GHz
             Intel Core i5    & 8 GB \\
             \hline
         \end{tabular}
