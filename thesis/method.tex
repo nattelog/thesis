@@ -6,9 +6,25 @@ architectures can be developed and how they perform. Also, the asynchronous I/O
 library libuv will be studied to see how it can increase the performance of IoT
 gateways.
 
-\section{Three phases}
+\section{Research and development methodologies}
 
-The overall phases of the study has been a design phase, a technological phase
+The study was conducted with Scrum as its backbone. Both the writing of the
+thesis and the development of the applications to test happened in two-week
+sprints. The project's backlog was initially the fundamental requirements of a
+master's thesis (based on requirements from Linköping University) and the
+research questions. The forms of its user stories resembled traditional issues
+or requirements, but their scopes were wide and their acceptance criteria
+abstract. Every sprint they underwent refinement and abstract stories were
+split into concrete ones as new knowledge about them were acquired during the
+project. For instance, a starting user story (or issue) was \textit{"write the
+Results chapter"}. Initially this story was very large, it was hard to do it in
+one sprint and it was hard to know where to start. As time progressed and the
+implementation to test had been developed and empirical data was gathered, the
+story was split into more precise issues like \textit{"present the developed
+application"} and \textit{"present a diagram with the test results"}. These
+issues were easier to do in one sprint.
+
+The overall phases of the study was a design phase, a technological phase
 and a reflexive phase \cite{novikov2013research}. In the design phase, the
 concept and goals of the study were developed. Together with the author's own
 ideas and input from Attentec, the value of understanding IoT gateway
@@ -250,8 +266,8 @@ handling}.
     \centering
     \begin{tikzpicture}[node distance=5cm, auto, >=stealth']
         \node[] (brewer) {Brewer};
-        \node[right of=brewer] (barista) {Barista};
-        \node[right of=barista] (customers) {Customer line};
+        \node[left of=brewer] (barista) {Barista};
+        \node[left of=barista] (customers) {Customer line};
 
         \node[below of=brewer, node distance=7.5cm] (brewer_ground) {};
         \node[below of=barista, node distance=7.5cm] (barista_ground) {};
@@ -338,11 +354,11 @@ handling}.
     \centering
     \begin{tikzpicture}[node distance=3cm, auto, >=stealth']
         \node[] (brewern) {$Brewer_{n-1}$};
-        \node[right of=brewern] (baristan) {$Barista_{n-1}$};
-        \node[right of=baristan, node distance=1.5cm] (dots) {...};
-        \node[right of=dots, node distance=1.5cm] (brewer0) {$Brewer_0$};
-        \node[right of=brewer0] (barista0) {$Barista_0$};
-        \node[right of=barista0] (customers) {Customer line};
+        \node[left of=brewern] (baristan) {$Barista_{n-1}$};
+        \node[left of=baristan, node distance=1.5cm] (dots) {...};
+        \node[left of=dots, node distance=1.5cm] (brewer0) {$Brewer_0$};
+        \node[left of=brewer0] (barista0) {$Barista_0$};
+        \node[left of=barista0] (customers) {Customer line};
 
         \node[below of=brewern, node distance=7cm] (brewern_ground) {};
         \node[below of=baristan, node distance=7cm] (baristan_ground) {};
@@ -436,10 +452,10 @@ handling}.
     \centering
     \begin{tikzpicture}[node distance=3cm, auto, >=stealth']
         \node[] (brewern) {$Brewer_{n-1}$};
-        \node[right of=brewern, node distance=1.5cm] (dots) {...};
-        \node[right of=dots, node distance=1.5cm] (brewer0) {$Brewer_0$};
-        \node[right of=brewer0] (barista) {Barista};
-        \node[right of=barista] (customers) {Customer line};
+        \node[left of=brewern, node distance=1.5cm] (dots) {...};
+        \node[left of=dots, node distance=1.5cm] (brewer0) {$Brewer_0$};
+        \node[left of=brewer0] (barista) {Barista};
+        \node[left of=barista] (customers) {Customer line};
 
         \node[below of=brewern, node distance=7cm] (brewern_ground) {};
         \node[below of=dots, node distance=7cm] (dots_ground) {};
@@ -529,12 +545,9 @@ Looking at all three of these order handling approaches, we find a few common
 entities. They all have orders, a customer line, one or several baristas and
 brewers. Lets generalize this a bit and call orders \textit{events}, the
 customer line we call the \textit{dispatcher}, the barista and brewer combined
-we call the \textit{event handler} and the work done by the dispatcher and the
-event handler on event $\epsilon_j$ we call $\lambda^d_j$ and $\lambda^e_j$
-respectively and the total work $\Lambda_j = \lambda^d_j + \lambda^e_j$. The
-definition of the three event propagation models is as follows:
-
-\todo{A better explaining on the work $\Lambda$}
+we call the \textit{event handler} and the work done by the event handler on
+event $\epsilon_j$ we call $\Lambda_j$. The definition of the three event
+propagation models is as follows:
 
 \begin{description}
 
@@ -557,17 +570,17 @@ definition of the three event propagation models is as follows:
 
 \end{description}
 
-Common for all models is that the event $\epsilon_j$ can not be dispatched
-before the work $\lambda^d_j$ is done and the work $\lambda^e_j$ can not start
-before the event $\epsilon_j$ is dispatched. Each event follow the order
-$\epsilon_j \rightarrow \lambda^d_j \rightarrow dispatch \rightarrow
-\lambda^e_j \rightarrow finish$.
+Common for all models is that the work $\Lambda_j$ can not start before the
+event $\epsilon_j$ is dispatched. Each event follow the order $\epsilon_j
+\rightarrow dispatch \rightarrow \Lambda_j \rightarrow finish$. An example of
+workflow of a serial event propagation model is illustrated in Figure
+\ref{fig:event-propagation-serial}.
 
 \begin{figure}[h!]
     \centering
     \begin{tikzpicture}[node distance=5cm, auto, >=stealth']
         \node[] (event_handler) {Event handler};
-        \node[right of=event_handler] (dispatcher) {Dispatcher};
+        \node[left of=event_handler] (dispatcher) {Dispatcher};
 
         \node[below of=event_handler, node distance=8cm] (event_handler_ground) {};
         \node[below of=dispatcher, node distance=8cm] (dispatcher_ground) {};
@@ -575,37 +588,25 @@ $\epsilon_j \rightarrow \lambda^d_j \rightarrow dispatch \rightarrow
         \draw (event_handler) -- (event_handler_ground);
         \draw (dispatcher) -- (dispatcher_ground);
 
-        \node[draw=none, fill=white, scale=0.9] at
-            ($(dispatcher)!0.5cm!(dispatcher_ground)$)
-            {$\lambda^d_0$};
-
         \draw[<-] ($(event_handler)!1cm!(event_handler_ground)$) --
             node[above, scale=0.9, midway]{Dispatch $\epsilon_0$}
             ($(dispatcher)!1cm!(dispatcher_ground)$);
         \node[draw=none, fill=white, scale=0.9] at
             ($(event_handler)!1.5cm!(event_handler_ground)$)
-            {$\lambda^e_0$};
+            {$\Lambda_0$};
         \draw[->] ($(event_handler)!2cm!(event_handler_ground)$) --
             node[above, scale=0.9, midway]{Finish $\epsilon_0$}
             ($(dispatcher)!2cm!(dispatcher_ground)$);
-
-        \node[draw=none, fill=white, scale=0.9] at
-            ($(dispatcher)!2.5cm!(dispatcher_ground)$)
-            {$\lambda^d_1$};
 
         \draw[<-] ($(event_handler)!3cm!(event_handler_ground)$) --
             node[above, scale=0.9, midway]{Dispatch $\epsilon_1$}
             ($(dispatcher)!3cm!(dispatcher_ground)$);
         \node[draw=none, fill=white, scale=0.9] at
             ($(event_handler)!3.5cm!(event_handler_ground)$)
-            {$\lambda^e_1$};
+            {$\Lambda_1$};
         \draw[->] ($(event_handler)!4cm!(event_handler_ground)$) --
             node[above, scale=0.9, midway]{Finish $\epsilon_1$}
             ($(dispatcher)!4cm!(dispatcher_ground)$);
-
-        \node[draw=none, fill=white, scale=0.9] at
-            ($(dispatcher)!4.5cm!(dispatcher_ground)$)
-            {$\lambda^d_2$};
 
         \node[draw=none, fill=white, scale=0.9] at
         ($(event_handler)!5cm!(event_handler_ground)$)
@@ -618,16 +619,12 @@ $\epsilon_j \rightarrow \lambda^d_j \rightarrow dispatch \rightarrow
             node[above, scale=0.9, midway]{Finish $\epsilon_{j-1}$}
             ($(dispatcher)!5.5cm!(dispatcher_ground)$);
 
-        \node[draw=none, fill=white, scale=0.9] at
-            ($(dispatcher)!6cm!(dispatcher_ground)$)
-            {$\lambda^d_j$};
-
         \draw[<-] ($(event_handler)!6.5cm!(event_handler_ground)$) --
             node[above, scale=0.9, midway]{Dispatch $\epsilon_j$}
             ($(dispatcher)!6.5cm!(dispatcher_ground)$);
         \node[draw=none, fill=white, scale=0.9] at
             ($(event_handler)!7cm!(event_handler_ground)$)
-            {$\lambda^e_j$};
+            {$\Lambda_j$};
         \draw[->] ($(event_handler)!7.5cm!(event_handler_ground)$) --
             node[above, scale=0.9, midway]{Finish $\epsilon_j$}
             ($(dispatcher)!7.5cm!(dispatcher_ground)$);
@@ -639,9 +636,12 @@ $\epsilon_j \rightarrow \lambda^d_j \rightarrow dispatch \rightarrow
         ($(dispatcher)!8cm!(dispatcher_ground)$)
             {...};
     \end{tikzpicture}
-    \caption{The serial event propagation model. Only one event $\epsilon_j$ is
-    dispatched and handled at a time and no event $\epsilon_j$ can be
-    dispatched before the previous work $\Lambda_{j-1}$ is finished.}
+
+    \caption{A sequence diagram of the serial event propagation model. Only one
+    event $\epsilon_j$ is dispatched and handled at a time and no event
+    $\epsilon_j$ can be dispatched before the previous work $\Lambda_{j-1}$ is
+    finished.}
+
     \label{fig:event-propagation-serial}
 \end{figure}
 
@@ -712,10 +712,10 @@ to pull events from them.
 An important question to consider is: how is the dispatcher related to the
 event propagation models? If the architecture of the gateway implements the
 serial event propagation model, the dispatcher should make sure it does not
-dispatch an event before the previous event is processed, see Figure
+dispatch an event before the previous event is dispatched, see Figure
 \ref{fig:dispatcher-serial}. Both the preemptive and the cooperative event
 propagation models loosens this constraint and allows the dispatcher to
-dispatch events before previous events have been processed. In contrast to the
+dispatch events before previous events have been dispatched. In contrast to the
 serial approach in Figure \ref{fig:dispatcher-serial}, all devices can be
 polled for events concurrently. There is no need, in theory, to loop through
 the list of device references and check them one by one. Instead, there can be
@@ -727,7 +727,7 @@ one dispatch process for each device, see Figure \ref{fig:dispatcher-pre-coop}.
         \node[block] (next) {Next device};
         \node[decision, node distance=3cm, below of=next] (has) {Has event?};
         \node[block, node distance=3cm, below of=has] (get) {Get event};
-        \node[block, below of=get] (process) {Process event};
+        \node[block, below of=get] (process) {Dispatch event};
 
         \path[line] (next) -- (has);
         \path[line] (has.west) -- node[above] {No} ++(-1cm,0) |- (next.west);
@@ -752,7 +752,7 @@ one dispatch process for each device, see Figure \ref{fig:dispatcher-pre-coop}.
     \begin{tikzpicture}[node distance=2.5cm, auto]
         \node[decision] (has) {Has event?};
         \node[block, node distance=3cm, below of=has] (get) {Get event};
-        \node[block, below of=get] (process) {Process event};
+        \node[block, below of=get] (process) {Dispatch event};
 
         \path[line] (has.west) -- node[above] {No} ++(-1cm,0) |- ++(0,2cm) -| (has.north);
         \path[line] (has) -- node {Yes} (get);
@@ -782,6 +782,17 @@ when the user initiates an asynchronous network transmission. The cooperative
 approach only requires one thread, utilizing the asynchronous features of the
 I/O drivers to the operating system.
 
+Regarding resource usage in the different dispatcher models. The serial
+approach will only communicate with one device at a time, thus only one socket
+is required to be open concurrently. In resource usage, this can scale very
+well.  If the list of device references becomes too large for memory, it can be
+stored in a database. The preemptive and cooperative approaches will in theory
+communicate with all devices concurrently, so there must be one socket
+available for each device concurrently. This does not scale well since only a
+limited amount of sockets are allowed by the operating system to be open. This
+can however be solved by breaking down the devices into chunks that are
+manageable by the gateway and process one chunk at a time.
+
 \subsection{The event handler}
 
 The purpose of the event handler is to process the event $\epsilon$. What type
@@ -796,13 +807,93 @@ real time. This requires some statistics or machine learning calculation to be
 done every time a new event arrives at the gateway. Generalising this idea, we
 get two different types of calculations: one depending on the CPU and its
 memory, and one depending on some peripheral unit of the CPU, for instance the
-file system or the network unit. The first we call CPU-work, or $\lambda^0$,
-for it is work entirely performed by the CPU. The latter we call I/O-work, or
-$\lambda^1$, for it is work not necessarily done by the CPU but by some
-peripheral I/O unit. The definition then follows that the total work done by
-the event handler $\lambda^e_j = \lambda^0_j + \lambda^1_j$ for an event
-$\epsilon_j$. It is however not necessarily the case that $\lambda^0$ is
-disjunct from $\lambda^0$, they might depend on each other to some extent.
+file system or the network unit. The first we call CPU-work, or
+$\lambda^{cpu}_j$, for it is work entirely performed by the CPU. The latter we
+call I/O-work, or $\lambda^{io}_j$, for it is work not necessarily done by the
+CPU but by some peripheral I/O unit. The definition then follows that the total
+work done by the event handler $\Lambda_j = \lambda^{cpu}_j + \lambda^{io}_j$
+for an event $\epsilon_j$. For simplification, it is assumed that work
+$\Lambda_j$ is the same for each event. The $j$ subscript is removed and for
+consistency with the rest of the paper the CPU- and I/O work are denoted
+$\lambda_0$ and $\lambda_1$, respectively. Worth noting is that it is not
+necessarily always the case that $\lambda_0$ is disjunct from $\lambda_1$, they
+might depend on each other to some extent.
+
+The serial event handler will perform $\lambda_0$ and $\lambda_1$
+synchronously, one after another, see Figure \ref{fig:event_handler_serial}.
+The entire work will block the rest of the execution.
+
+\begin{figure}[h!]
+    \centering
+    \begin{tikzpicture}[auto, >=stealth']
+        \node[] (l0) {$\lambda_0$};
+        \node[right = of l0] (l1) {$\lambda_1$};
+        \node[right = of l1] (done) {Done};
+
+        \draw[->] (l0) -- (l1);
+        \draw[->] (l1) -- (done);
+    \end{tikzpicture}
+
+    \caption{Workflow of the serial event handler.}
+    \label{fig:event_handler_serial}
+\end{figure}
+
+The preemptive event handler will conduct serial work on multiple threads, one
+thread per event, see Figure \ref{fig:event_handler_preemptive}. The operating
+system scheduler will perform what the user perceives as implicit interleaving.
+
+\begin{figure}[h!]
+    \centering
+    \begin{tikzpicture}[auto, >=stealth']
+        \node[] (t0) {$Thread_0$};
+        \node[right = of t0] (l0) {$\lambda_0$};
+        \node[right = of l0] (l1) {$\lambda_1$};
+        \node[right = of l1] (done) {Done};
+
+        \draw[dashed] (t0) -- (l0);
+        \draw[->] (l0) -- (l1);
+        \draw[->] (l1) -- (done);
+
+        \node[node distance = 0.5cm, below = of t0] (t1) {$Thread_1$};
+        \node[right = of t1] (l0_2) {$\lambda_0$};
+        \node[right = of l0_2] (l1_2) {$\lambda_1$};
+        \node[right = of l1_2] (done_2) {Done};
+
+        \draw[dashed] (t1) -- (l0_2);
+        \draw[->] (l0_2) -- (l1_2);
+        \draw[->] (l1_2) -- (done_2);
+
+        \node[node distance = 0.5cm, below = of t1] (dots) {...};
+    \end{tikzpicture}
+
+    \caption{Workflow of the preemptive event handler. Serial work is done on
+    multiple threads.}
+    \label{fig:event_handler_preemptive}
+\end{figure}
+
+The cooperative event handler will perform CPU work on a single thread, see
+Figure \ref{fig:event_handler_cooperative}.  However, I/O work will be
+dispatched asynchronously to the associated I/O driver. Work can in that way be
+parallelized with only one working thread.
+
+\begin{figure}[h!]
+    \centering
+    \begin{tikzpicture}[auto, >=stealth']
+        \node[] (l0) {$\lambda_0$};
+        \node[above right = of l0] (l1) {$\lambda_1$};
+        \node[node distance = 1.5cm, right = of l0] (done) {Done};
+
+        \draw[->, dashed] (l0) -- (l1);
+        \draw[->] (l0) -- (done);
+
+    \end{tikzpicture}
+
+    \caption{Workflow of the cooperative event handler. CPU work $\lambda_0$ is
+    performed on a single thread, I/O work $\lambda_1$ is however performed
+    asynchronously, thus letting event handler return immediately after
+    $\lambda_0$ is done.}
+    \label{fig:event_handler_cooperative}
+\end{figure}
 
 \section{An abstract gateway}
 
@@ -947,7 +1038,7 @@ $\epsilon_j \in M_c$. Then:
 A system is said to be \textit{at load} when the system is working at full
 capacity and is not able to produce higher throughput. Due to the
 strict time limitation provided by $t_{end}$ there might be cases where some
-events $\epsilon_j$ has $t_k^j \geq t_{end}$. These are events that haven't
+events $\epsilon_j$ has $t_k^j > t_{end}$. These are events that haven't
 been entirely processed by $\Gamma$. Let $\pi$ be a function such that:
 
 \[
@@ -974,8 +1065,9 @@ that case, we can not be sure whether $\Gamma$ is at a proper load or not.
 However, in cases where $P \ll 1$ we know for sure $\Gamma$ is not able to
 process all events, so there must be events on the device waiting for $\Gamma$.
 The response time, $t_4^j - t_0^j$, must therefore grow for each new event that
-is created. A proper load is therefore one where $P \simeq 1$, but where an
-increase in total amount of events $m$ only reduces $P$.
+is created, leading to an unfair image of the response time. A proper load is
+therefore one where $P \simeq 1$, but where an increase in total amount of
+events $m$ only reduces $P$.
 
 \section{Approach}
 
@@ -984,71 +1076,65 @@ its performance in different environments. Using the abstract gateway model
 $\Gamma$, it is possible to derive the performance mapping. By running $E$ with
 a set of different gateways $\Gamma_c$ and analyse the throughput, load,
 response time, wait time and process time on the resulting vector $M_c$ the
-performance mapping will be developed.
+performance mapping will be developed. The abstract gateway will be implemented
+to support a wide range of its possible configurations. In theory, the abstract
+gateway allows different combinations of dispatcher and event handler event
+propagation models. Due to lack of time, not all of them will be supported by
+the implementation, see Table \ref{tab:event_prop_combinations}.
 
-\subsection{Test environment}
+\begin{table}[h!]
+    \caption{Overview of the combination of event propagation models available
+    for the dispatcher and event handler.}
+    \label{tab:event_prop_combinations}
 
-\section{Development methodology}
+    \begin{center}
+        \begin{tabular}{|l|l|l|l|}
+            \hline
+            Dispatcher  & Event handler & Comment \\
+            \hline
+            Serial      & Serial        & Implemented. \\
+            Serial      & Preemptive    & Implemented. \\
+            Serial      & Cooperative   & Not implemented. \\
+            Preemptive  & Serial        & Not implemented. \\
+            Preemptive  & Preemptive    & Not implemented. \\
+            Preemptive  & Cooperative   & Not implemented. \\
+            Cooperative & Serial        & Not implemented. \\
+            Cooperative & Preemptive    & Implemented. \\
+            Cooperative & Cooperative   & Implemented. \\
+            \hline
+        \end{tabular}
+    \end{center}
+\end{table}
 
-This entire study will be conducted with Scrum as its backbone. Both the
-writing of the thesis and the development of the applications to test will
-happen in sprints. The project's backlog will initially be the fundamental
-requirements of a master's thesis (based on requirements from Linköping
-University) and the research questions. The forms of its user stories will
-resemble traditional issues or requirements, but their scope can be wide and
-their acceptance criteria abstract. Every week they undergo refinement and
-abstract stories will be split into concrete ones as new knowledge about them
-is acquired during the project. For instance, a starting user story (or issue)
-will be \textit{"write the Results chapter"}. Initially this story is very
-large, it is hard to do it in one sprint and it is hard to know where to start.
-As time progress and the application to test have been developed and tests have
-been conducted, the story can be split into more precise issues like
-\textit{"present the developed application"} and \textit{"present a diagram
-with the test results"}. These issues are (subjectively) easier to do in one
-sprint and it is also easier to know when they are finished.
+To mimick the gateway hardware used by Customer A (see Section
+\ref{sec:customer-cases}) a Raspberry Pi 3 Model
+B\footnote{\url{https://www.raspberrypi.org/products/raspberry-pi-3-model-b/}}
+is used to run the gateway implementation. The system that simulates the
+devices and analyses the resulting events (later known as the \textit{test
+manager}, see Chapter \ref{ch:implementation}) is run on a Macbook
+Pro\footnote{\url{https://support.apple.com/kb/sp703?locale=sv_SE}}. The
+hardware used are described in Table \ref{tab:test_environment_hardware}.
 
-The author will take on all three traditional Scrum roles: product owner, Scrum
-master and team member. Other stakeholders of the project are representatives
-from Attentec, the examiner and a mentor from Linköping University. Each sprint
-will have a length of 2 weeks and the sprint planning will, unlike the
-traditional sprint planning \cite{sims2012scrum} where only the product owner
-and team members are present, include a mentor from Attentec to help plan the
-upcoming sprint. At the end of each sprint the current status of the project
-will be presented to the stakeholders.
+\begin{table}[h!]
+    \caption{Overview of the hardware used in the performance tests.}
+    \label{tab:test_environment_hardware}
 
-\section{Implementation}
+    \begin{center}
+        \begin{tabular}{|l|l|p{4cm}|l|}
+            \hline
+            Usage           & Model                     & CPU  & Memory size \\
+            \hline
+            Gateway         & Raspberry Pi 3 Model B    & Quad Core 1.2GHz Broadcom
+            BCM2837 64bit  & 1 GB \\
 
-The main approach this study will undertake to answer its question is to:
+            Test manager    & Macbook Pro               & Dual Core 2.6Ghz
+            Intel Core i5    & 8 GB \\
+            \hline
+        \end{tabular}
+    \end{center}
+\end{table}
 
-\begin{enumerate}
-  \item find a state of the art reactive system in the industry with an
-    appropiate level of complexity
-  \item create a specification of the system
-  \item reimplement the system with libuv
-  \item create and conduct tests
-  \item apply and evaluate the maintainability metrics on both systems
-  \item present the results
-\end{enumerate}
-
-With help from Attentec, a multi-sensor monitor application used by one of
-their clients will be specified and its source code will be used to compare its
-software maintainability to a reimplementation with libuv. If no appropiate
-system can be found in the industry, Attentec will aid in creating a
-specification for a similar system as well as a state of the art technique to
-implement it. The specification will follow the same pattern presented by Ardis
-et al \cite{ardis1996framework}.
-
-Even though libuv is written in C, C++ will be used as the main programming
-language for the libuv implementation. With the dynamic programming style C++
-offers with classes and templates, it will be more suitable for an
-implementation that hopefully will attract web developers.
-
-A testing environment will be created to simulate an IoT context where multiple
-sensors are connected to the monitor application. A software testing suite will
-also be setup to create unit tests.
-
-\section{Evaluation}
-
-Same software maintainability metrics will be applied on the system found in
-the industry and the reimplementation of it. The results of the metrics will be
-compared and presented.
+The configuration parameter $\chi$ allows the number of cores to change. This
+is implemented by setting a flag in the operating system running the Raspberry
+Pi that sets the maximum number of cores used. Only wireless LAN is used
+between the test manager and the gateway.
