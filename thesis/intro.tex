@@ -15,44 +15,25 @@ complexity of a smart device varies from passive ID-tags which communicates
 through near field communication to full scale computers with multithreaded
 operating systems.
 
-Advanced RISC Machine (ARM) processors are used in different types of
-electronic devices. RISC is short for \textit{Reduced Instruction Set Computer}
-and its supported instructions are simple, have uniform length and almost all
-instructions execute in one clock cycle. This reduces the complexity of the
-chip and gives more room to performance enhancing features \cite{risc-vs-cisc}.
-In an IoT context, ARM processors can be a good choice to be embedded on a
-smart device due to its large variety in cost, energy consumption, performance
-and size. \todo{ARM processors will probably not be of any focus in the report,
-this paragraph might be removed.}
-
-From a network perspective, smart devices can be seen as clients in a
-traditional client-server architecture. They emit data to a server through an
-internet protocol. The server receives the data and processes it. When building
-these kinds of network services it is important for the server to avoid
-blocking concurrent requests \cite{elmeleegy2004lazy}. These requests are both
-on a network level but also on the general operating system level. Requests
-from a smart device might be logged on a file or written to a database, meaning
-the server must start new processes to handle these requests without blocking
-new requests from the network. A server does not necessarily have to be a web
-server serving requests on the internet protocol. The operating system itself
-can be viewed as an I/O (input/output) server receiving requests from the I/O
-layer. This can be data on serial ports and general purpose I/O pins on the
-processor. A device monitoring a physical environment using sensors can take
-use of this feature by letting the registers call interrupt handlers when they
-are ready for reading or writing. Thus an application running on an embedded
-system listening for data from sensors can be viewed as a web server listening
-for internet requests. The same challenge regarding non-blocking request
-handlers holds also for these mentioned applications.
-
-To implement a non-blocking server, the \textit{libuv} C library can be a good
-choice. With it the user can implement an \textit{event driven},
-\textit{reactive} architecture with request handlers reacting to certain events
-in the system, e.g. I/O events from the operating system. \cite{libuv-webpage}
-
-To determine the maintainability of a software system one can, among others,
-look at the source code and its age since release, the number of non-commented
-source code statements and its rate of failures per time unit.
-\cite{oman1992metrics}
+An important component in the IoT architecture is the IoT gateway
+\cite{chen2011brief}. It acts as a bridge between the "things", or devices, and
+the internet. Gateways can be seen as \textit{event-driven}, or
+\textit{reactive} systems, i.e. systems required to respond to stimuli in its
+environment \cite{garlan1993introduction} \cite{harel1985development}.
+Specifying reactive systems can be done by designing them as \textit{state
+machines} and implementation can be done in \textit{reactive languages}
+\cite{bainomugisha2013survey}. These languages have abstracted away time, in
+the same sense memory is abstracted away in, e.g. Java, by using garbage
+collectors. This thesis has been conducted at the Linköping-based company
+Attentec in Sweden. They focus on IoT-development and the gateways used by some
+of their customers are implemented on embedded, resource-constrained hardware.
+A common language for embedded systems is C as it allows the developer to
+access hardware without loosing the benefits of high-level programming
+\cite{nahas2012choosing} \cite{barr1999programming}. The C library
+\textit{libuv} can be a good choice when implementing reactive systems in C.
+With it the user can implement an \textit{event driven}, \textit{reactive}
+architecture with request handlers reacting to certain events in the system,
+e.g. I/O events from the operating system. \cite{libuv-webpage}
 
 \section{Motivation}
 \label{sec:motivation}
@@ -64,8 +45,9 @@ data streams with minimal overhead in transport. However, this implies for the
 transport and communication perspective on IoT, but another significant
 perspective is I/O (file writes, database queries) processing on the machines
 themselves. If the demand for high performance IoT services is increasing, then
-development towards embedded systems will too. A rigor evaluation on two common
-architectures can therefore be of great value to find what suits best in IoT.
+development towards embedded systems will too. A rigor evaluation on the
+different architectures a gateway can be developed on can therefore be of great
+value to find what suits best in IoT.
 
 libuv is the major subsystem to \textit{Node.js}, a popular universal language
 for \textit{"front end, back end and connected devices [and] everything from
@@ -74,33 +56,32 @@ Node.js' event-driven development style many developers in its field might have
 a better experience using libuv when if need to transfer to embedded
 programming will be in question.
 
-As software maintenance is a fundamental part of the software life cycle and is
-becoming a more important factor for businesses and open source projects for
-building products that can be further developed by others, it is of high
-interest to study the maintainance aspect of a libuv implementation
-\cite{bourque2014guide}.
-
 \section{Aim}
 \label{sec:aim}
 
-To find whether libuv is a good option in terms of maintainability when
-selecting underlying architecture for IoT devices.
+To understand and map out the internal and external properties that affects the
+functionality and performance of the IoT gateway.
 
 \section{Research questions}
 \label{sec:research-questions}
 
 \begin{enumerate}
 
-  \item Given a state of the art reactive system from the industry - how does
-    an equivalent implementation using libuv compare in terms of software
-    maintainability?
+    \item What internal and external properties affect the functionality and
+        performance of the IoT gateway?
+
+    \item How can libuv be used in order to implement an IoT gateway? What are
+        its benefits and disadvantages?
 
 \end{enumerate}
 
 \section{Delimitations}
 \label{sec:delimitations}
 
-Maintainability will be the main metric used. Other metrics might be useful for
-evaluation of the architectures, but due to time limitations only
-maintainability will be used. Only one or two types of devices will be used for
-implementation and testing. This might decrease data resolution.
+Performance will be the only attribute used to determine whether a gateway
+implementation is "good" or not. There are other ways of measuring programs as
+well, one of them are code measurements such as maintainability. However, this
+study only focuses on performance measures.
+
+The context of the study is IoT gateways. This study can however be applicable
+on a larger spectra of environments, e.g. web servers or enterprise systems.
