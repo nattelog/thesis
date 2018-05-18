@@ -4,14 +4,14 @@
 The Internet of Things (IoT) is a new dimension of the internet which includes
 \textit{smart devices} - physical devices able to communicate with the outside
 world through internet
-\cite{design-principles-for-distributed-embedded-applications}. Ericsson
-foretold there will be around 400 million smart devices by the end of 2016
-\cite{ericsson-iot-forecast} and a great challenge will be to serve all of
-these. IoT applications are already influencing our everyday lives; smart
-cities, smart grids and traffic management are only a few of the large variety
-of applications in this "multi-tiered heterogeneous system based on open
-architectural platforms and standards" \cite{gardavsevic2017iot}. The
-complexity of a smart device varies from passive ID-tags which communicates
+\cite{design-principles-for-distributed-embedded-applications}
+\cite{wu2011m2m}. Ericsson foretold there will be around 400 million smart
+devices by the end of 2016 \cite{ericsson-iot-forecast} and a great challenge
+will be to serve all of these. IoT applications are already influencing our
+everyday lives; smart cities, smart grids and traffic management are only a few
+of the large variety of applications in this "multi-tiered heterogeneous system
+based on open architectural platforms and standards" \cite{gardavsevic2017iot}.
+The complexity of a smart device varies from passive ID-tags which communicates
 through near field communication to full scale computers with multithreaded
 operating systems.
 
@@ -30,24 +30,30 @@ of their customers are implemented on embedded, resource-constrained hardware.
 A common language for embedded systems is C as it allows the developer to
 access hardware without loosing the benefits of high-level programming
 \cite{nahas2012choosing} \cite{barr1999programming}. The C library
-\textit{libuv} can be a good choice when implementing reactive systems in C.
-With it the user can implement an \textit{event driven}, \textit{reactive}
-architecture with request handlers reacting to certain events in the system,
-e.g. I/O events from the operating system. \cite{libuv-webpage}
+\textit{libuv} can be a good choice when implementing reactive systems in C
+\cite{libuv-webpage}. With it the user can implement an \textit{event driven},
+\textit{reactive} architecture with request handlers reacting to certain events
+in the system, e.g. I/O events from the operating system.
 
 \section{Motivation}
 \label{sec:motivation}
 
-Since IoT is growing and communication will largely increase, efficiency and
-performance is an important factor. There exists a number of communication
-protocols for IoT network architectures. A big challenge is to support massive
-data streams with minimal overhead in transport. However, this implies for the
-transport and communication perspective on IoT, but another significant
-perspective is I/O (file writes, database queries) processing on the machines
-themselves. If the demand for high performance IoT services is increasing, then
-development towards embedded systems will too. A rigor evaluation on the
-different architectures a gateway can be developed on can therefore be of great
-value to find what suits best in IoT.
+Earlier work has attempted to quantify the performance characteristics of
+gateways, but most focus has been on either higher level architectural models
+\cite{chen2011brief} \cite{zachariah2015internet} or hardware performance
+characteristics \cite{kruger2014benchmarking}. Observing the performance while
+varying software-related properties of the gateway will therefore be a good
+contribution to the research-field. Since IoT is growing and communication will
+largely increase, efficiency and performance is an important factor. There
+exists a number of communication protocols for IoT network architectures. A big
+challenge is to support massive data streams with minimal overhead in
+transport. However, this implies for the transport and communication
+perspective on IoT, but another significant perspective is I/O (file writes,
+database queries) processing on the machines themselves. If the demand for high
+performance IoT services is increasing, then development towards embedded
+systems will too. A rigor evaluation on the different architectures a gateway
+can be developed on can therefore be of great value to find what suits best in
+IoT.
 
 libuv is the major subsystem to \textit{NodeJS}, a popular universal runtime
 system for \textit{"front end, back end and connected devices [and] everything
@@ -71,7 +77,7 @@ functionality and performance of the IoT gateway.
         performance of the IoT gateway?
 
     \item How can libuv be used in order to implement an IoT gateway? What are
-        its benefits and disadvantages?
+        the benefits and disadvantages of doing so?
 
 \end{enumerate}
 

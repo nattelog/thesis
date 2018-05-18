@@ -731,7 +731,9 @@ represented as state callback functions. A state callback can make an
 asynchronous RMI call and pass in the edge to traverse to when the RMI response
 has returned. Each asynchronous RMI call wraps libuv socket operations and
 returns instantly. That allows the process to continue despite having socket
-transmissions on the line.
+transmissions on the line. The state machine approach is useful for reactive
+systems, such as the gateway, when many combinations of inputs are to be
+recognized \cite{harel1985development}.
 
 \begin{lstlisting}[
     language = C,

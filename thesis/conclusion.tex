@@ -54,15 +54,21 @@ a state machine. As libuv uses callback functions to let the user know when
 asynchronous I/O work is done, the callbacks can be seen as vertices in the
 state machine. Whenever an asynchronous I/O request is initiated in libuv, the
 user can explicitly choose other tasks to do while the I/O request is working.
-This makes libuv a good choice to implement the cooperative approach. The
-results of the performance tests shows that a cooperative dispatcher combined
-with a preemptive event handler performs better or equal to the next best event
+This makes libuv a good choice to implement the cooperative dispatcher. The
+results show that the cooperative event handler is not ideal for CPU intensive
+events. libuv is primarily single-threaded; it is not the best alternative for
+implementing cooperative event handlers if the CPU intensity of events is high.
+However, utilizing the built-in threadpool in libuv one can built a preemptive
+event handler on top of a cooperative dispatcher. The results of the
+performance tests shows that it performs better or equal to the next best event
 propagation model in all test cases.
 
 \section{Future work}
 
 The preemptive dispatcher was not developed and it would be interesting to do
-so in future work. This study only focused on passive devices that needed to be
-polled in order to retrieve their events. The alternative are active devices
-that push data to the gateway by themselves. This approach would be interesting
-to study as well.
+so in future work. The performance of a preemptive dispatcher would probably
+match the cooperative one, at least on multicore systems. This study only
+focused on passive devices that needed to be polled in order to retrieve their
+events. The alternative are active devices that push data to the gateway by
+themselves. This approach would be interesting to study as well as it resembles
+typical client-server architectures that are common to web solutions.
