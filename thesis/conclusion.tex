@@ -34,11 +34,11 @@ architectures of the dispatcher and the event handler. The serial event
 propagation model communicates with devices and handles events serially, i.e.
 one device at a time. The preemptive model can communicate with several devices
 and handle several events concurrently on different threads and the operating
-system scheduler interleaves between the working threads implicitly. The
-definition of the cooperative model states that CPU and I/O work induced by
-each event can \textit{explicitly} interleave and make room for other work. The
-cooperative model is implemented with libuv and allows multiple devices and
-events to be handled in parallel while still only running on one major thread.
+system scheduler interleaves between the working threads. The definition of the
+cooperative model states that CPU and I/O work induced by each event can
+\textit{explicitly} interleave and make room for other work. The cooperative
+model is implemented with libuv and allows multiple devices and events to be
+handled in parallel while still only running on one major thread.
 
 Increasing the number of devices will increase the response time drastically
 for the serial and cooperative event handlers compared to the preemptive ones.

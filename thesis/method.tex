@@ -36,7 +36,7 @@ The theoretical framework was developed in this phase to support claims and
 form a general direction of the entire study. Multiple databases were queried
 in order to find interesting material from previous research. Mainly the online
 library hosted by \textit{Linköping University}\footnote{\url{www.bibl.liu.se}}
-was used since it allow access to material otherwise unviewable due to
+was used since it allow access to material otherwise non-viewable due to
 institutional login requirements. Query results from this library is a
 collection of query results from other research databases such as \textit{ACM
 Digital Library}\footnote{\url{dl.acm.org}}, \textit{ProQuest Ebook
@@ -83,7 +83,7 @@ perform better when used in a reactive context. Terber
 decomposition for reactive software. With an industrial application as context,
 he replaces legacy code with code written in the \textit{Cèu} programming
 language, reaching the conclusion that Cèu preserves fundamental software
-engineering principles and is at the same time able to fullfill resource
+engineering principles and is at the same time able to fulfill resource
 limitations in the system. Jagadeesan et al \cite{jagadeesan1996formal}
 performs a similar study but with a different language: \textit{Esterel}. They
 reimplement a component in a telephone switching system and reach the
@@ -151,7 +151,7 @@ off-the-shelf brands: Raspberry Pi, Beaglebone and Beaglebone Black. They use
 \textit{micro-benchmarks} to identify performance bottlenecks at architecture
 level and \textit{macro-benchmarks} at application level. They reach the
 conclusion that gateway performance is most important when there is a large
-amount of data being transfered between the gateway and the IoT application.
+amount of data being transferred between the gateway and the IoT application.
 
 Aguilera et al. \cite{aguilera2003performance} presents an approach to identify
 performance bottlenecks in distributed systems where the components are seen as
@@ -179,7 +179,7 @@ two were of interest for this study with each having implemented an IoT gateway
 suitable for its operating context. \textit{Customer A} uses their IoT gateway
 to monitor industrial batteries used in forklifts. The main idea behind the
 event propagation model is that the gateway polls each battery for events and
-process them according to its specification (which is unrelevant here).
+process them according to its specification (which is nonrelevant here).
 Referring to data propagation in reactive languages (see section
 \ref{sec:evaluation-model}), one can view the event propagation as
 \textit{pull-based}, i.e. the gateway pulls events from the batteries whenever
@@ -240,7 +240,7 @@ device, but the device does not need to know anything about the gateway.
 \section{Three event propagation models}
 
 Taking inspiration from the three task management approaches presented by Adya
-et al \cite{adya2002cooperative} and described in Section
+et al. \cite{adya2002cooperative} and described in Section
 \ref{sec:task-management}, three event propagation models are proposed:
 \textit{serial}, \textit{preemptive} and \textit{cooperative event
 propagation}. Before presenting a formal definition, an analogy might suite
@@ -251,16 +251,16 @@ time. This is repeated for each customer in line with the constraint that no
 new order is accepted before the current order is served, see Figure
 \ref{fig:cafe-serial}. This can be seen as a \textit{serial order handling};
 only one order can be handled at a time. Imagine now that the cafe hires more
-baristas and more coffee machines. There is still one line (but there can be
-several), but orders can be handled concurrently, so the next customer in line
-does not necessarily have to wait for the previous customer to be served before
-he can place his order, see Figure \ref{fig:cafe-preemptive}. This can be seen
-as \textit{preemptive order handling}. Now lets keep the brewers but let go all
-baristas except for one.  All customers place their order to the same barista
-which in turn start one of the brewers. While the brewer is working, the next
-customer in line places his order and the barista can start a second brewer,
-see Figure \ref{fig:cafe-cooperative}. This is called \textit{cooperative order
-handling}.
+baristas and more coffee machines. There is still one line (however, there can
+be several), but orders can be handled concurrently, so the next customer in
+line does not necessarily have to wait for the previous customer to be served
+before he can place his order, see Figure \ref{fig:cafe-preemptive}. This can
+be seen as \textit{preemptive order handling}. Now lets keep the brewers but
+let go all baristas except for one.  All customers place their order to the
+same barista which in turn start one of the brewers. While the brewer is
+working, the next customer in line places his order and the barista can start a
+second brewer, see Figure \ref{fig:cafe-cooperative}. This is called
+\textit{cooperative order handling}.
 
 \begin{figure}[h!]
     \centering
@@ -656,17 +656,18 @@ workflow of a serial event propagation model is illustrated in Figure
 
 The event is the actual data transmitted from the device to the gateway.
 Imagine a small weather station used in private homes. It has two sensors
-measuring wind velocity and air temperature. The gateway is the central system
+measuring wind speed and air temperature. The gateway is the central system
 passing the data from each sensor to the application using the data. At a
-certain frequency, the gateway polls each sensor for new velocity and
+certain frequency, the gateway polls each sensor for new wind speed and
 temperature values. These values are the actual events in the system. In this
 toy example, each event might not only carry the actual value of the sensor it
 corresponds to, but also information on what sensor this data is coming from.
 The weather application might draw a plot on how the air temperate has changed
 over time, therefore each event must also include the timestamp of each sensor
 value. In this study, however, there is no need for event data that represents
-some mimicked sensor value. What is needed is a way to track each event to see
-when it reaches certain places in its life. This is done by registering the
+some mimicked sensor value. Only the frequency of events are important
+\cite{weyuker2000experience}. What is needed is a way to track each event to
+see when it reaches certain places in its life. This is done by registering the
 timestamp when the event reaches those places, see Figure \ref{fig:event-life}.
 
 \begin{figure}[h!]
@@ -694,7 +695,7 @@ timestamp when the event reaches those places, see Figure \ref{fig:event-life}.
     \label{fig:event-life}
 \end{figure}
 
-An event $\epsilon$ can generally be considered as a vector
+An event $\epsilon$ can generally be considered a vector:
 
 $$
 \epsilon = \big[ t_0, t_1, ..., t_{k-1} \big]
@@ -715,7 +716,7 @@ dispatch them to the event handler. As mentioned in Section
 push-based. The devices generating the events are either active and can push
 each event to the gateway, which in turn has to listen to them, or the devices
 are passive and the gateway must pull events from them. In this study, the
-pull-based approach is used to mimick the gateway used by Customer A. This
+pull-based approach is used to mimic the gateway used by Customer A. This
 approach requires the dispatcher to have a reference to each device to be able
 to pull events from them.
 
@@ -805,6 +806,7 @@ can however be solved by breaking down the devices into chunks that are
 manageable by the gateway and process one chunk at a time.
 
 \subsection{The event handler}
+\label{sec:the_event_handler}
 
 The purpose of the event handler is to process the event $\epsilon$. What type
 of processing to be done depends on the application and what the event
@@ -815,7 +817,7 @@ persistent data storage, e.g. a database. This database could either be found
 locally on the gateway's filesystem or on some remote internet service. Perhaps
 the weather station has a feature that predicts the future wind velocity in
 real time. This requires some statistics or machine learning calculation to be
-done every time a new event arrives at the gateway. Generalising this idea, we
+done every time a new event arrives at the gateway. Generalizing this idea, we
 get two different types of calculations: one depending on the CPU and its
 memory, and one depending on some peripheral unit of the CPU, for instance the
 file system or the network unit. The first we call CPU-work, or
@@ -886,7 +888,7 @@ system scheduler will perform what the user perceives as implicit interleaving.
 The cooperative event handler will perform CPU work on a single thread, see
 Figure \ref{fig:event_handler_cooperative}.  However, I/O work will be
 dispatched asynchronously to the associated I/O driver. Work can in that way be
-parallelized with only one working thread.
+parallelled with only one working thread.
 
 \begin{figure}[h!]
     \centering
@@ -930,9 +932,9 @@ of $\Gamma$. Let $K$ describe the event propagation model of $\Gamma$. It is
 expressed as $K = \{ \kappa_0, \kappa_1 \}$ where $\kappa_0$ and $\kappa_1$
 represents the event propagation model of the dispatcher and the event handler
 respectively and $\kappa_i \in \{ \textit{serial}, \textit{preemptive},
-\textit{cooperative} \}$. Let $\Lambda$ describe the resource demand in
-$\Gamma$ from each event. It is expressed as $\Lambda = \{ \lambda_0, \lambda_1
-\}$ where $\lambda_0$ and $\lambda_1$ represents the CPU intensity and the I/O
+\textit{cooperative} \}$. Let $\Lambda$ describe the work induced on $\Gamma$
+from each event. It is expressed as $\Lambda = \{ \lambda_0, \lambda_1 \}$
+where $\lambda_0$ and $\lambda_1$ represents the CPU intensity and the I/O
 intensity induced by each event, where $0 \leq \lambda_i \leq 1$. Let $\chi$
 describe the hardware platform of $\Gamma$, specifically the number of cores on
 the CPU.
@@ -1043,7 +1045,7 @@ $\epsilon_j \in M_c$. Then:
 
 \end{description}
 
-\subsection{Analysing the load}
+\subsection{Analyzing the load}
 \label{sec:load}
 
 A system is said to be \textit{at load} when the system is working at full
@@ -1060,7 +1062,7 @@ been entirely processed by $\Gamma$. Let $\pi$ be a function such that:
 \end{cases}
 \]
 
-With $\pi$, the load on $\Gamma$ can be analysed. The ratio between created
+With $\pi$, the load on $\Gamma$ can be analyzed. The ratio between created
 events and processed events can give hint on how many events $\Gamma$ can
 handle. Let $P$ denote the ratio between created and processed events:
 
@@ -1085,7 +1087,7 @@ events $m$ only reduces $P$.
 The goal of this thesis is to map how different gateway architectures affect
 its performance in different environments. Using the abstract gateway model
 $\Gamma$, it is possible to derive the performance mapping. By running $E$ with
-a set of different gateways $\Gamma_c$ and analyse the throughput, load,
+a set of different gateways $\Gamma_c$ and analyze the throughput, load,
 response time, wait time and process time on the resulting vector $M_c$ the
 performance mapping will be developed. The abstract gateway will be implemented
 to support a wide range of its possible configurations. In theory, the abstract

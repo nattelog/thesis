@@ -33,7 +33,10 @@ access hardware without loosing the benefits of high-level programming
 \textit{libuv} can be a good choice when implementing reactive systems in C
 \cite{libuv-webpage}. With it the user can implement an \textit{event driven},
 \textit{reactive} architecture with request handlers reacting to certain events
-in the system, e.g. I/O events from the operating system.
+in the system, e.g. I/O events from the operating system. This work examines
+the performance characteristics of the IoT gateway when its internal and
+external properties are varied and verifies if libuv is a good choice of
+approach when implementing an IoT gateway in C.
 
 \section{Motivation}
 \label{sec:motivation}
@@ -43,17 +46,17 @@ gateways, but most focus has been on either higher level architectural models
 \cite{chen2011brief} \cite{zachariah2015internet} or hardware performance
 characteristics \cite{kruger2014benchmarking}. Observing the performance while
 varying software-related properties of the gateway will therefore be a good
-contribution to the research-field. Since IoT is growing and communication will
-largely increase, efficiency and performance is an important factor. There
-exists a number of communication protocols for IoT network architectures. A big
-challenge is to support massive data streams with minimal overhead in
-transport. However, this implies for the transport and communication
-perspective on IoT, but another significant perspective is I/O (file writes,
-database queries) processing on the machines themselves. If the demand for high
-performance IoT services is increasing, then development towards embedded
-systems will too. A rigor evaluation on the different architectures a gateway
-can be developed on can therefore be of great value to find what suits best in
-IoT.
+contribution to the research-field. Since IoT and gateway technology is growing
+and communication will largely increase \cite{wu2011m2m}, efficiency and
+performance is an important factor. There exists a number of communication
+protocols for IoT network architectures. A big challenge is to support massive
+data streams with minimal overhead in transport. However, this implies for the
+transport and communication perspective on IoT, but another significant
+perspective is I/O (file writes, database queries) processing on the machines
+themselves. If the demand for high performance IoT services is increasing, then
+development towards embedded systems will too. A rigor evaluation on the
+different architectures a gateway can be developed on can therefore be of great
+value to find what suits best in IoT.
 
 libuv is the major subsystem to \textit{NodeJS}, a popular universal runtime
 system for \textit{"front end, back end and connected devices [and] everything
@@ -66,7 +69,8 @@ programming will be in question.
 \label{sec:aim}
 
 To understand and map out the internal and external properties that affects the
-functionality and performance of the IoT gateway.
+functionality and performance of the IoT gateway and to verify the legitimacy
+of using libuv as implementation approach when developing a new IoT gateway.
 
 \section{Research questions}
 \label{sec:research-questions}

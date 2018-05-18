@@ -10,14 +10,14 @@ The results are satisfactory and provides a good image on how different
 configurations of the gateway affect performance. There are however details in
 the production method of the data that could be improved. Each data point is
 the result of a single test scenario. Some diagrams have outliers caused by
-small delays and hickups in the network and the operating system during the
+small delays and hiccups in the network and the operating system during the
 test. If every data point instead was the average value of several test
 scenarios with the same configuration, smoother diagrams would have been
 obtained.
 
 Regarding the choice of data. There were a total of 18 diagrams that could have
 been presented in the result chapter. The most interesting ones were chosen and
-they were selected on the criterias:
+they were selected on the criterions:
 
 \begin{enumerate}
     \item They had unique outcomes. Only one of several diagrams that show the
@@ -28,7 +28,7 @@ they were selected on the criterias:
 \end{enumerate}
 
 The choice of values for the parameters that varied in the tests required some
-amount of testing in order to get sensable results. Too small steps lead either
+amount of testing in order to get sensible results. Too small steps lead either
 to no significant change in performance or too many steps in order to see some
 change in performance. 10 steps took 2-3 hours to fully test all possible
 event propagation models. Many tests were redone to calibrate best possible
@@ -41,11 +41,21 @@ performance, compared to changing the window to 0.1-0.5.
 
 Some new ideas are proposed in this study: the three event propagation models
 and the abstract gateway. They have all been verified to work as expected
-\textit{in this context}. There are limitations that have not been thouroughly
+\textit{in this context}. There are limitations that have not been thoroughly
 tested yet, e.g. the push-based dispatching approach where devices actively
 push data to the gateway. There is currently no parameter to the abstract
 gateway that takes active/passive devices into account. This should be further
 developed.
+
+Regarding the work $\Lambda_j$ discussed in Section
+\ref{sec:the_event_handler}. The simplification that all events induce the same
+amount of work is not necessarily correct in practice. Wu et al.
+\cite{wu2011m2m} discuss how large numbers of devices will be available on the
+market and if different types of devices are connected to the same gateway, it
+is obvious that they will induce different amount of work on it. Also, as noted
+in the same section, there can be dependency between CPU work and I/O work. The
+implementation done in this study has entirely designed the CPU- and I/O work
+to be independent on each other.
 
 \section{The work in a wider context}
 \label{sec:work-wider-context}

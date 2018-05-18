@@ -4,9 +4,9 @@
 To be able to reach the goal of this thesis, to map the performance of the
 abstract gateway $\Gamma$, a software system has been developed. The ultimate
 purpose of this system is to generate and store all events and their respective
-timestamps to be able to analyse the performance of $\Gamma$, which processed
+timestamps to be able to analyze the performance of $\Gamma$, which processed
 them. The system consists of two processes: a \textit{test manager} and a
-\textit{gateway} as well as an analysation tool. The main purpose of the test
+\textit{gateway} as well as an analyzation tool. The main purpose of the test
 manager is to simulate devices and store event data in a database while the
 purpose of the gateway is to pull events from the devices and process them. The
 analysation tool is not discussed more than that it provides utility functions
@@ -17,7 +17,7 @@ The test manager is entirely built in Python with standard libraries. SQLite is
 used for the database. Figure \ref{fig:test_manager_impl_architecture} depicts
 the overall architecture of the test manager. Each part is explained in the
 following sections. The main thread of the program is the actual test manager
-that waits for new event lifecycle messages from the logserver, which are
+that waits for new event lifecycle messages from the log server, which are
 updated in the database. One thread is created for the name service, which is a
 TCP server hosting the name service API. One thread is also created for each
 device in the test as they are TCP servers hosting the device API used by the
@@ -219,7 +219,7 @@ format:
 \end{lstlisting}
 
 If the gateway sends this message to the test manager, the API function
-\texttt{hostnames()} will be invoced and its result will be sent back to the
+\texttt{hostnames()} will be invoked and its result will be sent back to the
 gateway on the format:
 
 \begin{lstlisting}
@@ -299,7 +299,7 @@ and enables the receiving end to throw the error as if it was created locally.
 
 The test manager and the gateway are run as two different processes on two
 different machines. They are started manually from the command line with the
-appropiate flags and configurations. Due to the human factor, there is a
+appropriate flags and configurations. Due to the human factor, there is a
 possibility that the gateway is started with a configuration different from the
 one on the test manager. The test manager can for instance be started with an
 I/O intensity value of 0, while the gateway can be started with an I/O
@@ -431,7 +431,7 @@ manager with the following functions:
 The name service is a TCP server instantiated and started by the test manager.
 Its purpose is to act as the main API available for the gateway to communicate
 to the test manager. It also holds references to all simulated devices the
-gateway pulls event information from. The name service provide a single API for
+gateway pulls event information from. The name service provides a single API for
 the gateway:
 
 \begin{description}
@@ -576,7 +576,7 @@ packets to the log server.
 \section{The database}
 
 The primary use of the database is to store event lifecycle timestamps during
-the test run so they can be analysed at a later stage. The database schema is
+the test run so they can be analyzed at a later stage. The database schema is
 designed to order event lifecycle data with their corresponding test scenario,
 see Figure \ref{fig:er_db}. The test scenario, with its ID (sid), is built
 around the notion that a test run has a start and an end time and $n$ amount of
@@ -656,7 +656,7 @@ entire scenario is stored.
         {value} edge (configuration);
     \end{tikzpicture}
 
-    \caption{Entitry relationship diagram of the database schema.}
+    \caption{Entity relationship diagram of the database schema.}
     \label{fig:er_db}
 \end{figure}
 
@@ -698,7 +698,7 @@ void dispatcher_serial(config_data_t* config, protocol_value_t* devices)
             */
 
             // send log messages to the log server
-            // these two lines means there is theoratically no time difference
+            // these two lines means there is theoretically no time difference
             // between the retrieved- and the dispatched-timestamp.
             log_event_retrieved(device->event);
             log_event_dispatched(device->event);
@@ -826,7 +826,7 @@ thread to be free before the I/O work can be dispatched.
 void event_handler_cooperative(double cpu_intensity, double io_intensity)
 {
     do_cpu_work(cpu_intensity);
-    do_io_work_async(io_intensity); // returns immidiately
+    do_io_work_async(io_intensity); // returns immediately
 }
 \end{lstlisting}
 

@@ -93,7 +93,7 @@ not deliver higher throughput for the given quantity. Due to the restriction
 that events from the same device must be handled serially, i.e. even though the
 dispatcher is able to pull more events from a device it cannot if a previous
 event from the device is still being processed, the throughput is generally
-lower for small quantity values. However the throughput stabilises when the
+lower for small quantity values. However the throughput stabilizes when the
 quantity reaches a certain level.
 
 \begin{figure}[h!]
@@ -388,7 +388,7 @@ Figure \ref{fig:io_avg_d0} and Figure \ref{fig:quad_io_done_ratio}.
                 legend pos = outer north east
             ]
             \nextperformanceplot{data/quad_io_throughput.csv}{
-                ylabel = {Throughtput [events/s]},
+                ylabel = {Throughput [events/s]},
                 title = Quad core CPU
             }
             \nextperformanceplotwithlegend{data/single_io_throughput.csv}{

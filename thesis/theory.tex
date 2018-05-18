@@ -46,12 +46,12 @@ it combines aspects and technologies of all of these approaches."}
 
 \subsection{Enabling technologies and challenges}
 
-The state-of-the-art technologies used today in the IoT context include
-sensoring equipment and networks such as the \textit{Radio Frequency
-Identification} (RFID) and the \textit{Wireless Sensor Network} (WSN),
-communication techniques like the \textit{IPv6 over Low-Power Wireless Personal
-Area Network} (6LoWPAN) and \textit{Representational State Transfer} (REST) and
-architectural approaches like \textit{middleware} and \textit{gateways}.
+The state-of-the-art technologies used today in the IoT context include sensor
+equipment and networks such as the \textit{Radio Frequency Identification}
+(RFID) and the \textit{Wireless Sensor Network} (WSN), communication techniques
+like the \textit{IPv6 over Low-Power Wireless Personal Area Network} (6LoWPAN)
+and \textit{Representational State Transfer} (REST) and architectural
+approaches like \textit{middleware} and \textit{gateways}.
 
 RFID is a technique used to identify an object by letting a reader generate an
 electromagnetic wave which in turn generates a current in a microchip that
@@ -80,7 +80,7 @@ will produce its own content and should be retrievable regardless of location.
 This puts pressure on the identification methods and the overall network
 infrastructure for IoT. As remaining unused IPv4 addresses are closing in to
 zero, the IPv6 protocol can be a natural next step for IoT devices to use
-\cite{atzori2010internet}. 4 bytes are used to address devices in IPv4, wich
+\cite{atzori2010internet}. 4 bytes are used to address devices in IPv4, which
 means the protocol can support around 4 billion devices. IPv6 on the other hand
 uses 16 bytes to address devices, meaning around $10^{38}$ devices can be
 uniquely addressed.
@@ -139,7 +139,7 @@ A program task is an encapsulation of control flow with access to some common
 shared state. This can be viewed as a closure in a program language or a
 function. Managing these tasks can be done in several ways. In
 \textit{preemptive} task management, tasks can be scheduled to interleave and
-make room for other tasks or be run in parallell on multicore systems. In
+make room for other tasks or be run in parallel on multicore systems. In
 \textit{serial} task management, tasks are run until they are finished before
 any other task can start its execution. A hybrid approach is
 \textit{cooperative} task management. Tasks can yield control to other tasks in
@@ -156,7 +156,7 @@ There are two categories of I/O management: \textit{synchronous} and
 \textit{asynchronous} \cite{adya2002cooperative}. If a function calls an I/O
 operation and then blocks the rest of the execution while waiting for the I/O
 operation to finish, the function is synchronous. Here is an example of a
-synchronous read file-function from the Node.js documentation
+synchronous read file-function from the NodeJS documentation
 \cite{nodejs-docs}:
 
 \lstinputlisting[
@@ -187,7 +187,7 @@ An interesting notice to Listing \ref{listing:read_file_async} is that, say a
 global state is introduced and is dependent upon by the callback function,
 there is no guarantee the state remains unchanged between the
 \lstinline{readFile()}- and the \lstinline{callback()}-invocation. This is
-similar to the mutual exclusion problem in preemeptive task management where
+similar to the mutual exclusion problem in preemptive task management where
 multiple agents wants to access the same resource concurrently, and problems
 like read/write conflicts can occur. But since cooperative task management not
 necessarily infer multithreaded environments, concurrent problems can be
@@ -229,11 +229,11 @@ transformational/reactive system dichotomy a fundamental system paradigm.
 
 Harel and Pnueli presents a method for decomposing complex system using
 \textit{statecharts}. Drawn from the theories of \textit{finite state
-automata}, a system can be expressed using states. This is particularily useful
+automata}, a system can be expressed using states. This is particularly useful
 for reactive systems that can react to a large amount of different inputs. One
 powerful feature with statecharts is its ability to handle hierarchical states.
 If a system has a numerous amount of input combinations, a large set of states
-must be created which in the long run is not appropiate in terms of
+must be created which in the long run is not appropriate in terms of
 scalability. One solution to this is hierarchical states in which a state can
 hold a number of other states. Fundamentally, a state undergo a transition to
 another state when an action is performed on that state.
@@ -265,7 +265,7 @@ list had the format:
   And so on...
 \end{enumerate}
 
-They then implemented a system fullfilling the requirements in a set of
+They then implemented a system fulfilling the requirements in a set of
 different languages. Most languages fit well for reactive systems since their
 semanticS allows and makes it easy to build and define different state
 machines.  They also did one implementation in C in which they had two
@@ -334,7 +334,7 @@ such as behaviors and events.
 \label{sec:evaluation-model}
 
 When an event occurs, the evaluation model of a reactive language determines
-how change is propagated throughout the data dependencies. Propagatation can
+how change is propagated throughout the data dependencies. Propagation can
 either be \textit{push-based}, meaning that data is pushed to its dependencies
 as soon as an event occur, or \textit{pull-based}, meaning that computation
 nodes pull data when needed. The former is a \textit{data driven} model and is
@@ -373,7 +373,7 @@ These kinds of inconsistencies, or glitches, should be avoided by the language.
 \subsubsection{Lifting operators}
 
 \textit{Lifting} in reactive programming refers to the act of making previously
-uncompliant operators or functions work with behaviors. Lifting transforms the
+incompliant operators or functions work with behaviors. Lifting transforms the
 type signature of the function and registers the topology of its dependencies
 in the dataflow graph. A function $f$ with a non-behavior type $T$ can be
 lifted as:
@@ -574,7 +574,7 @@ is \textit{bug}. But an error is something a human does (verb) and a fault is
 the expressive representation of the error. When a program executes a fault a
 failure occurs. But the failure could have happened not only because bad code
 was executed (\textit{faults of commission}) - it could also be due to the fact
-that the correct code was abscent (\textit{faults of omission}). An incident is
+that the correct code was absent (\textit{faults of omission}). An incident is
 the consequence of a failure that signals the user of its presence.
 Fundamentally the act of testing has two objectives: to locate failures and to
 verify correct execution of the program. The actual procedure that executes a
@@ -605,7 +605,7 @@ performance related benchmarks in a system; usually by putting the system under
 I/O load such as simulated network traffic \cite{jiang2015survey}. Software
 systems contain resources such as the CPU, processes, threads and I/O that all
 have limited capacities, which mean they potentially can deny each others
-execution when several users require the same resource. Analysing a system's
+execution when several users require the same resource. Analyzing a system's
 performance requires quantification of such effects \cite{woodside2007future}.
 The goal of the tests could be to compare an existing system with a new
 proposed system to see which one performs better \cite{avritzer1996deriving} or
@@ -629,7 +629,7 @@ Usually, performance tests objectives relate to I/O throughput and response
 time. Weyuker and Vokolos conducted performance tests on a telecommunication
 gateway by developing simulated telephone callers \cite{weyuker2000experience}.
 These callers performed calls and transactions on the systems that were
-measured to analyse performance. Performance metrics used by the popular
+measured to analyze performance. Performance metrics used by the popular
 performance testing tool \textit{JMeter}\footnote{See
 \url{jmeter.apache.org}.}, which is often used to test web applications and
 services, include \cite{mendelawy2016kpis}:
@@ -637,7 +637,7 @@ services, include \cite{mendelawy2016kpis}:
 \begin{description}
   \item[Number of Users:] Measuring the number of active users can be done by
     creating \textit{virtual users} in a testing program. This metric is at
-    most interesting when analysed together with Hits per Second.
+    most interesting when analyzed together with Hits per Second.
   \item[Hits per Second:] This is a measure on how many requests are generated
     by each user. The correlation between Number of Users and Hits per Second
     provides a valuable hint on the performance of the server.
@@ -668,7 +668,7 @@ incomplete or unavailable \cite{barber2004creating}:
   \item If log files are unavailable, try to extract information from
     stakeholders such as salesmen (they might know of the most anticipated
     activities that can be used in the workload design) and users (they might
-    know what activites they probably will do).
+    know what activities they probably will do).
   \item Look for performance related activites in design and requirements
     documents.
   \item Whenever a new beta version of the system is available, retrieve
