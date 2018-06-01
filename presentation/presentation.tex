@@ -1,0 +1,1083 @@
+\documentclass{beamer}
+
+\include{settings}
+
+\mode<presentation>
+{
+    \usetheme{default}
+    \usecolortheme{default}
+    \usefonttheme{default}
+    \setbeamertemplate{navigation symbols}{}
+    \setbeamertemplate{caption}[numbered]
+}
+
+\usepackage[english]{babel}
+\usepackage[utf8x]{inputenc}
+\usepackage{graphics}
+
+\title{A study on the performance and architectural characteristics of the
+Internet of Things gateway}
+\author{Natanael Log}
+\institute{Master's thesis, spring 2018}
+\date{2018-06-01}
+
+\begin{document}
+    \begin{frame}
+        \titlepage
+    \end{frame}
+
+    \begin{frame}{Presentation outline}
+        \tableofcontents
+    \end{frame}
+
+    \section{Background}
+
+    \subsection{Internet of Things}
+
+    \begin{frame}{Internet of Things}
+
+        Things connected to the internet.
+
+    \end{frame}
+
+%    \begin{frame}{Internet of Things}
+%
+%        \begin{center}
+%
+%        \textit{"Internet of Things links uniquely identifiable things to their
+%            virtual representations in the Internet [...]. The provided
+%            accurate and appropriate information may be accessed in the right
+%            quantity and condition, at the right time and place at the right
+%            price. The Internet of Things is not synonymous with ubiquitous /
+%            pervasive computing, the Internet Protocol (IP), communication
+%            technology, embedded devices, its applications, the Internet of
+%            People or the Intranet / Extranet of Things, yet it combines
+%            aspects and technologies of all of these approaches."}
+%        \footcite{uckelmann2011architectural}
+%        \end{center}
+%
+%    \end{frame}
+
+    \begin{frame}{IoT architecture}
+
+        Chen et al. divides the IoT architecture into three layered domains
+        \footcite{chen2011brief}:
+
+        \begin{figure}[h!]
+            \centering
+            \begin{tikzpicture}
+                \matrix (table) [widelayeredblocks] {
+                    Application domain \\
+                    Network domain \\
+                    Sensing domain \\
+                };
+            \end{tikzpicture}
+        \end{figure}
+
+    \end{frame}
+
+%    \begin{frame}{An IoT device example}
+%
+%        \begin{block}{Raspberry Pi\footnote{\url{raspberrypi.org}}}
+%            \begin{itemize}
+%                \item Can talk directly to the internet
+%                \item Relatively powerful\footcite{kruger2014benchmarking} and general
+%                \item Requires continuous power
+%            \end{itemize}
+%        \end{block}
+%
+%        \begin{block}{RFID\footcite{want2006introduction}}
+%            \begin{itemize}
+%                \item Requires middleware for internet communication
+%                \item Specialized on one task
+%                \item No batteries or continuous power required
+%            \end{itemize}
+%        \end{block}
+%
+%    \end{frame}
+
+    \begin{frame}{The IoT gateway}
+
+        \begin{figure}[h!]
+            \centering
+            \begin{tikzpicture}[auto]
+                \node [block] (device_1) {Device 1};
+                \node [block, right of=device_1, node distance=3cm] (device_2) {Device 2};
+                \node [node distance = 0.5cm, right = of device_2] (dots) {...};
+                \node [block, node distance = 0.5cm, right = of dots] (device_n) {Device n};
+                \node [block, above of=device_2, node distance=2.5cm] (gateway) {Gateway};
+                \node [block, above = of gateway, node distance=2.5cm]
+                (internet) {Internet};
+
+                \path [->] (device_1) edge [bend left=5] (gateway);
+                \path [->] (gateway) edge [bend left=5] (device_1);
+                \path [->] (device_2) edge [bend left=5] (gateway);
+                \path [->] (gateway) edge [bend left=5] (device_2);
+                \path [->] (device_n) edge [bend left=5] (gateway);
+                \path [->] (gateway) edge [bend left=5] (device_n);
+                \path [->] (gateway) edge [bend left=5] (internet);
+                \path [->] (internet) edge [bend left=5] (gateway);
+            \end{tikzpicture}
+        \end{figure}
+
+    \end{frame}
+
+    \subsection{Asynchronous I/O and libuv}
+
+    \begin{frame}{Original idea}
+
+        \begin{itemize}
+            \item Experience from embedded gateway-like systems
+            \item Is there a better approach than a synchronous loop?
+            \item Can web technologies have an answer?
+        \end{itemize}
+
+    \end{frame}
+
+    \begin{frame}{NodeJS}
+
+        \lstinputlisting[
+          language=javascript,
+          caption={Synchronous I/O example in NodeJS.},
+          label={listing:read_file_sync}
+        ]{../thesis/figures/read_file_sync.js}
+
+        \lstinputlisting[
+          language=javascript,
+          caption={Asynchronous I/O example in NodeJS.},
+          label={listing:read_file_async}
+        ]{../thesis/figures/read_file_async.js}
+
+    \end{frame}
+
+    \begin{frame}{The event loop}
+
+        \begin{figure}[h!]
+        \centering
+            \begin{tikzpicture}[node distance=1.5cm, auto]
+                \node [decision] (alive) {Loop alive?};
+                \node [block, left of=alive, node distance=3cm] (end) {End};
+                \node [block, below of=alive, node distance=2.5cm] (poll) {Poll for I/O};
+                \node [block, below of=poll]
+                (run_callbacks) {Run callbacks};
+
+                \path [line] (alive) -- node {No} (end);
+                \path [line] (alive) -- node {Yes} (poll);
+                \path [line] (run_callbacks.east) -- ++(1cm,0) |- (alive.east);
+            \end{tikzpicture}
+        \end{figure}
+
+    \end{frame}
+
+    \begin{frame}{libuv}
+
+        \begin{figure}
+            \centering
+            \resizebox{\columnwidth}{!} {
+            \includegraphics{libuv.png}
+            }
+            \caption{The libuv logo. \textcopyright The libuv team (\url{libuv.org}).}
+        \end{figure}
+
+
+    \end{frame}
+
+%    \begin{frame}{Motivation}
+%
+%        What is the problem?
+%
+%        \begin{itemize}
+%            \item Kruger et al. state little work has been done to explore the
+%                performance of IoT devices when different parameters are
+%                adjusted \footcite{kruger2014benchmarking}.
+%
+%            \item There is an interest from the industry to understand and
+%                increase the knowledge of IoT devices and applications.
+%        \end{itemize}
+%
+%    \end{frame}
+
+    \begin{frame}{Research questions}
+
+        \begin{itemize}
+            \item What internal and external properties affect the
+                functionality and performance of the IoT gateway?
+
+            \item How can libuv be used in order to implement an IoT gateway?
+                What are the benefits and disadvantages of doing so?
+        \end{itemize}
+
+    \end{frame}
+
+    \section{Identifying the gateway}
+
+    \begin{frame}{Two customer cases}
+
+        Customer A
+
+        \begin{figure}[h!]
+            \centering
+            \resizebox{0.5\columnwidth}{!} {
+            \begin{tikzpicture}[auto]
+                \node [block] (device_1) {Device 1};
+                \node [block, right of=device_1, node distance=3cm] (device_2) {Device 2};
+                \node [node distance = 0.5cm, right = of device_2] (dots) {...};
+                \node [block, node distance = 0.5cm, right = of dots] (device_n) {Device n};
+                \node [block, below of=device_2, node distance=2.5cm] (gateway) {Gateway};
+
+                \path [->] (device_1) edge [bend left=5] (gateway);
+                \path [->] (gateway) edge [bend left=5] (device_1);
+                \path [->] (device_2) edge [bend left=5] (gateway);
+                \path [->] (gateway) edge [bend left=5] (device_2);
+                \path [->] (device_n) edge [bend left=5] (gateway);
+                \path [->] (gateway) edge [bend left=5] (device_n);
+            \end{tikzpicture}
+            }
+        \end{figure}
+
+        Customer B
+
+        \begin{figure}[h!]
+            \centering
+            \resizebox{0.5\columnwidth}{!} {
+            \begin{tikzpicture}[auto]
+                \node [block] (device_1) {Device 1};
+                \node [block, right of=device_1, node distance=3cm] (device_2) {Device 2};
+                \node [node distance = 0.5cm, right = of device_2] (dots) {...};
+                \node [block, node distance = 0.5cm, right = of dots] (device_n) {Device n};
+                \node [block, below of=device_2, node distance=2.5cm] (gateway) {Gateway};
+
+                \path [line] (device_1) -- (gateway);
+                \path [line] (device_2) -- (gateway);
+                \path [line] (device_n) -- (gateway);
+            \end{tikzpicture}
+            }
+        \end{figure}
+
+    \end{frame}
+
+%    \begin{frame}{Task management}
+%
+ %       Discussed by Adya et al.\footcite{adya2002cooperative}.
+%
+ %       \begin{block}{Serial task management}
+ %           Tasks are run until they are finished before any other task can
+ %           start its execution.
+ %       \end{block}
+%
+ %       \begin{block}{Preemptive task management}
+ %           Tasks can be scheduled to interleave and make room for other tasks
+ %           to be run concurrently.
+ %       \end{block}
+%
+ %       \begin{block}{Cooperative task management}
+ %           Tasks can yield control to other tasks in defined points in its
+ %           execution. Useful in I/O intensive systems.
+ %       \end{block}
+%
+ %   \end{frame}
+
+    \begin{frame}{Serial order handling}
+
+        \begin{figure}[h!]
+            \centering
+            \resizebox{\columnwidth}{!}{
+            \begin{tikzpicture}[node distance=5cm, auto, >=stealth']
+                \node[] (brewer) {Brewer};
+                \node[left of=brewer] (barista) {Barista};
+                \node[left of=barista] (customers) {Customer line};
+
+                \node[below of=brewer, node distance=7.5cm] (brewer_ground) {};
+                \node[below of=barista, node distance=7.5cm] (barista_ground) {};
+                \node[below of=customers, node distance=7.5cm] (customers_ground) {};
+
+                \draw (brewer) -- (brewer_ground);
+                \draw (barista) -- (barista_ground);
+                \draw (customers) -- (customers_ground);
+
+                \draw[<-] ($(barista)!1cm!(barista_ground)$) --
+                    node[above, scale=0.9, midway]{Place $Order_0$}
+                    ($(customers)!1cm!(customers_ground)$);
+                \draw[<-] ($(brewer)!1.1cm!(brewer_ground)$) --
+                    node[above, scale=0.9, midway]{Start brewer}
+                    ($(barista)!1.1cm!(barista_ground)$);
+                \node[draw=none, fill=white, scale=0.9] at
+                    ($(brewer)!1.5cm!(brewer_ground)$) {Brewing...};
+                \draw[->] ($(brewer)!1.9cm!(brewer_ground)$) --
+                    node[above, scale=0.9, midway]{Coffee ready}
+                    ($(barista)!1.9cm!(barista_ground)$);
+                \draw[->] ($(barista)!2cm!(barista_ground)$) --
+                    node[above, scale=0.9, midway]{Serve $Order_0$}
+                    ($(customers)!2cm!(customers_ground)$);
+
+                \node[draw=none, fill=white, scale=0.9] at
+                    ($(customers)!2.5cm!(customers_ground)$)
+                    {Next customer};
+
+                \draw[<-] ($(barista)!3cm!(barista_ground)$) --
+                    node[above, scale=0.9, midway]{Place $Order_1$}
+                    ($(customers)!3cm!(customers_ground)$);
+                \draw[<-] ($(brewer)!3.1cm!(brewer_ground)$) --
+                    node[above, scale=0.9, midway]{Start brewer}
+                    ($(barista)!3.1cm!(barista_ground)$);
+                \node[draw=none, fill=white, scale=0.9] at
+                    ($(brewer)!3.5cm!(brewer_ground)$) {Brewing...};
+                \draw[->] ($(brewer)!3.9cm!(brewer_ground)$) --
+                    node[above, scale=0.9, midway]{Coffee ready}
+                    ($(barista)!3.9cm!(barista_ground)$);
+                \draw[->] ($(barista)!4cm!(barista_ground)$) --
+                    node[above, scale=0.9, midway]{Serve $Order_1$}
+                    ($(customers)!4cm!(customers_ground)$);
+
+                \node[draw=none, fill=white, scale=0.9] at
+                    ($(customers)!4.5cm!(customers_ground)$)
+                    {Next customer};
+
+                \node[draw=none, fill=white, scale=0.9] at ($(brewer)!5cm!(brewer_ground)$)
+                    {...};
+                \node[draw=none, fill=white, scale=0.9] at ($(barista)!5cm!(barista_ground)$)
+                    {...};
+                \node[draw=none, fill=white, scale=0.9] at ($(customers)!5cm!(customers_ground)$)
+                    {...};
+
+                \draw[<-] ($(barista)!6cm!(barista_ground)$) --
+                    node[above, scale=0.9, midway]{Place $Order_j$}
+                    ($(customers)!6cm!(customers_ground)$);
+                \draw[<-] ($(brewer)!6.1cm!(brewer_ground)$) --
+                    node[above, scale=0.9, midway]{Start brewer}
+                    ($(barista)!6.1cm!(barista_ground)$);
+                \node[draw=none, fill=white, scale=0.9] at
+                    ($(brewer)!6.5cm!(brewer_ground)$) {Brewing...};
+                \draw[->] ($(brewer)!6.9cm!(brewer_ground)$) --
+                    node[above, scale=0.9, midway]{Coffee ready}
+                    ($(barista)!6.9cm!(barista_ground)$);
+                \draw[->] ($(barista)!7cm!(barista_ground)$) --
+                    node[above, scale=0.9, midway]{Serve $Order_j$}
+                    ($(customers)!7cm!(customers_ground)$);
+
+                \node[draw=none, fill=white, scale=0.9] at ($(brewer)!7.5cm!(brewer_ground)$)
+                    {...};
+                \node[draw=none, fill=white, scale=0.9] at ($(barista)!7.5cm!(barista_ground)$)
+                    {...};
+                \node[draw=none, fill=white, scale=0.9] at ($(customers)!7.5cm!(customers_ground)$)
+                    {...};
+            \end{tikzpicture}
+            }
+        \end{figure}
+
+    \end{frame}
+
+    \begin{frame}{Preemptive order handling}
+
+        \begin{figure}[h!]
+            \centering
+            \resizebox{\columnwidth}{!}{
+            \begin{tikzpicture}[node distance=3cm, auto, >=stealth']
+                \node[] (brewern) {$Brewer_{n-1}$};
+                \node[left of=brewern] (baristan) {$Barista_{n-1}$};
+                \node[left of=baristan, node distance=1.5cm] (dots) {...};
+                \node[left of=dots, node distance=1.5cm] (brewer0) {$Brewer_0$};
+                \node[left of=brewer0] (barista0) {$Barista_0$};
+                \node[left of=barista0] (customers) {Customer line};
+
+                \node[below of=brewern, node distance=7cm] (brewern_ground) {};
+                \node[below of=baristan, node distance=7cm] (baristan_ground) {};
+                \node[below of=dots, node distance=7cm] (dots_ground) {};
+                \node[below of=brewer0, node distance=7cm] (brewer0_ground) {};
+                \node[below of=barista0, node distance=7cm] (barista0_ground) {};
+                \node[below of=customers, node distance=7cm] (customers_ground) {};
+
+                \draw (brewern) -- (brewern_ground);
+                \draw (baristan) -- (baristan_ground);
+                \draw (brewer0) -- (brewer0_ground);
+                \draw (barista0) -- (barista0_ground);
+                \draw (customers) -- (customers_ground);
+
+                \draw[<-] ($(barista0)!1cm!(barista0_ground)$) --
+                    node[above, scale=0.9, midway]{Place $Order_0$}
+                    ($(customers)!1cm!(customers_ground)$);
+                \draw[<-] ($(brewer0)!1.1cm!(brewer0_ground)$) --
+                    node[above, scale=0.9, midway]{Start brewer}
+                    ($(barista0)!1.1cm!(barista0_ground)$);
+                \node[draw=none, fill=white, scale=0.9] at
+                    ($(brewer0)!1.5cm!(brewer0_ground)$) {Brewing...};
+                \draw[->] ($(brewer0)!2.9cm!(brewer0_ground)$) --
+                    node[above, scale=0.9, midway]{Coffee ready}
+                    ($(barista0)!2.9cm!(barista0_ground)$);
+                \draw[->] ($(barista0)!3cm!(barista0_ground)$) --
+                    node[above, scale=0.9, midway]{Serve $Order_0$}
+                    ($(customers)!3cm!(customers_ground)$);
+
+                \node[draw=none, fill=white, scale=0.9] at
+                    ($(customers)!1.5cm!(customers_ground)$)
+                    {Next customer};
+
+                \draw[<-, dashed] ($(dots)!2cm!(dots_ground)$) --
+                    node[above, scale=0.9, pos=0.4]{Place $Order_1$}
+                    ($(customers)!2cm!(customers_ground)$);
+
+                \node[draw=none, fill=white, scale=0.9] at
+                    ($(customers)!3.5cm!(customers_ground)$)
+                    {Next customer};
+
+                \node[draw=none, fill=white, scale=0.9] at ($(brewern)!4cm!(brewern_ground)$)
+                    {...};
+                \node[draw=none, fill=white, scale=0.9] at ($(baristan)!4cm!(baristan_ground)$)
+                    {...};
+                \node[draw=none, fill=white, scale=0.9] at ($(brewer0)!4cm!(brewer0_ground)$)
+                    {...};
+                \node[draw=none, fill=white, scale=0.9] at ($(barista0)!4cm!(barista0_ground)$)
+                    {...};
+                \node[draw=none, fill=white, scale=0.9] at ($(customers)!4cm!(customers_ground)$)
+                    {...};
+
+                \draw[<-] ($(baristan)!4.5cm!(baristan_ground)$) --
+                    node[above, scale=0.9, midway]{Place $Order_j$}
+                    ($(customers)!4.5cm!(customers_ground)$);
+                \draw[<-] ($(brewern)!4.6cm!(brewern_ground)$) --
+                    node[above, scale=0.9, midway]{Start brewer}
+                    ($(baristan)!4.6cm!(baristan_ground)$);
+                \node[draw=none, fill=white, scale=0.9] at
+                    ($(brewern)!5.5cm!(brewern_ground)$) {Brewing...};
+                \draw[->] ($(brewern)!6.4cm!(brewern_ground)$) --
+                    node[above, scale=0.9, midway]{Coffee ready}
+                    ($(baristan)!6.4cm!(baristan_ground)$);
+                \draw[->] ($(baristan)!6.5cm!(baristan_ground)$) --
+                    node[above, scale=0.9, midway]{Serve $Order_j$}
+                    ($(customers)!6.5cm!(customers_ground)$);
+
+                \draw[->, dashed] ($(dots)!5.5cm!(dots_ground)$) --
+                    node[above, scale=0.9, pos=0.41]{Serve $Order_{j-1}$}
+                    ($(customers)!5.5cm!(customers_ground)$);
+
+                \node[draw=none, fill=white, scale=0.9] at ($(brewern)!7cm!(brewern_ground)$)
+                    {...};
+                \node[draw=none, fill=white, scale=0.9] at ($(baristan)!7cm!(baristan_ground)$)
+                    {...};
+                \node[draw=none, fill=white, scale=0.9] at ($(brewer0)!7cm!(brewer0_ground)$)
+                    {...};
+                \node[draw=none, fill=white, scale=0.9] at ($(barista0)!7cm!(barista0_ground)$)
+                    {...};
+                \node[draw=none, fill=white, scale=0.9] at ($(customers)!7cm!(customers_ground)$)
+                    {...};
+            \end{tikzpicture}
+            }
+        \end{figure}
+
+    \end{frame}
+
+    \begin{frame}{Cooperative order handling}
+
+        \begin{figure}[h!]
+            \centering
+            \resizebox{\columnwidth}{!}{
+            \begin{tikzpicture}[node distance=3cm, auto, >=stealth']
+                \node[] (brewern) {$Brewer_{n-1}$};
+                \node[left of=brewern, node distance=1.5cm] (dots) {...};
+                \node[left of=dots, node distance=1.5cm] (brewer0) {$Brewer_0$};
+                \node[left of=brewer0] (barista) {Barista};
+                \node[left of=barista] (customers) {Customer line};
+
+                \node[below of=brewern, node distance=7cm] (brewern_ground) {};
+                \node[below of=dots, node distance=7cm] (dots_ground) {};
+                \node[below of=brewer0, node distance=7cm] (brewer0_ground) {};
+                \node[below of=barista, node distance=7cm] (barista_ground) {};
+                \node[below of=customers, node distance=7cm] (customers_ground) {};
+
+                \draw (brewern) -- (brewern_ground);
+                \draw (brewer0) -- (brewer0_ground);
+                \draw (barista) -- (barista_ground);
+                \draw (customers) -- (customers_ground);
+
+                \draw[<-] ($(barista)!1cm!(barista_ground)$) --
+                    node[above, scale=0.9, midway]{Place $Order_0$}
+                    ($(customers)!1cm!(customers_ground)$);
+                \draw[<-] ($(brewer0)!1.1cm!(brewer0_ground)$) --
+                    node[above, scale=0.9, midway]{Start brewer}
+                    ($(barista)!1.1cm!(barista_ground)$);
+                \node[draw=none, fill=white, scale=0.9] at
+                    ($(brewer0)!1.5cm!(brewer0_ground)$) {Brewing...};
+                \draw[->] ($(brewer0)!2.9cm!(brewer0_ground)$) --
+                    node[above, scale=0.9, midway]{Coffee ready}
+                    ($(barista)!2.9cm!(barista_ground)$);
+                \draw[->] ($(barista)!3cm!(barista_ground)$) --
+                    node[above, scale=0.9, midway]{Serve $Order_0$}
+                    ($(customers)!3cm!(customers_ground)$);
+
+                \node[draw=none, fill=white, scale=0.9] at
+                    ($(customers)!1.5cm!(customers_ground)$)
+                    {Next customer};
+
+                \draw[<-] ($(barista)!2cm!(barista_ground)$) --
+                    node[above, scale=0.9, pos=0.4]{Place $Order_1$}
+                    ($(customers)!2cm!(customers_ground)$);
+                \draw[<-, dashed] ($(dots)!2.1cm!(dots_ground)$) --
+                    node[above, scale=0.9, pos=0.65]{Start brewer}
+                    ($(barista)!2.1cm!(barista_ground)$);
+
+                \node[draw=none, fill=white, scale=0.9] at
+                    ($(customers)!3.5cm!(customers_ground)$)
+                    {Next customer};
+
+                \node[draw=none, fill=white, scale=0.9] at ($(brewern)!4cm!(brewern_ground)$)
+                    {...};
+                \node[draw=none, fill=white, scale=0.9] at ($(brewer0)!4cm!(brewer0_ground)$)
+                    {...};
+                \node[draw=none, fill=white, scale=0.9] at ($(barista)!4cm!(barista_ground)$)
+                    {...};
+                \node[draw=none, fill=white, scale=0.9] at ($(customers)!4cm!(customers_ground)$)
+                    {...};
+
+                \draw[<-] ($(barista)!4.5cm!(barista_ground)$) --
+                    node[above, scale=0.9, midway]{Place $Order_j$}
+                    ($(customers)!4.5cm!(customers_ground)$);
+                \draw[<-] ($(brewern)!4.6cm!(brewern_ground)$) --
+                    node[above, scale=0.9, pos=0.75]{Start brewer}
+                    ($(barista)!4.6cm!(barista_ground)$);
+                \node[draw=none, fill=white, scale=0.9] at
+                    ($(brewern)!5.5cm!(brewern_ground)$) {Brewing...};
+                \draw[->] ($(brewern)!6.4cm!(brewern_ground)$) --
+                    node[above, scale=0.9, pos=0.75]{Coffee ready}
+                    ($(barista)!6.4cm!(barista_ground)$);
+                \draw[->] ($(barista)!6.5cm!(barista_ground)$) --
+                    node[above, scale=0.9, midway]{Serve $Order_j$}
+                    ($(customers)!6.5cm!(customers_ground)$);
+
+                \draw[->, dashed] ($(dots)!5.5cm!(dots_ground)$) --
+                    node[above, scale=0.9, pos=0.41]{Serve $Order_{j-1}$}
+                    ($(customers)!5.5cm!(customers_ground)$);
+
+                \node[draw=none, fill=white, scale=0.9] at ($(brewern)!7cm!(brewern_ground)$)
+                    {...};
+                \node[draw=none, fill=white, scale=0.9] at ($(brewer0)!7cm!(brewer0_ground)$)
+                    {...};
+                \node[draw=none, fill=white, scale=0.9] at ($(barista)!7cm!(barista_ground)$)
+                    {...};
+                \node[draw=none, fill=white, scale=0.9] at ($(customers)!7cm!(customers_ground)$)
+                    {...};
+            \end{tikzpicture}
+            }
+        \end{figure}
+
+    \end{frame}
+
+    \begin{frame}{A general approach}
+
+        \begin{figure}[h!]
+            \centering
+            \resizebox{!}{18em}{
+            \begin{tikzpicture}[node distance=5cm, auto, >=stealth']
+                \node[] (event_handler) {Event handler};
+                \node[left of=event_handler] (dispatcher) {Dispatcher};
+
+                \node[below of=event_handler, node distance=8cm] (event_handler_ground) {};
+                \node[below of=dispatcher, node distance=8cm] (dispatcher_ground) {};
+
+                \draw (event_handler) -- (event_handler_ground);
+                \draw (dispatcher) -- (dispatcher_ground);
+
+                \draw[<-] ($(event_handler)!1cm!(event_handler_ground)$) --
+                    node[above, scale=0.9, midway]{Dispatch $\epsilon_0$}
+                    ($(dispatcher)!1cm!(dispatcher_ground)$);
+                \node[draw=none, fill=white, scale=0.9] at
+                    ($(event_handler)!1.5cm!(event_handler_ground)$)
+                    {$\Lambda_0$};
+                \draw[->] ($(event_handler)!2cm!(event_handler_ground)$) --
+                    node[above, scale=0.9, midway]{Finish $\epsilon_0$}
+                    ($(dispatcher)!2cm!(dispatcher_ground)$);
+
+                \draw[<-] ($(event_handler)!3cm!(event_handler_ground)$) --
+                    node[above, scale=0.9, midway]{Dispatch $\epsilon_1$}
+                    ($(dispatcher)!3cm!(dispatcher_ground)$);
+                \node[draw=none, fill=white, scale=0.9] at
+                    ($(event_handler)!3.5cm!(event_handler_ground)$)
+                    {$\Lambda_1$};
+                \draw[->] ($(event_handler)!4cm!(event_handler_ground)$) --
+                    node[above, scale=0.9, midway]{Finish $\epsilon_1$}
+                    ($(dispatcher)!4cm!(dispatcher_ground)$);
+
+                \node[draw=none, fill=white, scale=0.9] at
+                ($(event_handler)!5cm!(event_handler_ground)$)
+                    {...};
+                \node[draw=none, fill=white, scale=0.9] at
+                ($(dispatcher)!5cm!(dispatcher_ground)$)
+                    {...};
+
+                \draw[->] ($(event_handler)!5.5cm!(event_handler_ground)$) --
+                    node[above, scale=0.9, midway]{Finish $\epsilon_{j-1}$}
+                    ($(dispatcher)!5.5cm!(dispatcher_ground)$);
+
+                \draw[<-] ($(event_handler)!6.5cm!(event_handler_ground)$) --
+                    node[above, scale=0.9, midway]{Dispatch $\epsilon_j$}
+                    ($(dispatcher)!6.5cm!(dispatcher_ground)$);
+                \node[draw=none, fill=white, scale=0.9] at
+                    ($(event_handler)!7cm!(event_handler_ground)$)
+                    {$\Lambda_j$};
+                \draw[->] ($(event_handler)!7.5cm!(event_handler_ground)$) --
+                    node[above, scale=0.9, midway]{Finish $\epsilon_j$}
+                    ($(dispatcher)!7.5cm!(dispatcher_ground)$);
+
+                \node[draw=none, fill=white, scale=0.9] at
+                ($(event_handler)!8cm!(event_handler_ground)$)
+                    {...};
+                \node[draw=none, fill=white, scale=0.9] at
+                ($(dispatcher)!8cm!(dispatcher_ground)$)
+                    {...};
+            \end{tikzpicture}
+            }
+        \end{figure}
+
+    \end{frame}
+
+    \begin{frame}{Three event propagation models}
+
+        \begin{block}{Serial event propagation}
+%             Given a set of $m$ events $\{ \epsilon_0, \epsilon_1, ...,
+%             \epsilon_j, ..., \epsilon_{m-1} \}$ no event $\epsilon_j$ is
+%             dispatched before the work $\Lambda_{j-1}$ is finished.
+
+            \begin{itemize}
+                \item Dispatch and handle one event at a time
+                \item Typically single-threaded
+            \end{itemize}
+        \end{block}
+
+        \begin{block}{Preemptive event propagation}
+%            Given a set of $m$ events $\{ \epsilon_0, \epsilon_1, ...,
+%            \epsilon_j, ..., \epsilon_{m-1} \}$ each event $\epsilon_j$ can be
+%            dispatched independent on $\Lambda_{j-1}$ and the work $\Lambda_j$
+%            can \textbf{implicitly} interleave and make room for work $\Lambda_k$ where
+%            $k \ne j$.
+
+            \begin{itemize}
+                \item Dispatch and process many events concurrently
+                \item Typically multi-threaded
+            \end{itemize}
+        \end{block}
+
+        \begin{block}{Cooperative event propagation}
+%            Given a set of $m$ events $\{ \epsilon_0, \epsilon_1, ...,
+%            \epsilon_j, ..., \epsilon_{m-1} \}$ each event $\epsilon_j$ can be
+%            dispatched independent on $\Lambda_{j-1}$ and the work $\Lambda_j$
+%            can \textbf{explicitly} make room for work $\Lambda_k$ where $k \ne j$.
+
+            \begin{itemize}
+                \item Dispatch and process many events concurrently
+                \item Single-threaded, but asynchronous
+            \end{itemize}
+        \end{block}
+
+    \end{frame}
+
+    \begin{frame}{The gateway components}
+
+        The pull-based dispatcher was chosen for implementation.
+
+        \begin{description}
+            \item[Serial dispatcher:] Fetch and dispatch one event at a time.
+            \item[Preemptive dispatcher:] Use one thread per device.
+            \item[Cooperative dispatcher:] Fetch and dispatch events asynchronously.
+            \item[Serial event handler:] Process work $\Lambda$ serially.
+            \item[Preemptive event handler:] Use one thread per work $\Lambda$.
+            \item[Cooperative event handler:] Do CPU related work on one thread and I/O
+                related work asynchronously.
+        \end{description}
+
+    \end{frame}
+
+    \section{An abstract gateway}
+
+    \begin{frame}{An abstract gateway}
+
+        $$
+        \Gamma = \big \langle \Omega, \phi, \delta, K, \Lambda, \chi \big
+        \rangle
+        $$
+
+        $$
+        \Omega = \{ \omega_0, \omega_1, ..., \omega_{q-1} \} \text{, }
+        K = \{ \kappa_0, \kappa_1 \} \text{, }
+        \Lambda = \{ \lambda_0, \lambda_1 \}
+        $$
+
+        \begin{table}[h!]
+            \begin{center}
+                \begin{tabular}{|l|l|}
+                    \hline
+                    Parameter   & Description \\
+                    \hline
+                    $q = |\Omega|$         & Number of devices. \\
+                    $\phi$      & Frequency of generated events. \\
+                    $\delta$    & The delay, or latency, added to the network. \\
+                    $\kappa_0$  & Event propagation model of the dispatcher. \\
+                    $\kappa_1$  & Event propagation model of the event handler. \\
+                    $\lambda_0$ & CPU intensity induced by each event. \\
+                    $\lambda_1$ & I/O intensity induced by each event. \\
+                    $\chi$      & Number of CPU cores. \\
+                    \hline
+                \end{tabular}
+            \end{center}
+        \end{table}
+
+    \end{frame}
+
+    \begin{frame}{The $E$ function}
+
+        $$
+        E(\Gamma, t_{start}, t_{end}) \to M = \big[ \epsilon_0, \epsilon_1,
+        ..., \epsilon_{m-1} \big]^T
+        $$
+
+        $$
+        \epsilon_j = [ t_0^j, t_1^j, t_2^j, t_3^j, t_4^j ]
+        $$
+
+        \begin{itemize}
+
+            \item $t_0^j$ represents the point in time when $\epsilon_j$ was
+                created in $\omega_i$.
+
+            \item $t_1^j$ represents the point in time when $\epsilon_j$ left
+                $\omega_i$.
+
+            \item $t_2^j$ represents the point in time when $\epsilon_j$
+                arrived at $\Gamma$.
+
+            \item $t_3^j$ represents the point in time when $\epsilon_j$ was
+                dispatched to the event handler in $\Gamma$.
+
+            \item $t_4^j$ represents the point in time when $\Gamma$ finished
+                processing $\epsilon_j$.
+
+        \end{itemize}
+
+    \end{frame}
+
+%    \begin{frame}{Constraints on time values}
+%
+%        $$
+%        t_{start} \leq t_{end}
+%        $$
+%
+%        $$
+%        t_{start} \leq t_k^j
+%        $$
+%
+%        $$
+%        t_0^j \leq t_{end}
+%        $$
+%
+%        $$
+%        t_0^j \leq t_1^j \leq t_2^j \leq t_3^j \leq t_4^j
+%        $$
+%
+%    \end{frame}
+
+    \begin{frame}{Performance metrics}
+
+        \[
+            \pi(\epsilon_j) =
+        \begin{cases}
+            1, & \text{if } t_4^j \leq t_{end} \\
+            0, & \text{otherwise}
+        \end{cases}
+        \]
+
+        $$
+        T = \frac{\sum_{\epsilon_j \in M}{\pi(\epsilon_j)}}{t_{end} -
+        t_{start}} \text{ [events/tu]}
+        $$
+
+        \begin{itemize}
+
+            \item $d_0^j = t_4^j - t_0^j$ is the response time of $\epsilon_j$,
+                i.e.  the total time between that the event was created until
+                it was processed.
+
+            \item $d_1^j = t_1^j - t_0^j$ is the wait time, i.e. the time
+                $\epsilon_j$ spent in $\omega_i$.
+
+            \item $d_2^j = t_4^j - t_2^j$ is the process time, i.e. the time
+                $\epsilon_j$ spent in $\Gamma$.
+
+        \end{itemize}
+
+    \end{frame}
+
+%    \begin{frame}{Analyzing the load}
+%
+ %       A system is \textit{at load} when it is working at full capacity and is
+ %       not able to produce higher throughput.
+%
+ %       $$
+ %       P = \frac{\sum_{\epsilon_j \in M}{\pi(\epsilon_j)}}{m}
+ %       $$
+%
+ %       $$
+ %       P \simeq 1 \rightarrow \text{Maybe at load}
+ %       $$
+%
+ %       $$
+ %       P \ll 1 \rightarrow \text{Increase in response time but max throughput}
+ %       $$
+%
+ %       A proper load is one where $P \simeq 1$, but where an increase in $m$
+ %       only reduces $P$.
+%
+ %       $$
+ %       m = q \times \phi \times (t_{end} - t_{start}) \text{, }
+ %       \phi \approx \frac{T_{max}}{q}
+ %       $$
+%
+ %   \end{frame}
+
+    \section{Results}
+
+    \begin{frame}{Test overview}
+
+        \begin{itemize}
+            \item[s/s:] Serial dispatcher with a serial event handler.
+            \item[s/p:] Serial dispatcher with a preemptive event handler.
+            \item[c/c:] Cooperative dispatcher with a cooperative event
+                handler.
+            \item[c/p:] Cooperative dispatcher with a preemptive event handler.
+        \end{itemize}
+
+        \bgroup
+        \def\arraystretch{1.2}
+        \begin{table}[h!]
+        \begin{center}
+        \resizebox{\columnwidth}{!} {
+        \begin{tabular}{|r|r|r|r|r|r|}
+            \hline
+            \# & Cores $\chi$ & Quantity $q$ & Delay $\delta$ [s] & CPU int. $\lambda_0$ & I/O int. $\lambda_1$ \\
+            \hline
+            1 & 4 & $1 \rightarrow 50$ & 0 & 0.1 & $2 \times 10^{-4}$ \\
+            \hline
+            2 & 4 & 25 & $0.01 \rightarrow 0.1$ & 0.1 & $2 \times 10^{-4}$ \\
+            \hline
+            3 & 4 & 25 & 0 & $0.1 \rightarrow 0.5$ & $10^{-4}$ \\
+            \hline
+            4 & 1 & 25 & 0 & $0.1 \rightarrow 0.5$ & $10^{-4}$ \\
+            \hline
+            5 & 4 & 25 & 0 & 0.05 & $10^{-4} \rightarrow 10^{-3}$ \\
+            \hline
+            6 & 1 & 25 & 0 & 0.05 & $10^{-4} \rightarrow 10^{-3}$ \\
+            \hline
+        \end{tabular}
+        }
+        \end{center}
+        \end{table}
+
+    \end{frame}
+
+    \subsection{Test case 1}
+
+%    \begin{frame}{Test case 1: Increasing device quantity}
+%
+%        \begin{figure}[h!]
+%            \centering
+%            \performanceplot
+%            {../thesis/data/quad_quantity_throughput.csv}
+%            {
+%                xlabel=Device quantity $q$,
+%                ylabel={Throughput [events/s]},
+%                legend pos=outer north east
+%            }
+%        \end{figure}
+%
+%    \end{frame}
+
+    \begin{frame}{Test case 1: Increasing device quantity}
+
+        \begin{figure}[h!]
+            \centering
+            \performanceplot
+            {../thesis/data/quad_quantity_avg_d0.csv}
+            {
+                xlabel=Device quantity $q$,
+                ylabel={Response time [ms]},
+                legend pos=outer north east
+            }
+        \end{figure}
+
+    \end{frame}
+
+    \subsection{Test case 2}
+
+%    \begin{frame}{Test case 2: Increasing network delay}
+%
+%        \begin{figure}[h!]
+%            \centering
+%            \performanceplot
+%            {../thesis/data/quad_delay_throughput.csv}
+%            {
+%                xlabel={Network delay $\delta$ [s]},
+%                ylabel={Throughput [events/s]},
+%                legend pos=outer north east
+%            }
+%        \end{figure}
+%
+%    \end{frame}
+
+    \begin{frame}{Test case 2: Increasing network delay}
+
+        \begin{figure}[h!]
+            \centering
+            \performanceplot
+            {../thesis/data/quad_delay_avg_d0.csv}
+            {
+                xlabel={Network delay $\delta$ [s]},
+                ylabel={Response time [ms]},
+                legend pos=outer north east
+            }
+        \end{figure}
+
+    \end{frame}
+
+    \subsection{Test case 3 and 4}
+
+    \begin{frame}{Test case 3 and 4: Increasing CPU intensity}
+
+        \begin{figure}[h!]
+            \centering
+            \begin{tikzpicture}
+                \begin{groupplot}[
+                        group style = {group size = 2 by 1},
+                        width = 0.5*\textwidth,
+                        xlabel = CPU intensity $\lambda_0$,
+                        ymax = 125,
+                        legend columns = -1,
+                        legend style = { at = {(-0.3, -0.6)}, anchor = north }
+                    ]
+                    \nextperformanceplot{../thesis/data/quad_cpu_throughput.csv}{
+                        title = Quad core CPU,
+                        ylabel = {Throughput [events/s]}
+                    }
+                    \nextperformanceplotwithlegend{../thesis/data/single_cpu_throughput.csv}{
+                        title = Single core CPU
+                    }
+                \end{groupplot}
+            \end{tikzpicture}
+        \end{figure}
+
+    \end{frame}
+
+%    \begin{frame}{Test case 3 and 4: Increasing CPU intensity}
+%
+%        \begin{figure}[h!]
+%            \centering
+%            \begin{tikzpicture}
+%                \begin{groupplot}[
+%                        group style = {group size = 2 by 1},
+%                        width = 0.5*\textwidth,
+%                        xlabel = CPU intensity $\lambda_0$,
+%                        legend columns = -1,
+%                        legend style = { at = {(-0.3, -0.6)}, anchor = north }
+%                    ]
+%                    \nextperformanceplot{../thesis/data/quad_cpu_avg_d0.csv}{
+%                        title = Quad core CPU,
+%                        ylabel = {Response time [ms]}
+%                    }
+%                    \nextperformanceplotwithlegend{../thesis/data/single_cpu_avg_d0.csv}{
+%                        title = Single core CPU
+%                    }
+%                \end{groupplot}
+%            \end{tikzpicture}
+%        \end{figure}
+%
+%    \end{frame}
+
+    \subsection{Test case 5 and 6}
+
+    \begin{frame}{Test case 5 and 6: Increasing I/O intensity}
+
+        \begin{figure}[h!]
+            \centering
+            \begin{tikzpicture}
+                \begin{groupplot}[
+                        group style = {group size = 2 by 1},
+                        width = 0.45*\textwidth,
+                        xlabel = I/O intensity $\lambda_1$,
+                        ymax = 125,
+                        legend columns = -1,
+                        legend style = { at = {(-0.3, -0.6)}, anchor = north }
+                    ]
+                    \nextperformanceplot{../thesis/data/quad_io_throughput.csv}{
+                        ylabel = {Throughput [events/s]},
+                        title = Quad core CPU
+                    }
+                    \nextperformanceplotwithlegend{../thesis/data/single_io_throughput.csv}{
+                        title = Single core CPU
+                    }
+                \end{groupplot}
+            \end{tikzpicture}
+        \end{figure}
+
+    \end{frame}
+
+    \section{Conclusion}
+
+    \begin{frame}{Conclusion}
+
+        \begin{itemize}
+            \item The abstract gateway is proposed to be able to model \textit{any}
+                gateway implementation and performance tests.
+            \item A number of internal and external properties of the gateway
+                has been identified.
+        \end{itemize}
+
+    \end{frame}
+
+%    \begin{frame}{Conclusion}
+%
+%        \begin{itemize}
+%            \item Increasing the number of devices will increase response time
+%                for serial and cooperative event handlers.
+%            \item The cooperative dispatcher results in best response time when
+%                network delay is increased.
+%            \item All event propagation models perform about equally on a
+%                single core system when CPU intensity is increased.
+%            \item For I/O intensive work, the cooperative approaches perform
+%                best in terms of throughput.
+%        \end{itemize}
+%
+%    \end{frame}
+
+    \begin{frame}{Conclusion}
+
+        \begin{itemize}
+            \item libuv can be used to implement a cooperative dispatcher with
+                a preemptive event handler.
+            \item It performs $\approx$ better or equal to the next best event
+                propagation model in all test cases.
+        \end{itemize}
+
+    \end{frame}
+
+    \begin{frame}{If I had more time}
+
+        \begin{itemize}
+            \item Implement a preemptive dispatcher.
+            \item Use active devices, i.e. a push-based dispatcher design.
+        \end{itemize}
+
+    \end{frame}
+
+    \begin{frame}
+        Thank you.
+    \end{frame}
+
+    \begin{frame}
+        \centering
+        \resizebox{18em}{!}{
+            \includegraphics{thesis_defense.png}
+        }
+        \footnote{\url{https://imgs.xkcd.com/comics/thesis_defense.png}}
+    \end{frame}
+
+    \begin{frame}{References}
+        \printbibliography
+    \end{frame}
+
+\end{document}

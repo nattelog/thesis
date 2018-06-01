@@ -1,0 +1,323 @@
+\documentclass{memoir}
+
+\begin{document}
+
+\paragraph{Welcome}
+
+Welcome to the presentation of my master's thesis. My name is Natanael Log and
+I am an offspring of the D-programme here at the Linköping University and I
+have been conducting my master's thesis this spring at a company called
+Attentec, here in Mjärdevi.
+
+The title of my work is "A study on the performance and architectural
+characteristics of the Internet of Things gateway". I have studied what is
+called an Internet of Things (or IoT) gateway; its internal and external
+properties and functionalities and how they affect its performance given a
+certain environment it resides in.
+
+\paragraph{Presentation outline}
+
+\begin{description}
+    \item[Background:] Sense of context
+    \item[Identifying the gateway:] Method of identifying internal and external
+        properties, common features
+    \item[An abstract gateway:] A theoretical model that is proposed to mimic
+        \textit{any} gateway implementation
+    \item[Results:] A total of 24 tests
+    \item[Conclusion:]
+\end{description}
+
+\paragraph{Internet of things}
+
+Basically things connected to the internet. Basic examples. Check on your phone
+if lights are off, or oven is off. Factory machines talks to each other.
+Location independence. Using the internet as infrastructure.
+
+% Quote from Uckelmann et al. Emphasize "right quantity, right time and place".
+% Many definitions.
+
+\paragraph{IoT architecture}
+
+Three domains.
+
+\begin{description}
+    \item[Application domain:] Highest. Attentec's customer. Monitoring of industrial
+        batteries.
+    \item[Sensing domain:] Lowest. Devices and "things". More on the next
+        slide. Converts physical attributes to digital values, e.g. a AD
+        converter.
+    \item[Network domain:] Middleware. The internet infrastructure. Gateways.
+        Why can't devices talk directly to the internet? Some devices are not
+        designed to communicate with the IP technology. But they are designed
+        to communicate in other mediums. The middleware is needed to convert or
+        wrap the data from the devices to the internet.
+\end{description}
+
+%\paragraph{An IoT device example}
+%
+%\begin{description}
+%
+%    \item[Raspberry Pi:] A small computer. Can communicate. Relatively powerful
+%        and general.  Requires continuous power, must be turned on.
+%
+%    \item[RFID:] Basically an antenna with a chip. Very small. Magnetic field
+%        induces current that creates a radio signal with an ID code in it. Uses
+%        some sort of middleware to transfer that signal to an internet service.
+%        Passive device. Key-tag example to unlock door.
+%
+%\end{description}
+
+\paragraph{The IoT gateway}
+
+The bridge between the devices and the internet.
+
+\paragraph{Original idea}
+
+\begin{itemize}
+    \item Experience from embedded gateway-like systems. Worked with a embedded
+        system that listened to activity on its peripheral serial ports, e.g.
+        the CAN-bus and the UART. It piped the data to an internet service via
+        Bluetooth. Explain the loop-approach. Did not scale well when the
+        traffic and number of peripheral units was increased.
+    \item Is there a better approach than a synchronous loop? Especially on
+        small, resource-constrained systems.
+    \item Can web technologies have an answer? NodeJS is a Javascript runtime
+        platform that allows asynchronous operations to be done on the
+        operating system API. For instance file system and network. It has
+        great performance on I/O intensive systems.
+\end{itemize}
+
+\paragraph{NodeJS}
+
+\begin{description}
+    \item[Sync example:] Blocking code. Single-threaded.
+    \item[Async example:] Nonblocking code. Returns instantly. Requires a
+        callback. End of code will be printed before the file contents.
+\end{description}
+
+\paragraph{The event loop}
+
+Simplified version of the event loop. An asynchronous loop. The operating
+system supports functionalities to listen for activiy on each port, or
+\textit{file descriptor}, and notifies the program when something has happened.
+
+This could be a good approach to implement an IoT gateway. But is Javascript
+suitable for embedded devices? The most common language is C, as it allows the
+programmer to access low level components of the hardware while maintaining a
+high level semantics.
+
+\paragraph{libuv}
+
+Fortunately, the library in NodeJS that implements the event loop is written in
+C: libuv. libuv simplifies asynchronous I/O. Can libuv be used to implement a
+well performant IoT gateway?
+
+\paragraph{Motivation}
+
+% What is the problem? Is there a problem with the gateways the way they are now?
+% No, gateways exists everywhere and they seem to work fine.
+
+% \begin{itemize}
+%    \item Kruger et al. state little work has been done to explore the
+%        performance of IoT devices (including gateways) when different
+%        parameters are adjusted \footcite{kruger2014benchmarking}.
+%
+%    \item There is an interest from the industry to understand and
+%        increase the knowledge of IoT devices and applications.
+%\end{itemize}
+
+What are the questions?
+
+\begin{itemize}
+    \item What internal and external properties affect the
+        functionality and performance of the IoT gateway?
+
+    \item How can libuv be used in order to implement an IoT gateway?
+        What are the benefits and disadvantages of doing so?
+\end{itemize}
+
+\paragraph{Two customer cases}
+
+Attentec, the company the thesis was conducted, has two customers that provide
+IoT solutions and gateway implementations. One of them, Customer A, uses their
+IoT gateway to monitor industrial batteries used in forklifts.
+
+\begin{itemize}
+    \item Pull-based
+    \item Passive devices
+    \item Devices do not know of the gateway, basically servers listening for
+        requests.
+    \item Gateway must know of the devices
+\end{itemize}
+
+Customer B uses a \textit{push-based} approach to handle event propagation. The
+gateway hosts a REST API to serve IoT devices.
+
+\begin{itemize}
+    \item Push-based
+    \item Active devices
+    \item Devices must know the address of the gateway
+    \item Gateway does not need to know about the devices
+\end{itemize}
+
+Important findings:
+
+\begin{itemize}
+    \item Gateway have either a pull- or push-based approach to handle devices.
+        Maybe a combination can exist.
+    \item The main architecture is a typical server-client one. Many devices,
+        one gateway.
+    \item The devices talk to the gateway via some medium. Can be radio, can be
+        TCP based.
+\end{itemize}
+
+%\paragraph{Task management}
+%
+%Three ways of handling tasks. A task can be a function or a piece of code.
+%
+%\begin{description}
+%    \item[Serial:] typically single threaded.
+%    \item[Preemptive:] typically multi-threaded.
+%    \item[Cooperative:] typically asynchronous.
+%\end{description}
+%
+%These models have been transformed to better model event propagation in the
+%gateway.
+
+\paragraph{Coffe shop analogies}
+
+Discuss each one of them.
+
+\paragraph{A general approach}
+
+Common entities:
+
+\begin{description}
+    \item[Orders:] events $\epsilon$
+    \item[Customer line:] dispatcher, handles incoming events
+    \item[Barista and brewer:] event handler, put work on each event
+    \item[Work:] $\Lambda$
+\end{description}
+
+Example of a serial event propagation model.
+
+\paragraph{Three event propagation models}
+
+\begin{description}
+    \item[Implicit:] Interleaving performed by the operating system scheduler
+    \item[Explicit:] Interleaving performed by the user
+\end{description}
+
+\paragraph{The gateway components}
+
+Pull-based dispatcher design was chosen. Explain the different combinations.
+
+\paragraph{An abstract gateway}
+
+A gateway $\Gamma$ is a six-tuple describing its internal properties and its
+environment.
+
+Describe each item.
+
+CPU intensity: CPU related work. I/O intensity: e.g. reading data to a file or
+sending data over the network.
+
+These are not all possible properties. For instance push- or pull-based
+dispatcher design is omitted.
+
+\paragraph{The $E$ function}
+
+Describe it. $\Gamma$ can be seen as static source code, while $E$ is the
+runtime version of that source code.
+
+Timestamps represents part of the event lifecycle.
+
+% \paragraph{Constraints on time values}
+
+\paragraph{Performance metrics}
+
+%\paragraph{Analyzing the load}
+%
+%Why can't we just stick with a load $P \ll 1$?
+
+\paragraph{Test overview}
+
+Four of nine possible dispatcher/event handler combinations were implemented.
+
+For each architecture, 6 tests were conducted. $\phi$ was used to get a good
+load.
+
+\paragraph{Test case 1}
+
+\begin{description}
+%    \item[Throughput:] Preemptive event handlers fastest. Why?
+    \item[Response time:] Two groups. Preemptive fastest. Outliers correlated
+        with load. Why?
+    \item[Conclusion:] Response time scalability dependent on the event handler
+        event propagation model.
+\end{description}
+
+\paragraph{Test case 2}
+
+\begin{description}
+%    \item[Throughput:] Cooperative dispatchers fastest. Why?
+    \item[Response time:] Two groups. Cooperative fastest. Why?
+    \item[Conclusion:] Response time scalability dependent on the dispatcher
+        design.
+\end{description}
+
+\paragraph{Test case 3 and 4}
+
+\begin{description}
+    \item[Throughput:] Preemptive EH fastest for quad core. All perform about
+        equally for single core. S/P has bottleneck for low CPU values.
+%    \item[Response time:] Preemptive EH fastest for quad core. C/C slowest
+%        response time. S/S fastest for single core.
+    \item[Conclusion:] Preemptive best for multicore systems. S/S sufficient
+        for single core systems.
+\end{description}
+
+\paragraph{Test case 5 and 6}
+
+\begin{description}
+    \item[Throughput:] $\approx$ same result independent on cores. Preemptive
+        and cooperative fastest. Thread scheduling optimized for I/O
+        operations.
+    \item[Conclusion:] Cooperative approaches best. No need for multithreading.
+\end{description}
+
+\paragraph{Conclusion}
+
+\begin{itemize}
+    \item The abstract gateway is proposed to be able to model \textit{any}
+        gateway implementation and performance tests.
+    \item A number of internal and external properties of the gateway
+        has been identified. (next slide)
+    \item Increasing the number of devices will increase response time
+        for serial and cooperative event handlers.
+    \item The cooperative dispatcher results in best response time when
+        network delay is increased.
+    \item All event propagation models perform about equally on a
+        single core system when CPU intensity is increased.
+    \item For I/O intensive work, the cooperative approaches perform
+        best in terms of throughput. (next slide)
+    \item libuv can be used to implement a cooperative dispatcher with
+        a preemptive event handler.
+    \item It performs $\approx$ better or equal to the next best event
+        propagation model in all test cases.
+\end{itemize}
+
+\paragraph{If I had more time}
+
+\begin{itemize}
+    \item Implement a preemptive dispatcher and more combinations of the event
+        propagation models.
+    \item Use active devices, i.e. a push-based dispatcher design.
+\end{itemize}
+
+\paragraph{Thank you}
+
+That was the end of my presentation. There is more in the report that I haven't
+brought up here due to time.
+
+\end{document}

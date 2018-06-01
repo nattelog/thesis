@@ -159,7 +159,7 @@ handle concurrently are dispatched.
     {data/quad_quantity_avg_d2.csv}
     {
         xlabel=Device quantity $q$,
-        ylabel={Time on gateway [ms]},
+        ylabel={Process time [ms]},
         legend pos=outer north east
     }
 
@@ -314,7 +314,7 @@ gateway than they do on the device.
             ]
             \nextperformanceplot{data/quad_cpu_avg_d1.csv}{
                 title = Quad core CPU,
-                ylabel = {Time on device [ms]}
+                ylabel = {Wait time [ms]}
             }
             \nextperformanceplotwithlegend{data/single_cpu_avg_d1.csv}{
                 title = Single core CPU
@@ -340,7 +340,7 @@ gateway than they do on the device.
             ]
             \nextperformanceplot{data/quad_cpu_avg_d2.csv}{
                 title = Quad core CPU,
-                ylabel = {Time on gateway [ms]}
+                ylabel = {Process time [ms]}
             }
             \nextperformanceplotwithlegend{data/single_cpu_avg_d2.csv}{
                 title = Single core CPU
