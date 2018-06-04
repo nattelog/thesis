@@ -22,10 +22,10 @@ washing machines and heating can be optimized and only used when prices are low
 many visions" \cite{atzori2010internet} as there is no official definition of
 the term. IoT is more than ubiquitous computing, embedded devices and
 applications. It should not only be accessible by a small group of stakeholders
-but embedded in today's open internet infrastructure. Referring to logistics an
-IoT definition can be viewed as \textit{"[asking] for the right product in the
-right quantity at the right time at the right place in the right condition and
-at the right price"} \cite{uckelmann2011architectural}. Uckelmann et. al.
+but embedded in today's open internet infrastructure. Referring to logistics,
+an IoT definition can be viewed as \textit{"[asking] for the right product in
+the right quantity at the right time at the right place in the right condition
+and at the right price"} \cite{uckelmann2011architectural}. Uckelmann et. al.
 discusses these approaches and defines IoT as:
 
 \begin{center}
@@ -67,12 +67,12 @@ capsules to 2D-shaped stickers. The fact that they can work without a battery,
 meaning they theoretically can work forever, make them very practical to use in
 different environments. \cite{want2006introduction}
 
-In a survey from 2001, Akyildiz et. al.  \cite{akyildiz2002wireless} presents a
+In a survey from 2001, Akyildiz et. al.  \cite{akyildiz2002wireless} present a
 \textit{Wireless Sensor Network} containing hardware nodes capable of
-monitoring its environment and transmit the received data to a server or host
+monitoring their environment and transmit the received data to a server or host
 acting as a sink. The sensor could be one of many types and be able to measure
 temperature, humidity, movement, lightning condition, noise levels etc. This
-leads into one of the major challenges in IoT: communication and networking.
+leads to one of the major challenges in IoT: communication and networking.
 Following the semantical meaning of IoT, which states \textit{"[it is] a world
 wide network of interconnected objects uniquely addressable, based on standard
 communication protocols"} \cite{bassi2008internet}, it is clear that every node
@@ -102,10 +102,10 @@ the devices \cite{zhu2010iot}. Chen et. al. \cite{chen2011brief} describes
 three layers of domains in the IoT architecture: the \textit{sensing domain},
 the \textit{network domain} and the \textit{application domain}. The sensing
 domain is where the primitive communication between the actual devices in the
-network happen; for instance RFID and 6LoWPAN. This domain is layered under the
-network domain and each piece of information sent from the sensing domain is
-aggregated, filtered and wrapped in the network domain before being sent to the
-application domain. Note that the information protocols used between the
+network happens; for instance RFID and 6LoWPAN. This domain is layered under
+the network domain and each piece of information sent from the sensing domain
+is aggregated, filtered and wrapped in the network domain before being sent to
+the application domain. Note that the information protocols used between the
 sensing- and network domain and the network- and application domain does not
 necessarily match. As some protocols are more suited for resource-constrained
 devices, they might require modification to be able to communicate with more
@@ -121,16 +121,17 @@ In software architecture, the terms \textit{event-driven}, or \textit{implicit
 invocation}, are used to express the mechanism of function invocation based on
 events \cite{garlan1993introduction}. In contrast, \textit{explicit invocation}
 refers to a traditional function invocation by function name, e.g.
-\lstinline{foo()}. However, a function can be mapped to an event so that when
-the event occur, the function is invoked implicitly. Hence the name implicit
-invocation. The announcers of events do not know what functions are registered
-to the event and cannot make assumptions on event ordering or how data will be
-transformed due to the event. This is one disadvantage of this architecture
-\cite{garlan1993introduction}. However, in high-performance, I/O intensive
-networking systems, it is shown that event-based approaches perform much better
+\lstinline{foo()}. However, with the event-driven approach, a function can be
+mapped to an event so that when the event occur, the function is invoked
+implicitly. Hence the name implicit invocation. The announcers of events do not
+know what functions are registered to the event and cannot make assumptions on
+event ordering or how data will be transformed due to the event. This is one
+disadvantage of this architecture \cite{garlan1993introduction}. However, in
+high-performance, I/O intensive networking systems, it is shown that
+event-based approaches perform much better than other architectures
 \cite{hu1997measuring}.
 
-\subsection{Task management and task management}
+\subsection{Task management and stack management}
 \label{sec:task-management}
 
 A program task is an encapsulation of control flow with access to some common
@@ -138,17 +139,17 @@ shared state. This can be viewed as a closure in a program language or a
 function. Managing these tasks can be done in several ways. In
 \textit{preemptive} task management, tasks can be scheduled to interleave and
 make room for other tasks or be run in parallel on multicore systems. In
-\textit{serial} task management, tasks are run until they are finished before
-any other task can start its execution. A hybrid approach is
-\textit{cooperative} task management. Tasks can yield control to other tasks in
-defined points in its execution. This is useful in I/O intensive systems where
-tasks can make way for other tasks while waiting for I/O. Event-driven systems
-usually implement the cooperative approach. Events, e.g.  network requests,
-are handled by calling an associated function. A benefit with event-driven
-systems that run on a single thread is that mutual exclusion conflicts never
-occur. However, the state in which the task was in before yielding control to
-another task is not necessarily the same as when the task resumes control.
-\cite{adya2002cooperative}
+\textit{non-preemptive} (or \textit{serial}) task management, tasks are run
+until they are finished before any other task can start its execution. A hybrid
+approach is \textit{cooperative} task management. Tasks can yield control to
+other tasks in defined points in their execution. This is useful in I/O
+intensive systems where tasks can make way for other tasks while waiting for
+I/O. Event-driven systems usually implement the cooperative approach. Events,
+e.g. network requests, are handled by calling associated functions. A benefit
+with event-driven systems that run on a single thread is that mutual exclusion
+conflicts never occur. However, the state in which the task was in before
+yielding control to another task is not necessarily the same as when the task
+resumes control. \cite{adya2002cooperative}
 
 There are two categories of I/O management: \textit{synchronous} and
 \textit{asynchronous} \cite{adya2002cooperative}. If a function calls an I/O
@@ -188,7 +189,7 @@ there is no guarantee the state remains unchanged between the
 similar to the mutual exclusion problem in preemptive task management where
 multiple agents wants to access the same resource concurrently, and problems
 like read/write conflicts can occur. But since cooperative task management not
-necessarily infer multithreaded environments, concurrent problems can be
+necessarily infers multithreaded environments, concurrent problems can be
 avoided. There are however other problems related to understanding and
 scalability of the code. In Listing \ref{listing:read_file_sync} one can
 observe that all operations happen in the same scope. This is called
@@ -204,24 +205,23 @@ being broken into functions with separate scopes.
 \section{Reactive systems}
 
 Systems required to continually respond to its environment are called
-\textit{reactive} systems. Harel and Pnueli \cite{harel1985development}
-elaborates on different system dichotomies, for instance deterministic and
-nondeterministic systems. Deterministic systems have unique actions which
-always generates the same output. Nondeterministic systems do not have that
-property and it can cause them to be more difficult to handle. Another
-dichotomy is sequential and concurrent systems. Concurrent systems cause
-problems which are easily avoidable in sequential ones. For instance the mutual
-exclusion problem where it is not always trivial what process owns what
-resource and whether it is safe to modify a resource that can be used by
-another process. A more fundamental dichotomy is presented by Harel and Pnueli:
-\textit{transformational} and \textit{reactive} systems. A transformational
-system transforms its input and creates new output. It can continually prompt
-for new input. A reactive system is prompted the other way around: from the
-outside. It does not necessarily compute any input, but it maintains a
-relationship with its outside environment. A reactive system can be
-deterministic or nondeterministic, sequential or concurrent, thus making the
-transformational/reactive system dichotomy a fundamental system paradigm.
-\cite{harel1985development}
+\textit{reactive} systems. Harel and Pnueli elaborates on different system
+dichotomies, for instance deterministic and nondeterministic systems.
+Deterministic systems have unique actions that always generates the same output
+for a given input. Nondeterministic systems do not have that property and it
+can cause them to be more difficult to handle.  Another dichotomy is sequential
+and concurrent systems. Concurrent systems cause problems which are easily
+avoidable in sequential ones. For instance the mutual exclusion problem where
+it is not always trivial what process owns what resource and whether it is safe
+to modify a resource that can be used by another process. A more fundamental
+dichotomy is presented by Harel and Pnueli: \textit{transformational} and
+\textit{reactive} systems. A transformational system transforms its input and
+creates new output. It can continually prompt for new input. A reactive system
+is prompted the other way around: from the outside. It does not necessarily
+compute any output, but it maintains a relationship with its outside
+environment. A reactive system can be deterministic or nondeterministic,
+sequential or concurrent, thus making the transformational/reactive system
+dichotomy a fundamental system paradigm. \cite{harel1985development}
 
 \subsection{Specifications for reactive systems}
 
@@ -230,10 +230,10 @@ Harel and Pnueli presents a method for decomposing complex system using
 automata}, a system can be expressed using states. This is particularly useful
 for reactive systems that can react to a large amount of different inputs. One
 powerful feature with statecharts is its ability to handle hierarchical states.
-If a system has a numerous amount of input combinations, a large set of states
+If a system has numerous possible input combinations, a large set of states
 must be created which in the long run is not appropriate in terms of
 scalability. One solution to this is hierarchical states in which a state can
-hold a number of other states. Fundamentally, a state undergo a transition to
+hold a number of other states. Fundamentally, a state undergoes a transition to
 another state when an action is performed on that state.
 \cite{harel1985development}
 
@@ -265,7 +265,7 @@ list had the format:
 
 They then implemented a system fulfilling the requirements in a set of
 different languages. Most languages fit well for reactive systems since their
-semanticS allows and makes it easy to build and define different state
+semantics allows and makes it easy to build and define different state
 machines.  They also did one implementation in C in which they had two
 solutions: one using arrays to hold all the different actions and states and
 one using switch-blocks.
@@ -282,21 +282,21 @@ helps formalize inconsistent requirements.
 Reactive programming has been proposed to be the solution to implement
 event-driven architectures \cite{bainomugisha2013survey}. It is derived from
 the \textit{Synchronous Data Flow} (SDF) paradigm \cite{lee1987synchronous}.
-SDF is a data flow abstraction used to describe parallell computation.
+SDF is a data flow abstraction used to describe parallel computation.
 Functions are presented as nodes in a directed graph and the arcs represent
-data paths. Nodes can execute its computation whenever data is available on its
-incoming arcs, and nodes with no incoming arcs can execute at any time. This
-leads to concurrency since multiple nodes can execute in the same time. One
-constraint on this system is that of \textit{side-effects}, which are not
-allowed. Nodes cannot mutate any resource accessible by another node unless
+data paths. Nodes can execute their computation whenever data is available on
+their incoming arcs, and nodes with no incoming arcs can execute at any time.
+This leads to concurrency since multiple nodes can execute in the same time.
+One constraint on this system is that of \textit{side-effects}, which are not
+allowed: nodes cannot mutate any resource accessible by another node unless
 they are explicitly connected by an arc.
 
-In the reactive programming paradigm, the notion of time is abstracted away. In
-the same way memory can be abstracted away by garbage collection in languages
-like Java, the programmer does not have to instruct the program \textit{when}
-things will execute, but rather \textit{how} \cite{bainomugisha2013survey}.
-Data dependencies and change propagation can be handled automatically by the
-language. Consider a simple example:
+In the reactive programming paradigm, the notion of time management is
+abstracted away. In the same way memory management can be abstracted away by
+garbage collection in languages like Java, the programmer does not have to
+instruct the program \textit{when} things will execute, but rather \textit{how}
+\cite{bainomugisha2013survey}.  Data dependencies and change propagation can be
+handled automatically by the language. Consider a simple example:
 
 \begin{lstlisting}[language=C]
 int i = 1;
@@ -319,14 +319,14 @@ request that is available or a keyboard button that was pressed.
 
 \subsection{A taxonomy}
 
-Bainomugisha et al. \cite{bainomugisha2013survey} presents a taxonomy with six
+Bainomugisha et al. \cite{bainomugisha2013survey} present a taxonomy with six
 fundamental properties considered important features in reactive languages.
 
 \subsubsection{Basic abstractions}
 
-Imperative languages holds basic abstractions in the form of primitives such as
-primitive operators and values. Reactive languages holds basic abstractions
-such as behaviors and events.
+Imperative languages hold basic abstractions in the form of primitives such as
+primitive operators and values. Reactive languages hold basic abstractions such
+as behaviors and events.
 
 \subsubsection{Evaluation model}
 \label{sec:evaluation-model}
@@ -336,10 +336,10 @@ how change is propagated throughout the data dependencies. Propagation can
 either be \textit{push-based}, meaning that data is pushed to its dependencies
 as soon as an event occur, or \textit{pull-based}, meaning that computation
 nodes pull data when needed. The former is a \textit{data driven} model and is
-often implemented using callbacks. A challenge is to find out what nodes do not
-need to be recomputed. The pull-based model is said to be \textit{demand
-driven} as data is propagated upon request. A disadvantage with this model is
-that delays between events and reactions can be long.
+often implemented using callbacks. A challenge with this model is to find out
+what nodes do not need to be recomputed. The pull-based model is said to be
+\textit{demand driven} as data is propagated upon request. A disadvantage with
+this model is that delays between events and reactions can be long.
 
 \subsubsection{Glitch avoidance}
 
@@ -366,7 +366,7 @@ int i = j;      // i == 1
 int k = i + j;  // k == 3, should be 4
 \end{lstlisting}
 
-These kinds of inconsistencies, or glitches, should be avoided by the language.
+These kind of inconsistencies, or glitches, should be avoided by the language.
 
 \subsubsection{Lifting operators}
 
@@ -380,7 +380,7 @@ lifted as:
 f(T) -> flift(Behavior<T>)
 \end{lstlisting}
 
-Where $Behavior$ is a behavior-type holding a type $T$. In Flapjax, an reactive
+Where $Behavior$ is a behavior-type holding a type $T$. In Flapjax, a reactive
 language built upon Javascript, lifting is performed on multiple places to
 support behaviors \cite{meyerovich2009flapjax}. Here is an example from the
 language:
@@ -425,9 +425,9 @@ is recalculated as well.
 
 \subsubsection{Support for distribution}
 
-As interactive applications such that web applications are becoming more
-popular (whose nature is distributed) it is important for reactive languages to
-also support distributed mechanisms.
+As interactive applications such as web applications are becoming more popular
+(whose nature is distributed) it is important for reactive languages to also
+support distributed mechanisms.
 
 \section{Choosing programming language for embedded systems}
 
@@ -449,29 +449,29 @@ choosing a programming language for an embedded system:
     skilled programmers
 \end{itemize}
 
-There is no scientific method for selecting an appropiate language for a
+There is no scientific method for selecting an appropriate language for a
 specific project. Selection mostly relies on experience and subjective
 assessment from developers. It was however shown in 2006 that over 50 \% of
 embedded system projects were developed in C and 30 \% were developed in C++.
 Barr \cite{barr1999programming} states that the key advantage of C is that it
-allows the developer to access hardware without loosing the benefits of
-high-level programming. Compared to C, C++ offer a better object-oriented
+allows the developer to access hardware without losing the benefits of
+high-level programming. Compared to C, C++ offers a better object-oriented
 programming style but can on the other hand be less efficient.
 \cite{nahas2012choosing}
 
 \section{libuv}
 
 libuv is an asynchronous I/O cross-platform library written in C. It is one of
-the major core systems of Node.js, a popular JavaScript runtime engine. libuv's
-central part is the single-threaded event loop which contains all I/O
+the major core systems of Node.js, a popular JavaScript runtime engine. The
+central part of libuv is the single-threaded event loop, which contains all I/O
 operations. The event loop notifies any I/O events in a callback fashion using
 abstractions called \textit{handles} and \textit{requests}. Handles are
 long-lived structures and are operated on using requests. Requests usually only
 represent one I/O operation on a handle. Each I/O operation performed on the
-event loop is \textit{non-blocking}, meaning they instantly return and
-abstracts away any concurrency necessary. To handle network I/O libuv makes use
-of platform specific functionality, such as \textit{epoll} for Linux. For file
-I/O libuv utilizes its \textit{thread pool} to make the operation non-blocking.
+event loop is \textit{non-blocking}, meaning it instantly returns and abstracts
+away any concurrency necessary. To handle network I/O libuv makes use of
+platform specific functionality, such as \textit{epoll} for Linux. For file I/O
+libuv utilizes its \textit{thread pool} to make the operation non-blocking.
 All loops can queue work in this thread pool making it ideal for external
 services or systems that do not want to block any I/O. libuv includes handles
 for \textit{UDP} and \textit{TCP} sockets, file and file system, \textit{TTY},
@@ -479,9 +479,6 @@ timers and \textit{child processes}. \cite{libuv-docs}
 
 \begin{figure}[h!]
 \centering
-    \caption[The libuv event loop.]{The stages each event loop iteration steps
-    through in libuv.}
-    \label{fig:loop_iteration}
     \begin{tikzpicture}[node distance=1.5cm, auto]
         \node [block] (loop_time) {Update loop time};
         \node [decision, below of=loop_time] (alive) {Loop alive?};
@@ -499,40 +496,58 @@ timers and \textit{child processes}. \cite{libuv-docs}
         \path [line] (alive) -- node {Yes} (run_due);
         \path [line] (close.east) -- ++(1cm,0) |- (loop_time.east);
     \end{tikzpicture}
+
+    \caption[The libuv event loop.]{The stages each event loop iteration steps
+    through in libuv.}
+
+    \label{fig:loop_iteration}
 \end{figure}
 
 Figure \ref{fig:loop_iteration} demonstrates the stages each event loop
 iteration steps through. A loop is considered to be alive if there are any
 active handles or requests. For instance, if a TCP socket is closing its
 connection the handle structure is freed from the heap and both the request and
-handle are no longer active. If they were the last being active the loop dies.
-The steps are described briefly: \cite{libuv-docs}
+handle are no longer active. If they were the last active handles the loop
+dies. The steps are described briefly: \cite{libuv-docs}
 
 \begin{enumerate}
-  \item The loop time is updated and stored for the entire iteration.
-  \item If the loop is alive the iteration starts, otherwise it dies.
-  \item All active timers who are scheduled to timeout have their callbacks
-    called.
-  \item Pending callbacks are called; they are I/O callbacks deferred from the previous
-    iteration.
-  \item Callbacks registered for idle handles are called. Idle handles are good
-    for low priority activity.
-  \item Callbacks that should be called right before polling for I/O can be
-    registered with prepare handles, whose callbacks are called here.
-  \item The time to poll for I/O is calculated here. It either blocks for 0
-    seconds, the timeout for the closest timer or infinity. Depending on
-    whether there are active idle handles or requests or if the loop is about
-    to close, the time is 0. \label{item:poll_time_calculation}
-  \item I/O is polled and the loop is blocked. All handles monitoring I/O will
-    have their callbacks called.
-  \item Callbacks that should be called right after polling for I/O can be
-    registered with check handles, whose callbacks are called here.
-  \item Handles being closed have their close callbacks called.
-  \item If the loop was configured to only run once and no I/O callbacks were
-    called after the poll, timers might be due since time could have elapsed
-    during the poll. Those timers gets their callbacks called.
-  \item Depending on the loop's configuration and if it is still alive, the
-    loop exits or continues.
+
+    \item The loop time is updated and stored for the entire iteration.
+
+    \item If the loop is alive the iteration starts, otherwise it dies.
+
+    \item All active timers that are scheduled to timeout have their callbacks
+        called.
+
+    \item Pending callbacks are called; they are I/O callbacks deferred from
+        the previous iteration.
+
+    \item Callbacks registered for idle handles are called. Idle handles are
+        good for low priority activity.
+
+    \item Callbacks that should be called right before polling for I/O can be
+        registered with prepare handles, whose callbacks are called here.
+
+    \item The time to poll for I/O is calculated here. It either blocks for 0
+        seconds, the timeout for the closest timer or infinity. Depending on
+        whether there are active idle handles or requests or if the loop is
+        about to close, the time is 0. \label{item:poll_time_calculation}
+
+    \item I/O is polled and the loop is blocked. All handles monitoring I/O
+        will have their callbacks called.
+
+    \item Callbacks that should be called right after polling for I/O can be
+        registered with check handles, whose callbacks are called here.
+
+    \item Handles being closed have their close callbacks called.
+
+    \item If the loop was configured to only run once and no I/O callbacks were
+        called after the poll, timers might be due since time could have
+        elapsed during the poll. Those timers gets their callbacks called.
+
+    \item Depending on the loop's configuration and if it is still alive, the
+        loop exits or continues.
+
 \end{enumerate}
 
 The following example provided by Marathe \cite{uvbook} shows an idle handler
@@ -554,28 +569,27 @@ documentation \cite{libuv-docs}.
 Testing software is a broad concept with many goals such as validating an
 implementation to conform to its specification, evaluating robustness and
 performance, or finding inconsistencies in the design
-\cite{bertolino2007software}. It is a generally hierarchical process where the
-discrete modules (\textit{unit testing}) to the interaction between modules
-(\textit{integration testing}) to the composition of modules and the entire
-system (\textit{system testing}) is tested \cite{raymond1998automatic}. The
-specification of the \textit{system under test} (SUT) can be unknown, thus only
-the inputs and the outputs of the system can be examined for test case
-generation (\textit{black-box testing}) \cite{jorgensen2016software}. The
-codebase of the SUT can also be known, enabling verification of test case
-coverage so all paths in the code are tested (\textit{white-box testing})
-\cite{jorgensen2016software}.
+\cite{bertolino2007software}. It is a generally hierarchical process where
+testing of discrete modules (\textit{unit testing}) to testing of the
+interaction between modules (\textit{integration testing}) to testing of the
+composition of modules and the entire system (\textit{system testing}) is done
+\cite{raymond1998automatic}. The specification of the \textit{system under
+test} (SUT) can be unknown, thus only the inputs and the outputs of the system
+can be examined for test case generation (\textit{black-box testing})
+\cite{jorgensen2016software}. The codebase of the SUT can also be known,
+enabling verification of test case coverage so all paths in the code are tested
+(\textit{white-box testing}) \cite{jorgensen2016software}.
 
 Software testing includes basic terms such as \textit{error}, \textit{fault},
 \textit{failure}, \textit{incident}, \textit{test} and \textit{test case}
-\cite{radatz1990ieee}. Errors and faults share the same meaning, a good synonym
-is \textit{bug}. But an error is something a human does (verb) and a fault is
-the expressive representation of the error. When a program executes a fault a
-failure occurs. But the failure could have happened not only because bad code
-was executed (\textit{faults of commission}) - it could also be due to the fact
-that the correct code was absent (\textit{faults of omission}). An incident is
-the consequence of a failure that signals the user of its presence.
+\cite{radatz1990ieee}. People make errors and faults are the results of the
+errors. A good synonym for both is \textit{bug}. When a program executes a
+fault a failure occurs. But the failure could have happened not only because
+bad code was executed (\textit{faults of commission}) - it could also be due to
+the fact that the correct code was absent (\textit{faults of omission}). An
+incident is the consequence of a failure that signals the user of its presence.
 Fundamentally the act of testing has two objectives: to locate failures and to
-verify correct execution of the program. The actual procedure that executes a
+verify correct execution of the program.  The actual procedure that executes a
 test is the test case and it has a set of inputs and a set of expected outputs.
 \cite{jorgensen2016software}
 
@@ -586,7 +600,7 @@ out is \cite{bertolino2007software}:
   \item What is the \textit{test objective}? To locate faults in the design or
     verify correct behavior?
   \item What test methods should be \textit{selected}?
-  \item What is an \textit{adequate} test sample? What is the criteria to stop
+  \item What is an \textit{adequate} test sample? What are the criteria to stop
     testing?
   \item What \textit{levels} of testing should be conducted? Unit testing on
     separate modules or the entire system?
@@ -602,23 +616,23 @@ Performance testing is the process of measuring and evaluating certain
 performance related benchmarks in a system; usually by putting the system under
 I/O load such as simulated network traffic \cite{jiang2015survey}. Software
 systems contain resources such as the CPU, processes, threads and I/O that all
-have limited capacities, which mean they potentially can deny each others
+have limited capacities, which means they potentially can deny each others
 execution when several users require the same resource. Analyzing a system's
 performance requires quantification of such effects \cite{woodside2007future}.
 The goal of the tests could be to compare an existing system with a new
 proposed system to see which one performs better \cite{avritzer1996deriving} or
 to, in an early phase of the development of a system, identify future
 performance problems upon deliverance \cite{weyuker2000experience}. Contrary to
-functional software testing where the values of the test inputs determines the
+functional software testing where the values of the test inputs determine the
 test outcome, performance testing emphasizes the \textit{workloads} and
 \textit{frequencies} of the inputs \cite{weyuker2000experience}. Jiang and
-Hassan discusses performance testing along with two other similar testing
+Hassan discuss performance testing along with two other similar testing
 techniques: \textit{load testing} and \textit{stress testing}
 \cite{jiang2015survey}. Load testing is defined as the process of assessing a
 system's behavior under load to find both functional and non-functional related
 issues. Stress testing is about putting the system under extreme load
-conditions to verify robustness.  Performance testing differ from the other two
-when it comes to verification of benchmarks. A performance test can for
+conditions to verify robustness.  Performance testing differs from the other
+two when it comes to verification of benchmarks. A performance test can for
 instance happen when a module has been reengineered and the performance must be
 verified to at least be as good as the previous version of the module
 \cite{jiang2015survey}.
@@ -650,12 +664,12 @@ services, include \cite{mendelawy2016kpis}:
 
 To conduct a performance test, not only are the metrics necessary, but a
 representative workload is needed as well \cite{weyuker2000experience}.
-Methods to design workloads often requires historical data on what load the
+Methods to design workloads often require historical data on what load the
 system undergoes in typical usage. But as performance testing usually is
 performed on novel systems, historical data is a rare commodity
 \cite{barber2004creating}. Alternative approaches can be to retrieve usage data
 from a beta version of the system, have interviews with domain experts or
-analyse usage data from competitors \cite{jiang2015survey}. Barber synthesizes
+analyze usage data from competitors \cite{jiang2015survey}. Barber synthesizes
 common approaches found in the industry and provides a, somewhat agile,
 framework to support design of a workload model where historical data is
 incomplete or unavailable \cite{barber2004creating}:
@@ -667,7 +681,7 @@ incomplete or unavailable \cite{barber2004creating}:
     stakeholders such as salesmen (they might know of the most anticipated
     activities that can be used in the workload design) and users (they might
     know what activities they probably will do).
-  \item Look for performance related activites in design and requirements
+  \item Look for performance related activities in design and requirements
     documents.
   \item Whenever a new beta version of the system is available, retrieve
     workload data from it.
@@ -684,7 +698,7 @@ incomplete or unavailable \cite{barber2004creating}:
     \end{enumerate}
 \end{enumerate}
 
-Jiang and Hassan suggests workload models can either reflect the system's
+Jiang and Hassan suggest that workload models can either reflect the system's
 performance requirements (so called \textit{aggregate-workload based load
 design}) or the system's expected usage (\textit{use-case based load design}).
 An example of a performance requirement can be that CPU usage should not exceed
@@ -704,13 +718,14 @@ levels of workload intensity (but keeps the workload mix) to mimic certain
 usage levels across a time period. The main disadvantage with the
 aggregate-workload approach is that loads can be unrealistic or hard to design.
 The use-case approach tries to solve this by introducing states and stochastic
-aspects into the design. One can for instance design loads using \textit{use-case
-diagrams}, \textit{Markov chains} and \textit{Probabilistic Timed Automata} to
-create usage driven designs that resemble real-world workloads. \cite{jiang2015survey}
+aspects into the design. One can for instance design loads using
+\textit{use-case diagrams}, \textit{Markov chains} and \textit{Probabilistic
+Timed Automata} to create usage driven designs that resemble real-world
+workloads. \cite{jiang2015survey}
 
 \section{Software development methodology}
 
-There exists a numerous amount of ways to develop software. In plan-based
+There exist a numerous amount of ways to develop software. In plan-based
 methodologies, including the \textit{waterfall model}, the way of working is
 highly inspired by traditional engineering such as manufacturing and
 construction. Given a set of phases in the development, each phase must be done
@@ -765,11 +780,11 @@ populated by these tasks and they are expected to be finished within the time
 limit of the sprint. To monitor the status of the sprint or the entire project,
 the burn down chart is used. It is a diagram showing how much work is left to
 be done.  The Y-axis shows the amount of tasks and the X-axis the time. As time
-progress the amount of tasks are hopefully decreasing. The task board is used
+progresses the amount of tasks are hopefully decreasing. The task board is used
 to help the team inspect their current situation. It usually consists of three
 columns: \textit{To do}, \textit{Doing} and \textit{Done}. Each column consists
 of tasks (or symbols of tasks) in the current sprint, and gives the team a
-visual on what tasks are yet to be done. \cite{sims2012scrum}
+picture of what tasks are yet to be done. \cite{sims2012scrum}
 
 A Scrum project is split into a series of sprints. They are time limited
 smaller versions of the entire project where a pre-defined amount of tasks are
@@ -783,7 +798,7 @@ developed. A sprint consists of a number of meetings: \textit{sprint planning},
 \textit{retrospective}. A sprint always starts with a sprint planning. It is a
 meeting where the product owner and the team decides which user stories will be
 a part of the sprint backlog in the upcoming sprint. This is also where the
-team derive the user stories into tasks. Every day the team also has brief
+team derives the user stories into tasks. Every day the team also has brief
 daily Scrum meetings. Each team member shares what tasks they completed since
 the previous meeting, what tasks they expect to complete before the next and
 what difficulties they are currently facing. Every week, during story time, the

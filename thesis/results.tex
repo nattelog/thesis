@@ -54,8 +54,8 @@ from the four tested event propagation models and the legend is interpreted as:
 \end{table}
 
 After a test has finished, each event has timestamps associated with its
-lifecycle in the database. This data is used to calculate throughput, done
-ratio, response time, time on device and time on gateway, see Section
+lifecycle in the database. This data is used to calculate throughput, load,
+response time, time on device and time on gateway, see Section
 \ref{sec:performance_metrics}. Response time is defined as the done timestamp
 subtracted with the created timestamp. Time on device is defined as the fetched
 timestamp subtracted with the created timestamp. Time on gateway is defined as
@@ -67,19 +67,19 @@ response time. Some time is "lost" between the fetched timestamp and the
 retrieved timestamp.
 
 Each test has a load above 90 \%. This means that more than 90 \% of all
-created events in the test were processed and flagged done. The reason for
-having a load on this level is that a load smaller than 90 \% will give an
-unfair image of the response time, since many events will be queued up on the
-device because they are created too fast (see Section \ref{sec:load}). The way
-to achieve this was to modify the event frequency parameter $\phi$ so the
-gateway was at its peek load while still letting most events be processed. Each
-test run was run twice: first with a high $\phi$ value, meaning the load became
-smaller than 90 \%, and second with $\phi = \frac{T}{q}$ where $q$ is the
-amount of devices in the test and $T$ is the throughput result of the previous
-test run. Most of the time, $\phi$ will get a proper value on the second run
-and the done ratio will be above 90 \%. However, due to high traffic in the
-network and other processes on the testing platform, the resulting done ratio
-can be smaller than expected and a new test run must be executed.
+created events in the test were processed. The reason for having a load on this
+level is that a load smaller than 90 \% will give an unfair image of the
+response time, since many events will be queued up on the devices because they
+are created too fast (see Section \ref{sec:load}). The way to achieve this was
+to modify the event frequency parameter $\phi$ so the gateway was at its peek
+load while still letting most events be processed. Each test run was run twice:
+first with a high $\phi$ value, meaning the load became smaller than 90 \%, and
+second with $\phi = \frac{T}{q}$ where $q$ is the amount of devices in the test
+and $T$ is the throughput result of the previous test run. Most of the time,
+$\phi$ will get a proper value on the second run and the load will be above 90
+\%. However, due to high traffic in the network and other processes on the
+testing platform, the resulting load can be smaller than expected and a new
+test run must be executed.
 
 \section{Test case 1: Increasing device quantity}
 
@@ -106,20 +106,21 @@ quantity reaches a certain level.
         legend pos=outer north east
     }
 
-    \caption[Throughput result when device quantity was increased.]{Throughput result of the four event propagation models on a quad
-    core CPU as device quantity was increased.}
+    \caption[Throughput result when device quantity was increased.]{Throughput
+    result of the four event propagation models on a quad core CPU as device
+    quantity was increased.}
 
     \label{fig:quad_quantity_throughput}
 \end{figure}
 
 The response time scales slowest for the preemptive event handlers, see Figure
 \ref{fig:quad_quantity_avg_d0}. There is a correlation between the throughput
-and the response time: the two models with highest throughput also has the
+and the response time: the two models with highest throughput also have the
 lowest response time. The design of the dispatcher is not affecting the
-response time; both cooperative dispatch models gives distinct different
+response time; both cooperative dispatch models give distinct different
 outcomes in response time, same for the serial. However, the
-cooperative/cooperative gateway has a linear dependency to the device quantity,
-see Figure \ref{fig:quad_quantity_avg_d2}, compared to the rest which seem
+cooperative/cooperative gateway scales linearly with the device quantity, see
+Figure \ref{fig:quad_quantity_avg_d2}, compared to the rest which seem
 unaffected by it. The reason is due to two things: the cooperative dispatcher
 will fetch events fast as soon they are available on each device and the
 single-threaded cooperative event handler will not be able to keep up with the
@@ -177,7 +178,7 @@ time the network delay was increased by 10 milliseconds. Only the quad core CPU
 was tested and the rest of the configuration was set to $q = 25$, $\lambda_0 =
 0.1$ and $\lambda_1 = 2 \times 10^{-4}$. Figure \ref{fig:quad_delay_throughput}
 shows the throughput result of the tests and it clearly shows that the
-cooperative approaches performs much better as network delay is increased.
+cooperative approaches perform much better as network delay is increased.
 There is a clear distinction between the cooperative and the serial dispatcher
 as the serial/preemptive gateway converge to the same throughput as the
 serial/serial gateway quite fast. The serial dispatcher is the main bottleneck,
@@ -229,7 +230,7 @@ time the CPU intensity $\lambda_0$ was increased from 0.1 to 0.5 with steps of
 configuration was set to $q = 25$, $\delta = 0$ and $\lambda_1 = 10^{-4}$. The
 throughput result in Figure \ref{fig:cpu_throughput} shows how the preemptive
 event handler performs much better than the cooperative and the serial on the
-quad core CPU. Both preemptive event handler designs converges as CPU intensity
+quad core CPU. Both preemptive event handler designs converge as CPU intensity
 grows, however it is possible to see the serial dispatcher bottleneck in the
 serial/preemptive design when CPU intensity is low. The combination between a
 cooperative dispatcher and a preemptive event handler really shines in this
@@ -370,12 +371,12 @@ the number of cores does not affect throughput significantly. The main work is
 not done by the CPU, but by the filesystem. This also proves why the response
 in Figure \ref{fig:io_avg_d0} is not that different between the number of
 cores. There are a number of spikes in the response time measurements that
-correlate with the done ratio in Figure \ref{fig:quad_io_done_ratio}. Done
-ratio is the number of processed or done events divided by the number of
-created events.  When the ratio decreases, there are events waiting to be
-processed either on the device or on the gateway. This increases response time
-and is the reason why the spikes correlate between the quad core CPU graph in
-Figure \ref{fig:io_avg_d0} and Figure \ref{fig:quad_io_done_ratio}.
+correlate with the load in Figure \ref{fig:quad_io_done_ratio}. Load is the
+number of processed events divided by the number of created events. When the
+load decreases, there are events waiting to be processed either on the device
+or on the gateway. This increases response time and is the reason why the
+spikes correlate between the quad core CPU graph in Figure \ref{fig:io_avg_d0}
+and Figure \ref{fig:quad_io_done_ratio}.
 
 \begin{figure}[h!]
     \centering
@@ -408,12 +409,12 @@ Figure \ref{fig:io_avg_d0} and Figure \ref{fig:quad_io_done_ratio}.
     \centering
     \performanceplot
     {data/quad_io_done_ratio.csv}
-    {table/x=l1, xlabel=I/O intensity $\lambda_1$, ylabel=Done ratio, legend pos=outer north east}
+    {table/x=l1, xlabel=I/O intensity $\lambda_1$, ylabel=Load, legend pos=outer north east}
 
     \caption[Load result when I/O intensity was increased.]{The load result as
     I/O intensity increased on a quad core CPU. This diagram shows the direct
-    correlation low values has on response time, see Figure
-    \ref{fig:io_avg_d0}.}
+    correlation low values has on response time, see the quad core chart in
+    Figure \ref{fig:io_avg_d0}.}
 
     \label{fig:quad_io_done_ratio}
 \end{figure}

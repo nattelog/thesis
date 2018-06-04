@@ -5,30 +5,32 @@ The Internet of Things (IoT) is a new dimension of the internet which includes
 \textit{smart devices} - physical devices able to communicate with the outside
 world through internet
 \cite{design-principles-for-distributed-embedded-applications}
-\cite{wu2011m2m}. Ericsson foretold there will be around 400 million smart
+\cite{wu2011m2m}. Ericsson foretold there would be around 400 million smart
 devices by the end of 2016 \cite{ericsson-iot-forecast} and a great challenge
 will be to serve all of these. IoT applications are already influencing our
 everyday lives; smart cities, smart grids and traffic management are only a few
 of the large variety of applications in this "multi-tiered heterogeneous system
 based on open architectural platforms and standards" \cite{gardavsevic2017iot}.
-The complexity of a smart device varies from passive ID-tags which communicates
+The complexity of a smart device varies from passive ID-tags which communicate
 through near field communication to full scale computers with multithreaded
 operating systems.
 
 An important component in the IoT architecture is the IoT gateway
 \cite{chen2011brief}. It acts as a bridge between the "things", or devices, and
 the internet. Gateways can be seen as \textit{event-driven}, or
-\textit{reactive} systems, i.e. systems required to respond to stimuli in its
+\textit{reactive} systems, i.e. systems required to respond to stimuli in their
 environment \cite{garlan1993introduction} \cite{harel1985development}.
 Specifying reactive systems can be done by designing them as \textit{state
 machines} and implementation can be done in \textit{reactive languages}
-\cite{bainomugisha2013survey}. These languages have abstracted away time, in
-the same sense memory is abstracted away in, e.g. Java, by using garbage
-collectors. This thesis has been conducted at the Linköping-based company
-Attentec in Sweden. They focus on IoT-development and the gateways used by some
-of their customers are implemented on embedded, resource-constrained hardware.
-A common language for embedded systems is C as it allows the developer to
-access hardware without loosing the benefits of high-level programming
+\cite{bainomugisha2013survey}. These languages have abstracted away time
+management, in the same sense memory management is abstracted away in, e.g.
+Java, by using garbage collectors.
+
+This thesis has been conducted at the Linköping-based company Attentec in
+Sweden. They focus on IoT-development and the gateways used by some of their
+customers are implemented on embedded, resource-constrained hardware.  A common
+language for embedded systems is C as it allows the developer to access
+hardware without losing the benefits of high-level programming
 \cite{nahas2012choosing} \cite{barr1999programming}. The C library
 \textit{libuv} can be a good choice when implementing reactive systems in C
 \cite{libuv-webpage}. With it the user can implement an \textit{event driven},
@@ -47,30 +49,31 @@ gateways, but most focus has been on either higher level architectural models
 characteristics \cite{kruger2014benchmarking}. Observing the performance while
 varying software-related properties of the gateway will therefore be a good
 contribution to the research-field. Since IoT and gateway technology is growing
-and communication will largely increase \cite{wu2011m2m}, efficiency and
-performance is an important factor. There exists a number of communication
-protocols for IoT network architectures. A big challenge is to support massive
-data streams with minimal overhead in transport. However, this implies for the
-transport and communication perspective on IoT, but another significant
-perspective is I/O (file writes, database queries) processing on the machines
-themselves. If the demand for high performance IoT services is increasing, then
-development towards embedded systems will too. A rigor evaluation on the
-different architectures a gateway can be developed on can therefore be of great
-value to find what suits best in IoT.
+and as the demand for its services will largely increase \cite{wu2011m2m},
+efficiency and performance is an important factor. There exist a number of
+communication protocols for IoT network architectures. A big challenge is to
+support massive data streams with minimal overhead in transport. However, this
+applies to the transport and communication perspective on IoT, but another
+significant perspective is I/O (file writes, database queries) processing on
+the machines themselves. If the demand for high performance IoT services is
+increasing, then development towards embedded systems will too. A rigorous
+evaluation of the different architectures a gateway can be developed on can
+therefore be of great value to find what suits best in IoT.
 
-libuv is the major subsystem to \textit{NodeJS}, a popular universal runtime
-system for \textit{"front end, back end and connected devices [and] everything
-from the browser to your toaster"} \cite{node-js-survey-report-2016}. Due to
-NodeJS' event-driven development style many developers in its field might have
-a better experience using libuv when if need to transfer to embedded
-programming will be in question.
+\textit{NodeJS}, a popular universal runtime platform for \textit{"front end,
+back end and connected devices [and] everything from the browser to your
+toaster"}, includes the major subsystem libuv
+\cite{node-js-survey-report-2016}. Due to NodeJS' event-driven development
+style many developers in its field might have a better experience using libuv
+if transfer to embedded programming could be in question.
 
 \section{Aim}
 \label{sec:aim}
 
-To understand and map out the internal and external properties that affects the
-functionality and performance of the IoT gateway and to verify the legitimacy
-of using libuv as implementation approach when developing a new IoT gateway.
+The aim of this thesis is to understand and map the internal and external
+properties of the gateway to its functionality and performance and to assess
+the legitimacy of using libuv as an implementation approach when developing a
+new IoT gateway.
 
 \section{Research questions}
 \label{sec:research-questions}
@@ -94,4 +97,4 @@ well, one of them are code measurements such as maintainability. However, this
 study only focuses on performance measures.
 
 The context of the study is IoT gateways. This study can however be applicable
-on a larger spectra of environments, e.g. web servers or enterprise systems.
+on a larger spectrum of environments, e.g. web servers or enterprise systems.

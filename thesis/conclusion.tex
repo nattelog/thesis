@@ -1,7 +1,7 @@
 \chapter{Conclusion}
 \label{cha:conclusion}
 
-To understand what internal and external properties affects the functionality
+To understand what internal and external properties affect the functionality
 and performance of the IoT gateway, a combination of observations of
 state-of-the-art technologies and consulting from experienced professionals led
 to a list of common parameters in most IoT gateway systems. These parameters
@@ -29,8 +29,8 @@ The abstract gateway has two major building blocks: the dispatcher and the
 event handler. The dispatcher handles incoming events from the devices
 communicating with the gateway and dispatch them forward to the event handler.
 The event handler performs some CPU- and I/O intensive work on each event.
-Three event propagation models are proposed that describes the fundamental
-architectures of the dispatcher and the event handler. The serial event
+Three event propagation models are proposed that describe the fundamental
+architecture of the dispatcher and the event handler. The serial event
 propagation model communicates with devices and handles events serially, i.e.
 one device at a time. The preemptive model can communicate with several devices
 and handle several events concurrently on different threads and the operating
@@ -46,21 +46,21 @@ The cooperative dispatcher gives much better response time when network delay
 is increased, however. For single core CPUs, all event propagation models
 perform equally in terms of throughput when CPU intensity is increased. The
 cooperative dispatcher combined with a cooperative event handler creates worst
-response time, despite the number of cores. For I/O intensive work, the
+response time, despite the number of cores. For I/O intensive work, both the
 cooperative approaches perform best in terms of throughput.
 
 The best approach to implement libuv in this context is to model the gateway as
 a state machine. As libuv uses callback functions to let the user know when
 asynchronous I/O work is done, the callbacks can be seen as vertices in the
 state machine. Whenever an asynchronous I/O request is initiated in libuv, the
-user can explicitly choose other tasks to do while the I/O request is working.
+user can explicitly choose other tasks to run while the I/O request is working.
 This makes libuv a good choice to implement the cooperative dispatcher. The
 results show that the cooperative event handler is not ideal for CPU intensive
 events. libuv is primarily single-threaded; it is not the best alternative for
 implementing cooperative event handlers if the CPU intensity of events is high.
-However, utilizing the built-in threadpool in libuv one can built a preemptive
+However, utilizing the built-in threadpool in libuv one can build a preemptive
 event handler on top of a cooperative dispatcher. The results of the
-performance tests shows that it performs better or equal to the next best event
+performance tests show that it performs better or equal to the next best event
 propagation model in all test cases.
 
 \section{Future work}

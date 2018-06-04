@@ -24,7 +24,7 @@ story was split into more precise issues like \textit{"present the developed
 application"} and \textit{"present a diagram with the test results"}. These
 issues were easier to do in one sprint.
 
-The overall phases of the study was a design phase, a technological phase
+The overall phases of the study were a design phase, a technological phase
 and a reflexive phase \cite{novikov2013research}. In the design phase, the
 concept and goals of the study were developed. Together with the author's own
 ideas and input from Attentec, the value of understanding IoT gateway
@@ -36,7 +36,7 @@ The theoretical framework was developed in this phase to support claims and
 form a general direction of the entire study. Multiple databases were queried
 in order to find interesting material from previous research. Mainly the online
 library hosted by \textit{Linköping University}\footnote{\url{www.bibl.liu.se}}
-was used since it allow access to material otherwise non-viewable due to
+was used since it allows access to material otherwise non-viewable due to
 institutional login requirements. Query results from this library is a
 collection of query results from other research databases such as \textit{ACM
 Digital Library}\footnote{\url{dl.acm.org}}, \textit{ProQuest Ebook
@@ -45,7 +45,7 @@ Digital Library}\footnote{\url{ieeexplore.ieee.org}}; so it acts as a gateway
 to a global collection of scientific research.
 
 The \textit{three-pass approach} presented by Keshav \cite{keshav2007read} was
-be used as a basic approach to find interesting material. It helps the reader
+used as a basic approach to find interesting material. It helps the reader
 grasp the paper's content in three \textit{passes}. The first pass' purpose is
 to give the reader an overview of the paper. The title, abstract, introduction,
 headings, sub-headings, conclusions and references are read. This information
@@ -62,8 +62,8 @@ Together with Attentec, a model of a general, or abstract, gateway was
 theoretically developed. The idea was that all IoT gateway implementations have
 some common features, constraints and environments that can be simulated and
 tested. Another hypothesis developed that different IoT gateway architectures
-performed different in different environments, and that there is no
-"one-size-fit-all" architecture.
+performed differently in different environments, and that there is no
+"one-size-fits-all" architecture.
 
 The next phase, the technological phase, started with implementation of the
 abstract gateway in order to enable empirical data collection of different
@@ -84,8 +84,8 @@ decomposition for reactive software. With an industrial application as context,
 he replaces legacy code with code written in the \textit{Cèu} programming
 language, reaching the conclusion that Cèu preserves fundamental software
 engineering principles and is at the same time able to fulfill resource
-limitations in the system. Jagadeesan et al \cite{jagadeesan1996formal}
-performs a similar study but with a different language: \textit{Esterel}. They
+limitations in the system. Jagadeesan et al. \cite{jagadeesan1996formal}
+perform a similar study but with a different language: \textit{Esterel}. They
 reimplement a component in a telephone switching system and reach the
 conclusion that Esterel is better suited for analysis and verification for
 reactive systems.
@@ -106,45 +106,45 @@ However, the paper is not focusing on the same architectural abstraction level
 as this thesis, but provides a more holistic view on the entire IoT gateway
 application and sub-applications.
 
-Zachariah et al. \cite{zachariah2015internet} argues that application specific
+Zachariah et al. \cite{zachariah2015internet} argue that application specific
 IoT gateways are not the best approach towards a scalable IoT infrastructure.
 The same reason there isn't one web browser per web page, gateways should be
 generic and support all types of IoT devices and sensors. They propose a
 smartphone-centric architecture where IoT devices connect to the internet via
-smartphones. This paper is valuable because it challenges the traditional mind
-around IoT gateways. It is however elaborating the gateway on a higher
-abstraction level than this thesis is.
+smartphones. This paper is valuable because it challenges the traditional view
+of IoT gateways. It is however elaborating the gateway on a higher abstraction
+level than this thesis is.
 
-Weyuker et al. \cite{weyuker2000experience} states there has been very little
-research on software performance testing. In their paper, they discuss
-performance testing objectives, workload design and the role of requirements
-and specifications to eventually lead up to a case study where they test a
-gateway system without having access to historical usage data. They develop
-test cases based on usage scenarios to adhere their formulated performance
-objectives. The tests are conducted by running programs that simulate clients
-in the system, which sends transaction requests in various sizes and
-frequencies. The rate of transactions are monitored and used to assess the
-performance of the entire system. Their reflections and discussions on
-performance testing at large are very valuable to this thesis. However, their
-paper focuses on an already existing application upon which performance testing
-will be used to assess whether it fulfils its functional and non-functional
-requirements. This thesis dives into how an abstract gateway can be modeled and
-implemented and how its different configurations affects performance for some
-given contexts.
+Weyuker et al. \cite{weyuker2000experience} states that there has been very
+little research on software performance testing in general. In their paper,
+they discuss performance testing objectives, workload design and the role of
+requirements and specifications to eventually lead up to a case study where
+they test a gateway system without having access to historical usage data. They
+develop test cases based on usage scenarios to adhere their formulated
+performance objectives. The tests are conducted by running programs that
+simulate clients in the system, which send transaction requests in various
+sizes and frequencies. The rate of transactions are monitored and used to
+assess the performance of the entire system. Their reflections and discussions
+on performance testing at large are very valuable to this thesis. However,
+their paper focuses on an already existing application upon which performance
+testing will be used to assess whether it fulfils its functional and
+non-functional requirements. This thesis dives into how an abstract gateway can
+be modeled and implemented and how its different configurations affect
+performance for some given contexts.
 
-Denaro et al. \cite{denaro2005performance} presents a systematic method to
+Denaro et al. \cite{denaro2005performance} present a systematic method to
 ascertain that a given distributed software architecture lives up to its
 performance requirements. They mention some performance metrics such as
 latency, throughput and scalability. They state that the overall performance of
-a distributed system is often determined by the middleware used, and that same
-middleware can affect performance differently depending on its context of
+a distributed system is often determined by the middleware used, and that the
+same middleware can affect performance differently depending on its context of
 application. This is a good incentive to map and understand IoT gateway
 performance, which is done in this thesis.
 
 Kruger et al. \cite{kruger2014benchmarking} discuss the common use of
 off-the-shelf components for implementing IoT devices and gateways. They state
-little work has previously been done to explore the performance of these
-devices when different parameters are adjusted; such as system architecture and
+that little work has previously been done to explore the performance of these
+devices when different parameters are adjusted, such as system architecture and
 software components. They focus primarily on hardware adjustments (e.g.
 processor and memory speed) to identify performance bottlenecks in three common
 off-the-shelf brands: Raspberry Pi, Beaglebone and Beaglebone Black. They use
@@ -153,20 +153,20 @@ level and \textit{macro-benchmarks} at application level. They reach the
 conclusion that gateway performance is most important when there is a large
 amount of data being transferred between the gateway and the IoT application.
 
-Aguilera et al. \cite{aguilera2003performance} presents an approach to identify
+Aguilera et al. \cite{aguilera2003performance} present an approach to identify
 performance bottlenecks in distributed systems where the components are seen as
 black boxes, i.e. sub-systems of unknown functionality. By monitoring the
 traffic of \textit{remote procedure calls} in the system and store them in a
-log they are able to find the \textit{casual paths} of messages and thereby
+log they are able to find the \textit{causal paths} of messages and thereby
 understand the data flow in the system and where performance bottlenecks are
 located. The approach to capture log messages is used in this thesis, however
 the step of storing messages in a log file before computation is omitted and
 each log message is computed as it arrives.
 
-Liu et al. \cite{liu2002designing} presents an approach to predict distributed
+Liu et al. \cite{liu2002designing} present an approach to predict distributed
 system performance empirically by running test suites. They map out some
 parameters that affect performance, such as client request load and thread pool
-size and some observable parameters such as throughout and response time. They
+size and some observable parameters such as throughput and response time. They
 reach the conclusion that gathering empirical results with simple test cases is
 an effective method to understand the performance profile of the system.
 
@@ -179,7 +179,7 @@ two were of interest for this study with each having implemented an IoT gateway
 suitable for its operating context. \textit{Customer A} uses their IoT gateway
 to monitor industrial batteries used in forklifts. The main idea behind the
 event propagation model is that the gateway polls each battery for events and
-process them according to its specification (which is nonrelevant here).
+process them according to its specification (which is not relevant here).
 Referring to data propagation in reactive languages (see section
 \ref{sec:evaluation-model}), one can view the event propagation as
 \textit{pull-based}, i.e. the gateway pulls events from the batteries whenever
@@ -208,7 +208,7 @@ emit any events on their own, only when asked to by the gateway. Figure
     \label{fig:pull-based}
 \end{figure}
 
-\textit{Customer B} on the other hand uses a \textit{push-based} approach to
+\textit{Customer B}, on the other hand uses a \textit{push-based} approach to
 handle event propagation in their gateway. The gateway hosts a REST API to
 serve IoT devices. This means that the devices must be \textit{active}, i.e.
 they emit events whenever they find it necessary. See Figure
@@ -243,24 +243,24 @@ Taking inspiration from the three task management approaches presented by Adya
 et al. \cite{adya2002cooperative} and described in Section
 \ref{sec:task-management}, three event propagation models are proposed:
 \textit{serial}, \textit{preemptive} and \textit{cooperative event
-propagation}. Before presenting a formal definition, an analogy might suite
-well here. Imagine a cafe that serves coffee. There are several customers in
-line and the barista takes the order from the next customer in line, brews the
-coffee and serves it. The coffee brewer can only brew one cup of coffee at a
-time. This is repeated for each customer in line with the constraint that no
-new order is accepted before the current order is served, see Figure
-\ref{fig:cafe-serial}. This can be seen as a \textit{serial order handling};
-only one order can be handled at a time. Imagine now that the cafe hires more
-baristas and more coffee machines. There is still one line (however, there can
-be several), but orders can be handled concurrently, so the next customer in
-line does not necessarily have to wait for the previous customer to be served
-before he can place his order, see Figure \ref{fig:cafe-preemptive}. This can
-be seen as \textit{preemptive order handling}. Now lets keep the brewers but
-let go all baristas except for one.  All customers place their order to the
-same barista which in turn start one of the brewers. While the brewer is
-working, the next customer in line places his order and the barista can start a
-second brewer, see Figure \ref{fig:cafe-cooperative}. This is called
-\textit{cooperative order handling}.
+propagation}. Before presenting a formal definition, an analogy might be
+well-suited here. Imagine a cafe that serves coffee. There are several
+customers in line and the barista takes the order from the next customer in
+line, brews the coffee and serves it. The coffee brewer can only brew one cup
+of coffee at a time. This is repeated for each customer in line with the
+constraint that no new order is accepted before the current order is served,
+see Figure \ref{fig:cafe-serial}. This can be seen as a \textit{serial order
+handling}; only one order can be handled at a time. Imagine now that the cafe
+hires more baristas and more coffee machines. There is still one line (however,
+there can be several), but orders can be handled concurrently, so the next
+customer in line does not necessarily have to wait for the previous customer to
+be served before he can place his order, see Figure \ref{fig:cafe-preemptive}.
+This can be seen as \textit{preemptive order handling}. Now lets keep the
+brewers but let go all baristas except for one.  All customers place their
+order to the same barista which in turn start one of the brewers. While the
+brewer is working, the next customer in line places his order and the barista
+can start a second brewer, see Figure \ref{fig:cafe-cooperative}. This is
+called \textit{cooperative order handling}.
 
 \begin{figure}[h!]
     \centering
@@ -565,23 +565,25 @@ propagation models is as follows:
 
     \item[\textbf{Preemptive event propagation}:] Given a set of $m$ events $\{
             \epsilon_0, \epsilon_1, ..., \epsilon_j, ..., \epsilon_{m-1} \}$
-        each event $\epsilon_j$ can be dispatched independent on
+        each event $\epsilon_j$ can be dispatched independent of
         $\Lambda_{j-1}$ and the work $\Lambda_j$ can implicitly interleave and
         make room for work $\Lambda_k$ where $k \ne j$.
 
     \item[\textbf{Cooperative event propagation}:] Given a set of $m$ events
         $\{ \epsilon_0, \epsilon_1, ..., \epsilon_j, ..., \epsilon_{m-1} \}$
-        each event $\epsilon_j$ can be dispatched independent on
+        each event $\epsilon_j$ can be dispatched independent of
         $\Lambda_{j-1}$ and the work $\Lambda_j$ can explicitly make room for
         work $\Lambda_k$ where $k \ne j$.
 
 \end{description}
 
 Common for all models is that the work $\Lambda_j$ can not start before the
-event $\epsilon_j$ is dispatched. Each event follow the order $\epsilon_j
+event $\epsilon_j$ is dispatched. Each event follows the order $\epsilon_j
 \rightarrow dispatch \rightarrow \Lambda_j \rightarrow finish$. An example of
 workflow of a serial event propagation model is illustrated in Figure
-\ref{fig:event-propagation-serial}.
+\ref{fig:event-propagation-serial}. Note that the dispatcher is not necessarily
+notified of the \textit{finish}-operation. The event handler can finish work on
+$\epsilon_j$ without "returning" anything to the dispatcher.
 
 \begin{figure}[h!]
     \centering
@@ -888,7 +890,7 @@ system scheduler will perform what the user perceives as implicit interleaving.
 The cooperative event handler will perform CPU work on a single thread, see
 Figure \ref{fig:event_handler_cooperative}.  However, I/O work will be
 dispatched asynchronously to the associated I/O driver. Work can in that way be
-parallelled with only one working thread.
+parallelized with only one working thread.
 
 \begin{figure}[h!]
     \centering
@@ -912,7 +914,7 @@ parallelled with only one working thread.
 
 \section{An abstract gateway}
 
-A model of an abstract gateway is proposed as such: a gateway $\Gamma$ is a
+A model of an abstract gateway is proposed as follows: a gateway $\Gamma$ is a
 six-tuple describing its internal properties and its environment.
 
 \begin{equation}
@@ -927,10 +929,10 @@ as a set $\Omega = \{ \omega_0, \omega_1, ..., \omega_{q-1} \}$ where
 $\omega_i$ represents a device and $q$ is the total number of devices. Let
 $\phi$ be the number of events $\omega_i$ generates each second and let
 $\delta$ be the time it takes for a network request to travel from $\omega_i$
-to $\Gamma$, or vice versa. $K$ and $\Lambda$ describes the internal properties
+to $\Gamma$, or vice versa. $K$ and $\Lambda$ describe the internal properties
 of $\Gamma$. Let $K$ describe the event propagation model of $\Gamma$. It is
 expressed as $K = \{ \kappa_0, \kappa_1 \}$ where $\kappa_0$ and $\kappa_1$
-represents the event propagation model of the dispatcher and the event handler
+represent the event propagation model of the dispatcher and the event handler
 respectively and $\kappa_i \in \{ \textit{serial}, \textit{preemptive},
 \textit{cooperative} \}$. Let $\Lambda$ describe the work induced on $\Gamma$
 from each event. It is expressed as $\Lambda = \{ \lambda_0, \lambda_1 \}$
@@ -950,7 +952,7 @@ the CPU.
             \hline
             $q$         & Number of devices. \\
             $\phi$      & Frequency of generated events. \\
-            $\delta$    & The delay, or latency, added to the network. \\
+            $\delta$    & The delay, or latency, added by the network. \\
             $\kappa_0$  & Event propagation model of the dispatcher. \\
             $\kappa_1$  & Event propagation model of the event handler. \\
             $\lambda_0$ & CPU intensity induced by each event. \\
@@ -988,7 +990,7 @@ lifecycle:
     $\epsilon_j$.
 \end{description}
 
-These timestamps holds a set of basic constraints:
+These timestamps hold a set of basic constraints:
 
 \begin{equation}
 t_{start} \leq t_k^j
@@ -1010,7 +1012,19 @@ events produced by $\Gamma_c$.
 \label{sec:performance_metrics}
 
 With $M$ and $\epsilon_j$ it is possible to derive some performance metrics.
-Throughput $T$ can be calculated as:
+Let $\pi$ be a function such that:
+
+\[
+    \pi(\epsilon_j) =
+\begin{cases}
+    1, & \text{if } t_4^j \leq t_{end} \\
+    0, & \text{otherwise}
+\end{cases}
+\]
+
+If $\epsilon_j$ has been processed, i.e. its last timestamp $t_4^j$ happened
+before the gateway stopped, $\pi$ returns 1. Using this function, throughput
+$T$ can be calculated as:
 
 $$
 T = \frac{\sum_{\epsilon_j \in M}{\pi(\epsilon_j)}}{t_{end} - t_{start}}
@@ -1023,12 +1037,12 @@ spent in $\omega_i$ and how long time it spent in $\Gamma$. Let:
 \begin{description}
 
     \item[$d_0^j = t_4^j - t_0^j$] be the response time of $\epsilon_j$, i.e. the
-        total time between that the event was created until it was processed.
+        total time between the event was created until it was processed.
 
     \item[$d_1^j = t_1^j - t_0^j$] be the wait time, i.e. the time $\epsilon_j$
         spent in $\omega_i$.
 
-    \item[$d_2^j = t_4^j - t_2^j$] be the process time, i.e. $\epsilon_j$ spent
+    \item[$d_2^j = t_4^j - t_2^j$] be the processing time, i.e. $\epsilon_j$ spent
         in $\Gamma$.
 
 \end{description}
@@ -1036,7 +1050,7 @@ spent in $\omega_i$ and how long time it spent in $\Gamma$. Let:
 Given a vector of events $M_c$, with length $m$, created by running $E$ on a
 gateway with the configuration $c$, let $D_k^c$ be a vector containing $\big[
     d_k^0, d_k^1, ..., d_k^{m-1} \big]$, where $k = 0, 1, 2$, $d_0^j$ is the
-response time, $d_1^j$ is the wait time and $d_2^j$ is the process time for
+response time, $d_1^j$ is the wait time and $d_2^j$ is the processing time for
 $\epsilon_j \in M_c$. Then:
 
 \begin{description}
@@ -1049,22 +1063,12 @@ $\epsilon_j \in M_c$. Then:
 \label{sec:load}
 
 A system is said to be \textit{at load} when the system is working at full
-capacity and is not able to produce higher throughput. Due to the
-strict time limitation provided by $t_{end}$ there might be cases where some
-events $\epsilon_j$ has $t_k^j > t_{end}$. These are events that haven't
-been entirely processed by $\Gamma$. Let $\pi$ be a function such that:
-
-\[
-    \pi(\epsilon_j) =
-\begin{cases}
-    1, & \text{if } t_4^j \leq t_{end} \\
-    0, & \text{otherwise}
-\end{cases}
-\]
-
-With $\pi$, the load on $\Gamma$ can be analyzed. The ratio between created
-events and processed events can give hint on how many events $\Gamma$ can
-handle. Let $P$ denote the ratio between created and processed events:
+capacity and is not able to produce higher throughput. Due to the strict time
+limitation provided by $t_{end}$ there might be cases where some events
+$\epsilon_j$ have $t_k^j > t_{end}$. These are events that haven't been
+entirely processed by $\Gamma$. The ratio between created events and processed
+events can give hint on how many events $\Gamma$ can handle. Let $P$ denote the
+ratio between created and processed events:
 
 $$
 P = \frac{P_\pi}{m} = \frac{\sum_{\epsilon_j \in M}{\pi(\epsilon_j)}}{m}
@@ -1084,7 +1088,7 @@ events $m$ only reduces $P$.
 
 \section{Approach}
 
-The goal of this thesis is to map how different gateway architectures affect
+The goal of this thesis is to study how different gateway architectures affect
 its performance in different environments. Using the abstract gateway model
 $\Gamma$, it is possible to derive the performance mapping. By running $E$ with
 a set of different gateways $\Gamma_c$ and analyze the throughput, load,
@@ -1122,7 +1126,7 @@ the implementation, see Table \ref{tab:event_prop_combinations}.
     \end{center}
 \end{table}
 
-To mimick the gateway hardware used by Customer A (see Section
+To mimic the gateway hardware used by Customer A (see Section
 \ref{sec:customer-cases}) a Raspberry Pi 3 Model
 B\footnote{\url{https://www.raspberrypi.org/products/raspberry-pi-3-model-b/}}
 is used to run the gateway implementation. The system that simulates the

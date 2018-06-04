@@ -6,25 +6,27 @@ abstract gateway $\Gamma$, a software system has been developed. The ultimate
 purpose of this system is to generate and store all events and their respective
 timestamps to be able to analyze the performance of $\Gamma$, which processed
 them. The system consists of two processes: a \textit{test manager} and a
-\textit{gateway} as well as an analyzation tool. The main purpose of the test
+\textit{gateway} as well as an analyzing tool. The main purpose of the test
 manager is to simulate devices and store event data in a database while the
 purpose of the gateway is to pull events from the devices and process them. The
-analysation tool is not discussed more than that it provides utility functions
-to assemble event timestamp information from one or several test runs available
-in the database and output them as comma separated values (\textit{csv}).
+analyzing tool is not discussed more than that it provides utility functions to
+assemble event timestamp information from one or several test runs available in
+the database and output them as comma separated values (\textit{csv}).
 
 The test manager is entirely built in Python with standard libraries. SQLite is
 used for the database. Figure \ref{fig:test_manager_impl_architecture} depicts
 the overall architecture of the test manager. Each part is explained in the
 following sections. The main thread of the program is the actual test manager
-that waits for new event lifecycle messages from the log server, which are
-updated in the database. One thread is created for the name service, which is a
-TCP server hosting the name service API. One thread is also created for each
-device in the test as they are TCP servers hosting the device API used by the
-gateway. The producer is also working in its own thread, creating new events at
-a given frequency. The log server is a UDP server listening for UDP log
-messages in its own thread. The "Net"-module implements the middleware
-functionality, enabling communication between the test manager and the gateway.
+that waits for new event lifecycle messages from the log server, which acts as
+the main source of event-related information. The test manager takes each new
+event lifecycle message and store it in the database. One thread is created for
+the name service, which is a TCP server hosting the name service API. One
+thread is also created for each device in the test as they are TCP servers
+hosting the device API used by the gateway. The producer is also working in its
+own thread, creating new events at a given frequency. The log server is a UDP
+server listening for UDP log messages in its own thread. The "Net"-module
+implements the middleware functionality, enabling communication between the
+test manager and the gateway.
 
 \begin{figure}[h!]
     \centering
@@ -184,7 +186,8 @@ The purpose of the CPU intensity $\lambda_0$ is to simulate CPU intensive work
 induced by each event. The intensity value can be set in the configuration to
 be a value between 0 and 1, where 0 means no intensity and 1 means maximum
 intensity on each event. CPU intensity is simulated by calculating the $n$th
-prime number, where $n = \lfloor 2^{12} \times \lambda_0 \rfloor$.
+prime number, where $n = \lfloor 2^{12} \times \lambda_0 \rfloor$. Each
+calculation is done on one thread per event.
 
 \subsection{Simulating I/O intensity}
 
@@ -202,13 +205,13 @@ TCP and UDP technologies are used as communication methods between the test
 manager and the gateway, see Figure \ref{fig:comm_flow}. UDP is not
 connection-oriented like TCP and is able to send messages with less overhead.
 UDP is therefore used as medium to send log messages to the log server, both by
-the test manager and the gateway. Each log message is sent on a specific format
+the test manager and the gateway. Each log message is sent in a specific format
 and is explained in Section \ref{sec:log_server}. The TCP communication
 middleware is implemented using \textit{Remote Method Invocation} (RMI)
 \cite{coulouris2005distributed} and is placed in the "Net"-module, see Figures
 \ref{fig:test_manager_impl_architecture} and
 \ref{fig:gateway_impl_architecture}. For the gateway to call an API function on
-the test manager (or vice versa), it must produce a JSON-string message on the
+the test manager (or vice versa), it must produce a JSON-string message in the
 format:
 
 \begin{lstlisting}
@@ -220,7 +223,7 @@ format:
 
 If the gateway sends this message to the test manager, the API function
 \texttt{hostnames()} will be invoked and its result will be sent back to the
-gateway on the format:
+gateway in the format:
 
 \begin{lstlisting}
 {
@@ -229,7 +232,7 @@ gateway on the format:
 \end{lstlisting}
 
 However, if the RMI induce an error while being processed by the API, the error
-is returned instead of the result. The error is sent back on the format:
+is returned instead of the result. The error is sent back in the format:
 
 \begin{lstlisting}
 {
@@ -240,8 +243,8 @@ is returned instead of the result. The error is sent back on the format:
 }
 \end{lstlisting}
 
-The name of the error and the arguments used to create the error is sent back
-and enables the receiving end to throw the error as if it was created locally.
+The name of the error and the arguments used to create the error are sent back
+and enable the receiving end to throw the error as if it was created locally.
 
 \begin{figure}[h!]
     \centering
@@ -312,15 +315,15 @@ machines the performance analysis is not trustworthy. It is therefore important
 to get the time offset between the test manager and the gateway.
 
 The test bootup process solves these two issues by verifying the configuration
-between the two instances and also verify the time offset between them. The
-configuration verification is done by letting the gateway send its
-configuration to the test manager who checks that the configurations match. If
-they don't the test will end with an error stating that the configurations did
-not match. If they match, however, the test manager will start a time
-synchronization procedure that calculates the time offset between the two
-machines. This offset will be added to each event timestamp retrieved from the
-gateway. The algorithm that calculates the time offset has been used in video
-games earlier and is as follows \cite{simpson2004stream}:
+between the two instances and the time offset between them. The configuration
+verification is done by letting the gateway send its configuration to the test
+manager who checks that the configurations match. If they don't, the test will
+end with an error stating that the configurations did not match. If they match,
+however, the test manager will start a time synchronization procedure that
+calculates the time offset between the two machines. This offset will be added
+to each event timestamp retrieved from the gateway. The algorithm that
+calculates the time offset has been used in video games earlier and is as
+follows \cite{simpson2004stream}:
 
 \begin{enumerate}
     \item The test manager saves current local time ($t_{tm_0}$) and requests the
@@ -542,36 +545,36 @@ levels available: \texttt{VERBOSE}, \texttt{DEBUG}, \texttt{INFO} and
 that if the level is set to \texttt{VERBOSE}, all log messages in the higher
 levels are shown as well. If the level on the other hand is set to
 \texttt{INFO} the \texttt{VERBOSE} and \texttt{DEBUG} messages are not shown.
-Event lifecycle messages are on the format
+Event lifecycle messages are in the format
 \texttt{<level>:<timestamp>:<function>:<keyword>:<event\_id>} where keyword is
 one of:
 
 \begin{description}
 
-\item[\texttt{EVENT\_LIFECYCLE\_CREATED}:] The event \texttt{event\_id} was
-created at time \texttt{timestamp}. The log server extracts the relevant data
-from the message using regular expressions and sends them to the test manager
-who inserts them in the database.
+    \item[\texttt{EVENT\_LIFECYCLE\_CREATED}:] The event \texttt{event\_id} was
+        created at time \texttt{timestamp}. The log server extracts the
+        relevant data from the message using regular expressions and sends them
+        to the test manager who inserts them in the database.
 
-\item[\texttt{EVENT\_LIFECYCLE\_FETCHED}:] The event \texttt{event\_id} left
-the device at time \texttt{timestamp}.
+    \item[\texttt{EVENT\_LIFECYCLE\_FETCHED}:] The event \texttt{event\_id}
+        left the device at time \texttt{timestamp}.
 
-\item[\texttt{EVENT\_LIFECYCLE\_RETRIEVED}:] The event \texttt{event\_id}
-arrived at the gateway at time \texttt{timestamp}.
+    \item[\texttt{EVENT\_LIFECYCLE\_RETRIEVED}:] The event \texttt{event\_id}
+        arrived at the gateway at time \texttt{timestamp}.
 
-\item[\texttt{EVENT\_LIFECYCLE\_DISPATCHED}:] The event \texttt{event\_id} was
-dispatched to the event handler at time \texttt{timestamp}.
+    \item[\texttt{EVENT\_LIFECYCLE\_DISPATCHED}:] The event \texttt{event\_id}
+        was dispatched to the event handler at time \texttt{timestamp}.
 
-\item[\texttt{EVENT\_LIFECYCLE\_DONE}:] The event \texttt{event\_id} was
-finished processed at time \texttt{timestamp}.
+    \item[\texttt{EVENT\_LIFECYCLE\_DONE}:] The event \texttt{event\_id}
+        finished processing at time \texttt{timestamp}.
 
 \end{description}
 
 A regular expression is used both to check whether the message is an event
 lifecycle message and to extract the relevant values from it. The log server is
 run on a separate thread in the test manager process and listens for UDP
-packets. Both the test manager and the gateway sends log messages as UDP
-packets to the log server.
+packets. Both the test manager and the gateway send log messages as UDP packets
+to the log server.
 
 \section{The database}
 
@@ -595,14 +598,14 @@ values between $0.1$ and $0.5$.
 
 When a test is about to start, the user specifies the configuration of the test
 in the command line, see Section \ref{sec:configuration}. A new record for each
-configuration key is created in the configuration table. When the test start, a
-new scenario record is created with its start time set.  During the time sync
+configuration key is created in the configuration table. When the test starts,
+a new scenario record is created with its start time set.  During the time sync
 process, see Section \ref{sec:bootup_service}, the time offset between the test
 manager and the gateway is identified and set in the offset attribute in the
 scenario record. When a new event is created, the device sends a log message to
 the log server, which in turn extracts the relevant data from the message and
 creates a new eventlifecycle record with the created\_time attribute set. The
-device and the gateway sends log messages as the event passes the associated
+device and the gateway send log messages as the event passes the associated
 lifecycles and the log server updates the eventlifecycle record. When the test
 stops the test manager sets the end timestamp in the scenario record and an
 entire scenario is stored.
@@ -783,7 +786,7 @@ void event_handler_serial(double cpu_intensity, double io_intensity)
 }
 \end{lstlisting}
 
-The preemptive event handler dispatch each event to a thread pool and returns
+The preemptive event handler dispatches each event to a thread pool and returns
 immediately, see Listing \ref{lst:preemptive_event_handler}. If all threads in
 the pool are busy with previous events, the event handler waits for a thread to
 be free and blocks the execution on the main thread. The work each thread
@@ -809,13 +812,14 @@ The cooperative event handler will perform CPU work first, on the same thread,
 blocking the rest of the execution, followed by the I/O work that is performed
 asynchronously and returns instantly, see Listing
 \ref{lst:cooperative_event_handler}. The I/O work will be performed using
-libuv's filesystem API. libuv perform filesystem operations in its built-in
+libuv's filesystem API. libuv performs filesystem operations in its built-in
 threadpool. That means the only difference between the preemptive and the
-cooperative event handler is that the cooperative perform CPU work first before
-dispatching the work further to the threadpool. libuv's internal threadpool
-gets the same size as the number of threads configured when the gateway starts,
-but if the threadpool is full the cooperative event handler will not wait for a
-thread to be free before the I/O work can be dispatched.
+cooperative event handler is that the cooperative performs CPU work first,
+before dispatching the work further to the threadpool. The internal threadpool
+of libuv gets the same size as the number of threads configured when the
+gateway starts, but if the threadpool is full the cooperative event handler
+will not wait for a thread to be free before the I/O work can be dispatched. It
+will queue the work and continue the normal dispatcher/event handler execution.
 
 \begin{lstlisting}[
     language = C,
