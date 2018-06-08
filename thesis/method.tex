@@ -192,7 +192,8 @@ emit any events on their own, only when asked to by the gateway. Figure
     \begin{tikzpicture}[auto]
         \node [block] (device_1) {Device 1};
         \node [block, right of=device_1, node distance=3cm] (device_2) {Device 2};
-        \node [block, right of=device_2, node distance=3cm] (device_n) {Device n};
+        \node [node distance = 0.5cm, right = of device_2] (dots) {...};
+        \node [block, node distance = 0.5cm, right = of dots] (device_n) {Device n};
         \node [block, below of=device_2, node distance=2.5cm] (gateway) {Gateway};
 
         \path [->] (device_1) edge [bend left=5] (gateway);
@@ -224,7 +225,8 @@ device, but the device does not need to know anything about the gateway.
     \begin{tikzpicture}[auto]
         \node [block] (device_1) {Device 1};
         \node [block, right of=device_1, node distance=3cm] (device_2) {Device 2};
-        \node [block, right of=device_2, node distance=3cm] (device_n) {Device n};
+        \node [node distance = 0.5cm, right = of device_2] (dots) {...};
+        \node [block, node distance = 0.5cm, right = of dots] (device_n) {Device n};
         \node [block, below of=device_2, node distance=2.5cm] (gateway) {Gateway};
 
         \path [line] (device_1) -- (gateway);
